@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Recurring editor (triptych)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#15130D;
+    --release:#C98A1A;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit}
+  ::selection{background:var(--accent);color:#fff}
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+  .uplabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+
+  /* ========== HOME: flat event list ========== */
+  .page{max-width:1440px;margin:0 auto;min-height:100vh;background:var(--paper);border-left:2px solid var(--line);border-right:2px solid var(--line);display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;gap:16px;padding:18px 36px;border-bottom:2px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .topbar .spacer{flex:1}
+  .addbtn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 14px}
+  .addbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .addbtn:active{transform:translate(3px,3px);box-shadow:none}
+  .sublink{display:flex;align-items:center;gap:10px}
+  .sublink .box{display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:var(--paper);padding:6px 8px 6px 10px;box-shadow:var(--shadow-sm)}
+  .sublink code{font-size:11px;color:var(--ink);white-space:nowrap}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:5px 9px}
+  .sublink button:hover{background:var(--accent)}
+
+  .list{flex:1;padding:4px 36px 80px}
+  .seclabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:34px 0 14px;display:flex;align-items:center;gap:12px}
+  .seclabel::after{content:"";flex:1;height:2px;background:var(--hairline)}
+  .seclabel .ct{color:var(--ink);background:var(--cream);border:2px solid var(--ink);padding:0 6px;font-size:10px;letter-spacing:.06em}
+
+  .row{display:flex;align-items:center;gap:18px;padding:16px 4px;border-bottom:1px solid var(--hairline);cursor:pointer;transition:padding-left .08s}
+  .row:hover{padding-left:10px}
+  .row .sw{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .row .body{flex:1;min-width:0}
+  .row .ti{font-size:15.5px;font-weight:600;line-height:1.2}
+  .row .sched{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+  .row .sched .cal{color:var(--ink);font-weight:600}
+  .row .sched .sep{color:var(--hairline)}
+  .row .badge{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--ink);padding:2px 8px;flex-shrink:0;white-space:nowrap}
+  .row .badge.rec{background:var(--ink);color:var(--paper)}
+  .row .chev{color:var(--muted);flex-shrink:0}
+
+  /* ========== FULL-SCREEN EDITOR (triptych) ========== */
+  .editor{position:fixed;inset:0;background:var(--paper);z-index:40;display:none;flex-direction:column}
+  .editor.open{display:flex}
+  .ovbar{display:flex;align-items:center;gap:18px;padding:14px 28px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .backbtn{display:flex;align-items:center;gap:8px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px;color:var(--ink)}
+  .backbtn:hover{background:var(--ink);color:var(--paper)}
+  .ovbar .et{display:flex;align-items:center;gap:11px;min-width:0}
+  .ovbar .cdot{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .ovbar h1{font-size:19px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ovbar .kick{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .ovbar .spacer{flex:1}
+  .savebtn{background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);padding:8px 20px;font-size:13px;font-weight:700}
+  .savebtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .delbtn{background:none;border:2px solid var(--ink);padding:8px 13px;font-size:13px;font-weight:600;color:var(--ink)}
+  .delbtn:hover{background:var(--ink);color:var(--paper)}
+
+  .triptych{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;min-height:0}
+  .col{min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .col + .col{border-left:2px solid var(--line)}
+  .colhead{padding:18px 28px 6px;display:flex;align-items:baseline;gap:10px;flex-shrink:0}
+  .colhead .n{font-size:10px;font-weight:700;color:var(--paper);background:var(--ink);width:18px;height:18px;display:grid;place-items:center;align-self:center}
+  .colscroll{flex:1;overflow:auto;padding:14px 28px 32px}
+
+  /* ---- col 1: fields, grid-aligned ---- */
+  .frow{display:grid;grid-template-columns:88px minmax(0,1fr);gap:18px;align-items:center;padding:15px 0;border-top:1px solid var(--hairline)}
+  .frow:first-of-type{border-top:0;padding-top:6px}
+  .frow.top{align-items:start}
+  .frow.top > .fl{padding-top:10px}
+  .fl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .inp{width:100%;border:2px solid var(--ink);background:var(--paper);padding:9px 10px;font-size:13.5px;color:var(--ink)}
+  .inp:focus{outline:3px solid var(--accent);outline-offset:0}
+  .inp.title{font-size:16px;font-weight:600}
+  .when{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .when .inp.date{width:150px;flex:none}
+  .when .inp.t{width:74px;flex:none;text-align:center}
+  .when .dash{color:var(--muted);font-weight:600}
+  .allday{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:var(--muted);cursor:pointer}
+  .allday input{width:15px;height:15px;accent-color:var(--ink)}
+  textarea.inp{resize:vertical;min-height:84px;line-height:1.5;font-size:13.5px}
+  .meet{display:flex;align-items:center;gap:8px}
+  .meet .inp{font-size:12.5px}
+  .linkico{flex-shrink:0;color:var(--muted)}
+
+  /* ---- col 2: recurrence builder ---- */
+  .repseg{display:flex;border:2px solid var(--ink);margin-bottom:18px}
+  .repseg button{flex:1;border:0;background:var(--paper);font-size:12px;font-weight:600;padding:9px 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .repseg button+button{border-left:2px solid var(--ink)}
+  .repseg button.on{background:var(--ink);color:var(--paper)}
+
+  .summary{border:3px solid var(--ink);background:var(--cream);box-shadow:var(--shadow-sm);padding:16px 17px;margin-bottom:14px}
+  .summary .lab{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px}
+  .summary .big{font-size:18px;font-weight:600;line-height:1.3}
+  .summary .big .accent{color:var(--accent)}
+  .rrwrap{display:flex;align-items:center;gap:8px;margin:10px 0 24px;padding:0 2px}
+  .rrwrap .rrlab{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);flex-shrink:0}
+  .rrwrap code{font-size:11px;color:var(--muted);word-break:break-all}
+
+  .bgroup{margin-bottom:22px}
+  .bglabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:9px}
+  .freq{display:flex;border:2px solid var(--ink)}
+  .freq button{flex:1;border:0;background:var(--paper);font-size:12px;font-weight:600;padding:8px 4px;color:var(--muted)}
+  .freq button+button{border-left:2px solid var(--ink)}
+  .freq button.on{background:var(--ink);color:var(--paper)}
+  .interval{display:flex;align-items:center;gap:10px}
+  .interval .pre{font-size:13.5px}
+  .interval input{width:60px;border:2px solid var(--ink);background:var(--paper);padding:8px;text-align:center;font-size:14px;font-weight:600}
+  .interval input:focus{outline:3px solid var(--accent)}
+  .interval .unit{font-size:13.5px;font-weight:600}
+  .wdays{display:flex;gap:6px}
+  .wdays button{width:38px;height:38px;border:2px solid var(--ink);background:var(--paper);font-size:13px;font-weight:600;color:var(--muted)}
+  .wdays button.on{background:var(--ink);color:var(--paper)}
+  .monthly .mode{display:flex;align-items:center;gap:9px;margin-bottom:11px;font-size:13.5px;cursor:pointer}
+  .monthly .mode input{width:16px;height:16px;accent-color:var(--ink);flex-shrink:0}
+  .monthly select,.monthly input.num{border:2px solid var(--ink);background:var(--paper);padding:6px 8px;font-size:13px;font-weight:600}
+  .monthly input.num{width:54px;text-align:center}
+  .ends .mode{display:flex;align-items:center;gap:9px;margin-bottom:11px;font-size:13.5px;cursor:pointer}
+  .ends .mode input[type=radio]{width:16px;height:16px;accent-color:var(--ink);flex-shrink:0}
+  .ends .mode .inp{border:2px solid var(--ink);background:var(--paper);padding:6px 8px;font-size:13px;width:auto}
+  .ends .mode .sub{font-size:13.5px;color:var(--muted)}
+  .ends .mode.dis{color:var(--muted)}
+
+  .exc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:11px}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--ink);background:var(--paper);padding:4px 6px 4px 9px;font-size:12px;font-weight:500}
+  .chip .mono{font-size:11.5px}
+  .chip button{background:none;border:0;display:grid;place-items:center;color:var(--muted);padding:0}
+  .chip button:hover{color:var(--accent)}
+  .excadd{display:flex;gap:8px}
+  .excadd input{border:2px solid var(--ink);background:var(--paper);padding:7px 8px;font-size:12.5px;flex:1}
+  .excadd button{border:2px solid var(--ink);background:var(--paper);font-size:12px;font-weight:600;padding:7px 12px}
+  .excadd button:hover{background:var(--ink);color:var(--paper)}
+  .norepeat{color:var(--muted);font-size:13.5px;line-height:1.5;padding:8px 0}
+
+  /* ---- col 3: future occurrences ---- */
+  .occcap{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.45}
+  .occcap b{color:var(--ink)}
+  .occ{display:flex;align-items:center;gap:14px;padding:12px 2px;border-top:1px solid var(--hairline)}
+  .occ:first-child{border-top:0}
+  .occ .mk{width:30px;flex-shrink:0;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase}
+  .occ .od{flex:1;min-width:0}
+  .occ .ow{font-size:14px;font-weight:600}
+  .occ .ot{font-size:12px;color:var(--muted);margin-top:2px}
+  .occ .acts{display:flex;gap:6px;flex-shrink:0}
+  .occ .acts button{width:30px;height:30px;border:2px solid var(--hairline);background:var(--paper);display:grid;place-items:center;color:var(--muted)}
+  .occ .acts button:hover{border-color:var(--ink);color:var(--ink)}
+  .occ.skipped .ow{text-decoration:line-through;color:var(--muted)}
+  .occ.skipped .ot{text-decoration:line-through}
+  .occ .stag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:2px solid var(--ink);padding:1px 5px;margin-left:8px}
+  .occ.skipped .stag{background:var(--ink);color:var(--paper)}
+  .occ.edited .stag.e{background:var(--release);color:var(--ink)}
+  .occ .acts button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ========== docked agent chat ========== */
+  .dock{flex-shrink:0;border-top:2px solid var(--line);background:var(--cream);display:flex;flex-direction:column}
+  .dockthread{display:none;max-height:300px;overflow:auto;padding:18px 28px;border-bottom:2px solid var(--hairline);flex-direction:column;gap:14px}
+  .dock.open .dockthread{display:flex}
+  .m{font-size:13.5px;line-height:1.5;max-width:760px}
+  .m.user{align-self:flex-end;background:var(--ink);color:var(--paper);padding:9px 13px;border:2px solid var(--ink)}
+  .m.bot .who{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+  .change{margin-top:10px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);max-width:560px}
+  .change .crow{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:12.5px}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .tag{font-size:10px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0}
+  .change .tag.add{background:var(--work);color:#fff}
+  .change .tag.mv{background:var(--release);color:var(--ink)}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-top:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+
+  .dockbar{display:flex;align-items:center;gap:16px;padding:11px 28px}
+  .dtoggle{display:flex;align-items:center;gap:9px;background:none;border:0;flex-shrink:0;color:var(--ink)}
+  .dtoggle .ico{width:24px;height:24px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper)}
+  .dtoggle b{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .dtoggle .chev{color:var(--muted);transition:transform .15s}
+  .dock.open .dtoggle .chev{transform:rotate(180deg)}
+  .lastchange{display:flex;align-items:center;gap:9px;min-width:0;flex:1;font-size:12.5px;color:var(--muted)}
+  .lastchange .tag{font-size:9.5px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);background:var(--work);color:#fff;flex-shrink:0;letter-spacing:.04em}
+  .lastchange .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lastchange button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:12px;flex-shrink:0}
+  .lastchange button:hover{color:var(--accent)}
+  .dcomposer{display:flex;align-items:center;gap:8px;flex-shrink:0;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);padding:5px 5px 5px 11px;width:340px}
+  .dcomposer input{flex:1;border:0;outline:0;background:none;font-size:13px;color:var(--ink)}
+  .dcomposer input::placeholder{color:var(--muted)}
+  .dcomposer .send{width:30px;height:30px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .dcomposer .send:hover{transform:translate(1px,1px)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(90px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+  .hide{display:none !important}
+</style>
+</head>
+<body>
+  <!-- ============ HOME: EVENT LIST ============ -->
+  <div class="page">
+    <div class="topbar">
+      <div class="brand"><span class="mark"><span></span></span><b>Calink</b></div>
+      <button class="addbtn" onclick="openEditor('new')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New recurring event
+      </button>
+      <span class="spacer"></span>
+      <div class="sublink">
+        <span class="uplabel">Live feed</span>
+        <div class="box">
+          <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- ============ EDITOR (TRIPTYCH) ============ -->
+  <div class="editor" id="editor">
+    <div class="ovbar">
+      <button class="backbtn" onclick="closeEditor()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Back
+      </button>
+      <div class="et">
+        <span class="cdot" id="ov-dot"></span>
+        <h1 id="ov-title">Sprint Planning</h1>
+        <span class="kick" id="ov-kick">Acme</span>
+      </div>
+      <span class="spacer"></span>
+      <button class="delbtn" onclick="showToast('Event deleted · subscribers update within ~1h')">Delete</button>
+      <button class="savebtn" onclick="saveEvent()">Save</button>
+    </div>
+
+    <div class="triptych">
+      <!-- COL 1 — EVENT FIELDS -->
+      <section class="col">
+        <div class="colhead"><span class="n">1</span><span class="uplabel">Event</span></div>
+        <div class="colscroll">
+          <div class="frow"><span class="fl">Title</span>
+            <input id="f-title" class="inp title" oninput="onTitle()" value="Sprint Planning"></div>
+          <div class="frow"><span class="fl">Calendar</span>
+            <select id="f-cal" class="inp" onchange="onCal()">
+              <option value="acme">Acme</option>
+              <option value="work">Workouts</option>
+              <option value="personal">Personal</option>
+              <option value="release">Release</option>
+            </select></div>
+          <div class="frow"><span class="fl">When</span>
+            <div>
+              <div class="when">
+                <input id="f-date" class="inp date mono tnum" onchange="syncFields()" value="2026-06-29">
+                <input id="f-start" class="inp t mono tnum" onchange="syncFields()" value="11:00">
+                <span class="dash">–</span>
+                <input id="f-end" class="inp t mono tnum" onchange="syncFields()" value="12:30">
+              </div>
+              <label class="allday"><input id="f-allday" type="checkbox" onchange="syncFields()"> All-day event</label>
+            </div></div>
+          <div class="frow"><span class="fl">Location</span>
+            <input id="f-loc" class="inp" placeholder="Add a place" value=""></div>
+          <div class="frow"><span class="fl">Meeting</span>
+            <div class="meet">
+              <span class="linkico"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1"/></svg></span>
+              <input id="f-meet" class="inp mono" placeholder="Add a video link" value="meet.google.com/spr-plan">
+            </div></div>
+          <div class="frow top"><span class="fl">Notes</span>
+            <textarea id="f-desc" class="inp">Groom the backlog, commit the sprint scope, assign owners. Bring estimates.</textarea></div>
+        </div>
+      </section>
+
+      <!-- COL 2 — RECURRENCE BUILDER -->
+      <section class="col">
+        <div class="colhead"><span class="n">2</span><span class="uplabel">Recurrence</span></div>
+        <div class="colscroll">
+          <div class="repseg" id="repseg">
+            <button data-rep="1" onclick="setRepeats(true)">Repeats</button>
+            <button data-rep="0" onclick="setRepeats(false)">Does not repeat</button>
+          </div>
+
+          <div class="summary">
+            <div class="lab">In plain English</div>
+            <div class="big" id="sum-text">—</div>
+          </div>
+          <div class="rrwrap" id="rrwrap">
+            <span class="rrlab">RRULE</span>
+            <code class="mono" id="rr-text">—</code>
+          </div>
+
+          <div id="builder">
+            <div class="bgroup">
+              <div class="bglabel">Frequency</div>
+              <div class="freq" id="freq">
+                <button data-f="DAILY">Daily</button>
+                <button data-f="WEEKLY">Weekly</button>
+                <button data-f="MONTHLY">Monthly</button>
+                <button data-f="YEARLY">Yearly</button>
+              </div>
+            </div>
+
+            <div class="bgroup">
+              <div class="bglabel">Interval</div>
+              <div class="interval">
+                <span class="pre">Every</span>
+                <input id="iv" class="tnum" type="number" min="1" value="2" oninput="onInterval()">
+                <span class="unit" id="iv-unit">weeks</span>
+              </div>
+            </div>
+
+            <div class="bgroup" id="g-weekly">
+              <div class="bglabel">On these days</div>
+              <div class="wdays" id="wdays"></div>
+            </div>
+
+            <div class="bgroup monthly hide" id="g-monthly">
+              <div class="bglabel">Monthly pattern</div>
+              <label class="mode">
+                <input type="radio" name="mmode" value="day" onchange="onMonthMode('day')">
+                <span>On day</span>
+                <input id="mday" class="num tnum" type="number" min="1" max="31" value="1" oninput="render()">
+              </label>
+              <label class="mode">
+                <input type="radio" name="mmode" value="nth" onchange="onMonthMode('nth')">
+                <span>On the</span>
+                <select id="mpos" onchange="render()">
+                  <option value="1">1st</option><option value="2">2nd</option>
+                  <option value="3">3rd</option><option value="4">4th</option>
+                  <option value="-1">last</option>
+                </select>
+                <select id="mwd" onchange="render()">
+                  <option value="MO">Monday</option><option value="TU">Tuesday</option>
+                  <option value="WE">Wednesday</option><option value="TH">Thursday</option>
+                  <option value="FR">Friday</option><option value="SA">Saturday</option>
+                  <option value="SU">Sunday</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="bgroup ends">
+              <div class="bglabel">Ends</div>
+              <label class="mode"><input type="radio" name="end" value="never" onchange="onEnd('never')"><span>Never</span></label>
+              <label class="mode"><input type="radio" name="end" value="on" onchange="onEnd('on')"><span>On date</span>
+                <input id="until" class="inp tnum mono" type="date" value="2026-12-31" onchange="render()"></label>
+              <label class="mode"><input type="radio" name="end" value="after" onchange="onEnd('after')"><span>After</span>
+                <input id="count" class="inp tnum" type="number" min="1" value="13" style="width:64px" oninput="render()"><span class="sub">occurrences</span></label>
+            </div>
+
+            <div class="bgroup">
+              <div class="bglabel">Exceptions — skipped dates</div>
+              <div class="exc" id="exc"></div>
+              <div class="excadd">
+                <input id="excdate" type="date" value="2026-08-24">
+                <button onclick="addException()">+ Skip date</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="norepeat hide" id="norepeat">
+            This is a one-time event. Switch to <b>Repeats</b> to turn it into a recurring series with a live RRULE.
+          </div>
+        </div>
+      </section>
+
+      <!-- COL 3 — FUTURE OCCURRENCES -->
+      <section class="col">
+        <div class="colhead"><span class="n">3</span><span class="uplabel">Future occurrences</span></div>
+        <div class="colscroll">
+          <div class="occcap" id="occ-cap"></div>
+          <div id="occ-list"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- DOCKED AGENT CHAT -->
+    <div class="dock" id="dock">
+      <div class="dockthread" id="dockthread">
+        <div class="m user">Make Sprint Planning every other Monday instead of weekly, and end it at the new year.</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Done — updated the recurrence on Sprint Planning:
+          <div class="change">
+            <div class="crow"><span class="tag mv">RULE</span><span>Now <b>every 2 weeks on Monday</b>, until 31 Dec 2026</span></div>
+            <div class="crow"><span class="tag add">RRULE</span><span class="mono" style="font-size:11.5px">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</span></div>
+            <div class="applied"><span>Auto-applied · feed updates ~1h</span><button onclick="undoToast()">Undo</button></div>
+          </div>
+        </div>
+        <div class="m user">Skip the one on Aug 24, I'm away.</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Added <span class="mono" style="font-size:12px">EXDATE 2026-08-24</span> — that occurrence is now skipped in your feed. I have the same calendar tools your own AI gets over <b>MCP</b>, so you can do this from any agent too.
+        </div>
+      </div>
+      <div class="dockbar">
+        <button class="dtoggle" onclick="toggleDock()">
+          <span class="ico"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+          <b>Agent</b>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M6 15l6-6 6 6"/></svg></span>
+        </button>
+        <div class="lastchange">
+          <span class="tag">Applied</span>
+          <span class="txt">Set recurrence → every 2 weeks on Monday, until 31 Dec · skipped Aug 24</span>
+          <button onclick="undoToast()">Undo</button>
+        </div>
+        <div class="dcomposer">
+          <input placeholder="Tell the agent to change this event…">
+          <button class="send" title="Send"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span id="toast-msg">Change undone.</span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  /* ---------- dataset ---------- */
+  const CAL = {
+    acme:{name:'Acme', color:'var(--acme)'},
+    work:{name:'Workouts', color:'var(--work)'},
+    personal:{name:'Personal', color:'var(--paper)'},
+    release:{name:'Release', color:'var(--release)'},
+  };
+  function rec(o){return Object.assign({repeats:true,freq:'WEEKLY',interval:1,byday:['MO'],monthlyMode:'day',monthDay:1,nthPos:2,nthDay:'TU',endMode:'never',untilDate:'2026-12-31',count:13,exceptions:[],edited:[]},o);}
+  const EVENTS = {
+    sprint:{title:'Sprint Planning',cal:'acme',date:'2026-06-29',start:'11:00',end:'12:30',allday:false,loc:'',meet:'meet.google.com/spr-plan',desc:'Groom the backlog, commit the sprint scope, assign owners. Bring estimates.',
+      rec:rec({freq:'WEEKLY',interval:2,byday:['MO'],endMode:'on',untilDate:'2026-12-31',exceptions:['2026-08-24']})},
+    standup:{title:'Team Standup',cal:'acme',date:'2026-06-29',start:'09:30',end:'09:45',allday:false,loc:'',meet:'meet.google.com/std-acme',desc:'Yesterday / today / blockers. 15 min max.',
+      rec:rec({freq:'WEEKLY',interval:1,byday:['MO','TU','WE','TH','FR'],endMode:'never'})},
+    run:{title:'Morning Run',cal:'work',date:'2026-06-29',start:'07:00',end:'07:45',allday:false,loc:'Riverside loop',meet:'',desc:'Easy 5k, zone 2.',
+      rec:rec({freq:'WEEKLY',interval:1,byday:['MO','WE','FR'],endMode:'never'})},
+    book:{title:'Book Club',cal:'personal',date:'2026-07-14',start:'20:00',end:'21:30',allday:false,loc:'rotating',meet:'',desc:"This month: 'The Shape of Things'. Bring 2 questions.",
+      rec:rec({freq:'MONTHLY',interval:1,monthlyMode:'nth',nthPos:2,nthDay:'TU',endMode:'never'})},
+    sam:{title:'1:1 with Sam',cal:'acme',date:'2026-07-02',start:'16:30',end:'17:00',allday:false,loc:'',meet:'meet.google.com/sam-1on1',desc:'Career + project check-in.',
+      rec:rec({freq:'WEEKLY',interval:1,byday:['TH'],endMode:'never'})},
+    rent:{title:'Pay rent',cal:'personal',date:'2026-07-01',start:'',end:'',allday:true,loc:'',meet:'',desc:'Transfer €1,450 to landlord.',
+      rec:rec({freq:'MONTHLY',interval:1,monthlyMode:'day',monthDay:1,endMode:'never'})},
+    design:{title:'Design review — Calink feeds',cal:'acme',date:'2026-06-29',start:'14:00',end:'15:00',allday:false,loc:'Room 2',meet:'meet.google.com/design-rv',desc:'Review the .ics feed serializer and recurrence edge cases.',
+      rec:rec({repeats:false})},
+    cutoff:{title:'v0.3 cut-off',cal:'release',date:'2026-06-29',start:'',end:'',allday:true,loc:'',meet:'',desc:'Freeze scope for v0.3.',
+      rec:rec({repeats:false})},
+    lunch:{title:'Lunch with Priya',cal:'personal',date:'2026-07-06',start:'12:30',end:'13:30',allday:false,loc:'Sona',meet:'',desc:"Catch up, she's back from Lisbon.",
+      rec:rec({repeats:false})},
+    board:{title:'Quarterly board sync',cal:'acme',date:'2026-07-14',start:'15:00',end:'16:00',allday:false,loc:'',meet:'zoom.us/j/8841 0023',desc:'Deck due the night before.',
+      rec:rec({repeats:false})},
+    new:{title:'',cal:'acme',date:'2026-06-29',start:'10:00',end:'10:30',allday:false,loc:'',meet:'',desc:'',
+      rec:rec({repeats:true,freq:'WEEKLY',interval:1,byday:['MO'],endMode:'never'})},
+  };
+
+  /* ---------- home list ---------- */
+  const RECURRING = ['sprint','standup','run','book','sam','rent'];
+  const ONEOFF = ['design','cutoff','lunch','board'];
+  const WD_SHORT = {MO:'Mon',TU:'Tue',WE:'Wed',TH:'Thu',FR:'Fri',SA:'Sat',SU:'Sun'};
+  const WD_FULL  = {MO:'Monday',TU:'Tuesday',WE:'Wednesday',TH:'Thursday',FR:'Friday',SA:'Saturday',SU:'Sunday'};
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const WDCODE = ['SU','MO','TU','WE','TH','FR','SA'];
+
+  function shortCadence(r){
+    if(!r.repeats) return null;
+    if(r.freq==='DAILY') return r.interval>1?'Every '+r.interval+'d':'Daily';
+    if(r.freq==='WEEKLY'){
+      if(isWeekdays(r.byday)) return 'Weekdays';
+      const s=r.byday.map(d=>WD_SHORT[d].slice(0,3)).join('·');
+      return r.interval>1?('×'+r.interval+' '+s):s;
+    }
+    if(r.freq==='MONTHLY') return 'Monthly';
+    return 'Yearly';
+  }
+  function listSummary(ev){
+    const r=ev.rec;
+    const time = ev.allday?'All day':(ev.start+'–'+ev.end);
+    if(r.repeats) return summaryText(ev,r,false);
+    const d=parseDate(ev.date);
+    return WD_SHORT[WDCODE[d.getDay()]]+' '+MON[d.getMonth()]+' '+d.getDate()+' · '+time;
+  }
+  function renderList(){
+    const wrap=document.getElementById('list');
+    let h='<div class="seclabel">Recurring <span class="ct tnum">'+RECURRING.length+'</span></div>';
+    RECURRING.forEach(k=>h+=rowHTML(k));
+    h+='<div class="seclabel">One-off &amp; upcoming <span class="ct tnum">'+ONEOFF.length+'</span></div>';
+    ONEOFF.forEach(k=>h+=rowHTML(k));
+    wrap.innerHTML=h;
+  }
+  function rowHTML(k){
+    const ev=EVENTS[k], c=CAL[ev.cal];
+    const sw='background:'+c.color+(ev.cal==='personal'?';':'');
+    const extra=[]; if(ev.loc) extra.push(ev.loc); if(ev.meet) extra.push('Meet');
+    const cad=shortCadence(ev.rec);
+    return '<div class="row" onclick="openEditor(\''+k+'\')">'+
+      '<span class="sw" style="'+sw+'"></span>'+
+      '<div class="body"><div class="ti">'+ev.title+'</div>'+
+      '<div class="sched"><span class="cal">'+c.name+'</span><span class="sep">/</span>'+
+      '<span class="mono tnum">'+listSummary(ev)+'</span>'+
+      (extra.length?('<span class="sep">/</span><span>'+extra.join(' · ')+'</span>'):'')+'</div></div>'+
+      (cad?('<span class="badge rec">'+cad+'</span>'):'')+
+      '<span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>';
+  }
+
+  /* ---------- date helpers ---------- */
+  function parseDate(iso){const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
+  function isoDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function fmtLong(iso){const d=parseDate(iso);return d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear();}
+  function mondayOf(d){const x=new Date(d);const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);x.setHours(0,0,0,0);return x;}
+  function weekIndex(a,b){return Math.round((mondayOf(b)-mondayOf(a))/(7*86400000));}
+  function monthDiff(a,b){return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth());}
+  function isWeekdays(arr){return arr.length===5&&['MO','TU','WE','TH','FR'].every(d=>arr.includes(d));}
+  const ORD={'1':'1st','2':'2nd','3':'3rd','4':'4th','-1':'last'};
+
+  /* ---------- RRULE + summary + occurrences ---------- */
+  function buildRRULE(ev,r){
+    if(!r.repeats) return null;
+    const p=['FREQ='+r.freq];
+    if(r.interval>1) p.push('INTERVAL='+r.interval);
+    if(r.freq==='WEEKLY'&&r.byday.length) p.push('BYDAY='+orderDays(r.byday).join(','));
+    if(r.freq==='MONTHLY'){
+      if(r.monthlyMode==='day') p.push('BYMONTHDAY='+r.monthDay);
+      else p.push('BYDAY='+r.nthPos+r.nthDay);
+    }
+    if(r.endMode==='on') p.push('UNTIL='+r.untilDate.replace(/-/g,'')+'T235959Z');
+    if(r.endMode==='after') p.push('COUNT='+r.count);
+    return 'RRULE:'+p.join(';');
+  }
+  function orderDays(arr){const o=['MO','TU','WE','TH','FR','SA','SU'];return o.filter(d=>arr.includes(d));}
+  function timeBit(ev){return ev.allday?'all day':(ev.start+'–'+ev.end);}
+  function summaryText(ev,r,withTime=true){
+    let base='';
+    const iv=r.interval;
+    if(r.freq==='DAILY') base=iv>1?('Every '+iv+' days'):'Every day';
+    else if(r.freq==='WEEKLY'){
+      const sel=orderDays(r.byday);
+      if(isWeekdays(sel)) base=iv>1?('Every '+iv+' weeks on weekdays'):'Every weekday';
+      else if(sel.length===0) base=iv>1?('Every '+iv+' weeks'):'Weekly';
+      else{const names=sel.map(d=>WD_FULL[d]).join(', ');base=iv>1?('Every '+iv+' weeks on '+names):('Weekly on '+names);}
+    }
+    else if(r.freq==='MONTHLY'){
+      if(r.monthlyMode==='day') base=(iv>1?('Every '+iv+' months'):'Monthly')+' on day '+r.monthDay;
+      else base=(iv>1?('Every '+iv+' months'):'Monthly')+' on the '+ORD[String(r.nthPos)]+' '+WD_FULL[r.nthDay];
+    }
+    else base=iv>1?('Every '+iv+' years'):'Every year';
+    let tail='';
+    if(r.endMode==='on') tail=' · until '+fmtLong(r.untilDate);
+    if(r.endMode==='after') tail=' · '+r.count+' times';
+    return base+(withTime?(' · '+timeBit(ev)):'')+tail;
+  }
+  function matches(r,d,start){
+    if(d<start) return false;
+    const wd=WDCODE[d.getDay()];
+    if(r.freq==='DAILY') return Math.round((d-start)/86400000)%r.interval===0;
+    if(r.freq==='WEEKLY'){
+      const days=r.byday.length?r.byday:[WDCODE[start.getDay()]];
+      if(!days.includes(wd)) return false;
+      return weekIndex(start,d)%r.interval===0;
+    }
+    if(r.freq==='MONTHLY'){
+      if(monthDiff(start,d)%r.interval!==0) return false;
+      if(r.monthlyMode==='day') return d.getDate()===r.monthDay;
+      if(wd!==r.nthDay) return false;
+      if(r.nthPos===-1){const t=new Date(d);t.setDate(d.getDate()+7);return t.getMonth()!==d.getMonth();}
+      return Math.ceil(d.getDate()/7)===r.nthPos;
+    }
+    if(r.freq==='YEARLY') return (d.getFullYear()-start.getFullYear())%r.interval===0&&d.getMonth()===start.getMonth()&&d.getDate()===start.getDate();
+    return false;
+  }
+  function genOccurrences(ev,r,limit){
+    const out=[];const start=parseDate(ev.date);let cur=new Date(start);
+    const until=r.endMode==='on'?parseDate(r.untilDate):null;
+    const maxN=r.endMode==='after'?r.count:Infinity;let n=0,safety=0;
+    while(out.length<limit&&safety<3000&&n<maxN){
+      safety++;
+      if(matches(r,cur,start)){
+        if(until&&cur>until) break;
+        n++;
+        const iso=isoDate(cur);
+        out.push({iso,date:new Date(cur),skipped:r.exceptions.includes(iso),edited:r.edited.includes(iso)});
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+    return out;
+  }
+
+  /* ---------- editor state + render ---------- */
+  let cur=null;       // current event object (clone)
+  let curKey=null;
+
+  function openEditor(key){
+    curKey=key;
+    cur=JSON.parse(JSON.stringify(EVENTS[key]||EVENTS.new));
+    // fields
+    document.getElementById('f-title').value=cur.title;
+    document.getElementById('f-cal').value=cur.cal;
+    document.getElementById('f-date').value=cur.date;
+    document.getElementById('f-start').value=cur.start;
+    document.getElementById('f-end').value=cur.end;
+    document.getElementById('f-allday').checked=cur.allday;
+    document.getElementById('f-loc').value=cur.loc;
+    document.getElementById('f-meet').value=cur.meet;
+    document.getElementById('f-desc').value=cur.desc;
+    // recurrence controls -> from state
+    document.getElementById('iv').value=cur.rec.interval;
+    document.getElementById('mday').value=cur.rec.monthDay;
+    document.getElementById('mpos').value=cur.rec.nthPos;
+    document.getElementById('mwd').value=cur.rec.nthDay;
+    document.getElementById('until').value=cur.rec.untilDate;
+    document.getElementById('count').value=cur.rec.count;
+    document.querySelector('input[name="mmode"][value="'+cur.rec.monthlyMode+'"]').checked=true;
+    document.querySelector('input[name="end"][value="'+cur.rec.endMode+'"]').checked=true;
+    buildWeekdays();
+    onCal();onTitle();
+    render();
+    document.getElementById('editor').classList.add('open');
+  }
+  function closeEditor(){document.getElementById('editor').classList.remove('open');}
+
+  function buildWeekdays(){
+    const order=['MO','TU','WE','TH','FR','SA','SU'];const lbl=['M','T','W','T','F','S','S'];
+    const box=document.getElementById('wdays');box.innerHTML='';
+    order.forEach((d,i)=>{
+      const b=document.createElement('button');b.textContent=lbl[i];
+      if(cur.rec.byday.includes(d)) b.classList.add('on');
+      b.onclick=()=>{
+        const arr=cur.rec.byday;const idx=arr.indexOf(d);
+        if(idx>=0&&arr.length>1) arr.splice(idx,1); else if(idx<0) arr.push(d);
+        b.classList.toggle('on');render();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function onTitle(){const v=document.getElementById('f-title').value;cur.title=v;document.getElementById('ov-title').textContent=v||'New event';}
+  function onCal(){const v=document.getElementById('f-cal').value;cur.cal=v;const c=CAL[v];document.getElementById('ov-dot').style.background=c.color;document.getElementById('ov-kick').textContent=c.name;}
+  function syncFields(){
+    cur.date=document.getElementById('f-date').value;
+    cur.start=document.getElementById('f-start').value;
+    cur.end=document.getElementById('f-end').value;
+    cur.allday=document.getElementById('f-allday').checked;
+    render();
+  }
+  function onInterval(){cur.rec.interval=Math.max(1,parseInt(document.getElementById('iv').value)||1);render();}
+  function onMonthMode(m){cur.rec.monthlyMode=m;render();}
+  function onEnd(m){cur.rec.endMode=m;render();}
+  function setRepeats(v){cur.rec.repeats=v;document.querySelectorAll('#repseg button').forEach(b=>b.classList.toggle('on',(b.dataset.rep==='1')===v));render();}
+  function setFreq(f){cur.rec.freq=f;document.querySelectorAll('#freq button').forEach(b=>b.classList.toggle('on',b.dataset.f===f));render();}
+  document.querySelectorAll('#freq button').forEach(b=>b.onclick=()=>setFreq(b.dataset.f));
+
+  function addException(){
+    const v=document.getElementById('excdate').value;if(!v) return;
+    if(!cur.rec.exceptions.includes(v)) cur.rec.exceptions.push(v);
+    render();
+  }
+  function removeException(iso){cur.rec.exceptions=cur.rec.exceptions.filter(x=>x!==iso);render();}
+  function toggleSkip(iso){
+    if(cur.rec.exceptions.includes(iso)) cur.rec.exceptions=cur.rec.exceptions.filter(x=>x!==iso);
+    else cur.rec.exceptions.push(iso);
+    render();
+  }
+  function toggleEdit(iso){
+    if(cur.rec.edited.includes(iso)) cur.rec.edited=cur.rec.edited.filter(x=>x!==iso);
+    else cur.rec.edited.push(iso);
+    render();
+  }
+
+  function render(){
+    const r=cur.rec;
+    // read freq-active control values into state
+    r.monthDay=Math.min(31,Math.max(1,parseInt(document.getElementById('mday').value)||1));
+    r.nthPos=parseInt(document.getElementById('mpos').value);
+    r.nthDay=document.getElementById('mwd').value;
+    r.untilDate=document.getElementById('until').value;
+    r.count=Math.max(1,parseInt(document.getElementById('count').value)||1);
+
+    // repeats toggle visual
+    document.querySelectorAll('#repseg button').forEach(b=>b.classList.toggle('on',(b.dataset.rep==='1')===r.repeats));
+    document.querySelectorAll('#freq button').forEach(b=>b.classList.toggle('on',b.dataset.f===r.freq));
+    document.getElementById('builder').classList.toggle('hide',!r.repeats);
+    document.getElementById('norepeat').classList.toggle('hide',r.repeats);
+    document.getElementById('rrwrap').classList.toggle('hide',!r.repeats);
+
+    // freq-specific groups
+    document.getElementById('g-weekly').classList.toggle('hide',r.freq!=='WEEKLY');
+    document.getElementById('g-monthly').classList.toggle('hide',r.freq!=='MONTHLY');
+    document.getElementById('iv-unit').textContent={DAILY:'days',WEEKLY:'weeks',MONTHLY:'months',YEARLY:'years'}[r.freq];
+
+    // summary + rrule
+    if(r.repeats){
+      const txt=summaryText(cur,r,true);
+      document.getElementById('sum-text').innerHTML=highlight(txt);
+      document.getElementById('rr-text').textContent=buildRRULE(cur,r);
+    }else{
+      document.getElementById('sum-text').textContent='Does not repeat — one-time event';
+    }
+
+    renderExceptions();
+    renderOccurrences();
+  }
+  function highlight(t){
+    return t.replace(/(Every \d+ weeks?|Every weekday|Weekly|Monthly|Every day|Every year|Every \d+ (days|months|years))/,'<span class="accent">$1</span>');
+  }
+  function renderExceptions(){
+    const box=document.getElementById('exc');
+    const ex=cur.rec.exceptions.slice().sort();
+    if(!ex.length){box.innerHTML='<span style="font-size:12.5px;color:var(--muted)">None — every occurrence is active.</span>';return;}
+    box.innerHTML=ex.map(iso=>{
+      const d=parseDate(iso);
+      return '<span class="chip"><span class="mono">'+WD_SHORT[WDCODE[d.getDay()]]+' '+d.getDate()+' '+MON[d.getMonth()]+'</span>'+
+        '<button onclick="removeException(\''+iso+'\')" title="Remove"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>';
+    }).join('');
+  }
+  function renderOccurrences(){
+    const cap=document.getElementById('occ-cap');const list=document.getElementById('occ-list');const r=cur.rec;
+    if(!r.repeats){
+      const d=parseDate(cur.date);
+      cap.innerHTML='<b>Single occurrence.</b> One-time events appear once in your feed.';
+      list.innerHTML=occRowHTML(isoDate(d),d,false,false,true);
+      return;
+    }
+    const occ=genOccurrences(cur,r,10);
+    const active=occ.filter(o=>!o.skipped).length;
+    cap.innerHTML='Cadence: <b>'+summaryText(cur,r,false)+'</b>. Showing the next <b>'+occ.length+'</b> computed occurrences ('+active+' active).';
+    list.innerHTML=occ.map(o=>occRowHTML(o.iso,o.date,o.skipped,o.edited,false)).join('');
+  }
+  function occRowHTML(iso,d,skipped,edited,single){
+    const cls=['occ'];if(skipped)cls.push('skipped');if(edited)cls.push('edited');
+    const time=cur.allday?'All day':(cur.start+'–'+cur.end);
+    let tags='';if(skipped)tags+='<span class="stag">Skipped</span>';if(edited)tags+='<span class="stag e">Edited</span>';
+    const acts=single?'':
+      '<div class="acts">'+
+      '<button class="'+(skipped?'on':'')+'" title="Skip this date" onclick="toggleSkip(\''+iso+'\')"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg></button>'+
+      '<button class="'+(edited?'on':'')+'" title="Edit this occurrence" onclick="toggleEdit(\''+iso+'\')"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M14 5l5 5L8 21H3v-5z"/></svg></button>'+
+      '</div>';
+    return '<div class="'+cls.join(' ')+'">'+
+      '<span class="mk">'+WD_SHORT[WDCODE[d.getDay()]]+'</span>'+
+      '<div class="od"><div class="ow">'+MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+tags+'</div>'+
+      '<div class="ot mono tnum">'+time+'</div></div>'+acts+'</div>';
+  }
+
+  /* ---------- misc ui ---------- */
+  function toggleDock(){document.getElementById('dock').classList.toggle('open');}
+  function saveEvent(){showToast('Saved · subscribers update within ~1h');}
+  let toastT;
+  function showToast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(hideToast,3500);}
+  function hideToast(){document.getElementById('toast').classList.remove('show');}
+  function undoToast(){showToast('Reverted — Sprint Planning back to weekly, Aug 24 restored.');}
+  function copyFeed(btn){const o=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=o,1200);}
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEditor();});
+
+  /* ---------- init ---------- */
+  renderList();
+  openEditor('sprint');   // default open on Sprint Planning so recurrence is visible
+</script>
+</body>
+</html>

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Tabbed editor + Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#15130D;
+    --release:#C98A1A;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer}
+  ::selection{background:var(--accent);color:#fff}
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+
+  /* ===== HOME: flat event list ===== */
+  .page{max-width:1440px;margin:0 auto;min-height:100vh;background:var(--paper);border-left:2px solid var(--line);border-right:2px solid var(--line);display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;gap:16px;padding:16px 36px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--paper);z-index:10}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .topbar .addbtn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px}
+  .topbar .addbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .topbar .addbtn:active{transform:translate(3px,3px);box-shadow:none}
+  .topbar .spacer{flex:1}
+  .sublink{display:flex;align-items:center;gap:9px}
+  .sublink .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .sublink .box{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);padding:6px 8px}
+  .sublink code{font-size:11px;color:var(--ink);white-space:nowrap}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:5px 9px}
+  .sublink button:hover{background:var(--accent)}
+
+  .list{flex:1;overflow:auto;padding:6px 36px 80px;width:100%}
+  .seclabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:34px 0 14px;display:flex;align-items:center;gap:12px}
+  .seclabel:first-child{margin-top:26px}
+  .seclabel .ct{color:var(--ink)}
+  .seclabel::after{content:"";flex:1;height:2px;background:var(--hairline)}
+
+  .row{display:grid;grid-template-columns:14px 1fr auto 18px;align-items:center;gap:16px;padding:15px 18px;border:2px solid var(--line);background:var(--paper);margin-bottom:10px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+  .row:hover{box-shadow:var(--shadow-sm);transform:translate(-1px,-1px)}
+  .row .sw{width:14px;height:14px;border:2px solid var(--ink)}
+  .row .body{min-width:0}
+  .row .ti{font-size:15px;font-weight:600;line-height:1.25}
+  .row .sched{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+  .row .sched .cal{color:var(--ink);font-weight:500}
+  .row .sched .dot{color:var(--hairline)}
+  .row .badge{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--ink);padding:2px 8px;white-space:nowrap}
+  .row .chev{color:var(--muted)}
+
+  /* ===== FULL-SCREEN EDITOR ===== */
+  .overlay{position:fixed;inset:0;background:var(--paper);z-index:40;display:none;flex-direction:column}
+  .overlay.open{display:flex}
+  .ovbar{display:flex;align-items:center;gap:18px;padding:15px 28px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .backbtn{display:flex;align-items:center;gap:8px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px;color:var(--ink)}
+  .backbtn:hover{background:var(--ink);color:var(--paper)}
+  .ovbar .et{display:flex;align-items:center;gap:11px;min-width:0}
+  .ovbar .cdot{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .ovbar h1{font-size:18px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ovbar .kick{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border:2px solid var(--hairline);padding:3px 8px;white-space:nowrap}
+  .ovbar .esc{margin-left:auto;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+  .ovbar .esc kbd{font-family:"JetBrains Mono",monospace;border:2px solid var(--hairline);padding:1px 6px;color:var(--ink)}
+
+  .panes{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+  .pane{min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .pane.editor{border-right:2px solid var(--line)}
+
+  /* tab bar */
+  .tabbar{display:flex;border-bottom:2px solid var(--line);flex-shrink:0;background:var(--cream)}
+  .tabbar button{flex:1;border:0;background:none;padding:13px 8px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);position:relative}
+  .tabbar button+button{border-left:2px solid var(--line)}
+  .tabbar button .ct{font-size:10px;opacity:.7;margin-left:5px}
+  .tabbar button.on{background:var(--ink);color:var(--paper)}
+  .tabbar button:not(.on):hover{background:var(--paper);color:var(--ink)}
+
+  .tabscroll{flex:1;overflow:auto;padding:30px 36px 22px}
+  .tabpanel{display:none}
+  .tabpanel.on{display:block}
+
+  /* aligned field rows: fixed label column */
+  .frow{display:grid;grid-template-columns:128px 1fr;gap:18px;align-items:start;padding:14px 0;border-bottom:1.5px solid var(--hairline)}
+  .frow:first-child{padding-top:0}
+  .frow > label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding-top:11px}
+  .frow .val input,.frow .val select,.frow .val textarea{width:100%;border:2px solid var(--ink);background:var(--paper);padding:10px 11px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .frow .val input:focus,.frow .val select:focus,.frow .val textarea:focus{outline:3px solid var(--accent);outline-offset:0}
+  .frow.title .val input{font-size:18px;font-weight:600}
+  .frow .val .mono{font-family:"JetBrains Mono",monospace;font-size:13px}
+  .frow .val textarea{resize:vertical;line-height:1.5;min-height:88px}
+  .whenrow{display:grid;grid-template-columns:1.5fr 1fr 14px 1fr;gap:10px;align-items:center}
+  .whenrow .dash{text-align:center;color:var(--muted);font-weight:600}
+  .whenrow.allday{grid-template-columns:1.5fr auto}
+  .allday-tag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:2px solid var(--hairline);padding:9px 12px}
+  .sublabel{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+  /* footer */
+  .panefoot{display:flex;align-items:center;gap:12px;padding:15px 36px;border-top:2px solid var(--line);flex-shrink:0;background:var(--paper)}
+  .panefoot .del{background:none;border:2px solid var(--ink);padding:9px 14px;font-size:13px;font-weight:600;color:var(--ink)}
+  .panefoot .del:hover{background:var(--ink);color:var(--paper)}
+  .panefoot .spacer{flex:1}
+  .panefoot .scopehint{font-size:10.5px;color:var(--muted);max-width:220px;line-height:1.4}
+  .panefoot .save{background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);padding:9px 24px;font-size:13px;font-weight:700}
+  .panefoot .save:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  /* ===== RECURRENCE tab ===== */
+  .summary{border:3px solid var(--ink);background:var(--cream);padding:18px 20px;box-shadow:var(--shadow-sm);margin-bottom:8px}
+  .summary .skick{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+  .summary .splain{font-size:19px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+  .summary .srrule{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted);margin-top:12px;padding-top:11px;border-top:1.5px solid var(--hairline);word-break:break-all}
+  .summary .srrule b{color:var(--ink);font-weight:500}
+
+  .builder{margin-top:24px}
+  .brow{display:grid;grid-template-columns:128px 1fr;gap:18px;align-items:start;padding:15px 0;border-bottom:1.5px solid var(--hairline)}
+  .brow > label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding-top:9px}
+  .brow select,.brow input[type=number],.brow input[type=date]{border:2px solid var(--ink);background:var(--paper);padding:9px 10px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .brow select:focus,.brow input:focus{outline:3px solid var(--accent);outline-offset:0}
+  .interval{display:flex;align-items:center;gap:10px}
+  .interval input{width:70px}
+  .interval .unit{font-size:13px;color:var(--muted)}
+
+  .days{display:flex;gap:6px;flex-wrap:wrap}
+  .days button{width:42px;height:38px;border:2px solid var(--ink);background:var(--paper);font-size:12px;font-weight:600;color:var(--ink);text-transform:uppercase}
+  .days button.on{background:var(--ink);color:var(--paper)}
+  .days button:not(.on):hover{background:var(--cream)}
+
+  .monthmode{display:flex;flex-direction:column;gap:9px}
+  .moption{display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .moption input[type=radio]{width:16px;height:16px;accent-color:var(--ink);flex-shrink:0}
+  .moption select{padding:6px 8px;font-size:13px}
+
+  .ends{display:flex;flex-direction:column;gap:11px}
+  .eopt{display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .eopt input[type=radio]{width:16px;height:16px;accent-color:var(--ink);flex-shrink:0}
+  .eopt input[type=date],.eopt input[type=number]{padding:6px 8px;font-size:13px}
+  .eopt input[type=number]{width:64px}
+
+  .exrow{padding-top:15px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--ink);background:var(--paper);padding:5px 8px 5px 10px;font-size:12px;font-weight:500}
+  .chip.mono{font-family:"JetBrains Mono",monospace;font-size:11.5px}
+  .chip button{border:0;background:none;color:var(--muted);display:grid;place-items:center;padding:0}
+  .chip button:hover{color:var(--accent)}
+  .chip .icon{width:13px;height:13px}
+  .addchip{display:inline-flex;align-items:center;gap:6px;border:2px dashed var(--hairline);background:none;padding:6px 10px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .addchip:hover{border-color:var(--ink);color:var(--ink)}
+  .noex{font-size:12.5px;color:var(--muted)}
+
+  /* ===== OCCURRENCES tab ===== */
+  .occhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+  .occhead .t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .occhead .sub{font-size:12px;color:var(--muted)}
+  .occ{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:16px;padding:13px 0;border-bottom:1.5px solid var(--hairline)}
+  .occ .wk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .occ .when{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .occ .date{font-size:14px;font-weight:600}
+  .occ .time{font-size:12.5px;color:var(--muted);font-family:"JetBrains Mono",monospace}
+  .occ .acts{display:flex;gap:8px}
+  .occ .acts button{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--ink);background:var(--paper);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:6px 10px;color:var(--ink)}
+  .occ .acts button:hover{background:var(--ink);color:var(--paper)}
+  .occ.skipped{opacity:.55}
+  .occ.skipped .date{text-decoration:line-through}
+  .occ .state{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:2px solid var(--ink);padding:2px 7px}
+  .occ .state.skip{background:var(--cream);color:var(--muted)}
+  .occ .state.edit{background:var(--release);color:var(--ink)}
+
+  /* ===== AGENT ===== */
+  .agent{background:var(--cream)}
+  .agenthead{display:flex;align-items:center;gap:9px;padding:18px 24px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .agenthead .ico{width:24px;height:24px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper)}
+  .agenthead b{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .agenthead .status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .agenthead .status::before{content:"";width:7px;height:7px;background:var(--work);border-radius:50%}
+
+  .thread{flex:1;overflow:auto;padding:22px 24px;display:flex;flex-direction:column;gap:16px}
+  .m{font-size:13.5px;line-height:1.5}
+  .m.user{align-self:flex-end;max-width:82%;background:var(--ink);color:var(--paper);padding:10px 13px;border:2px solid var(--ink)}
+  .m.bot{align-self:flex-start;max-width:92%}
+  .m.bot .who{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+  .change{margin-top:10px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm)}
+  .change .crow{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:12.5px}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .tag{font-size:10px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0}
+  .change .tag.mv{background:var(--release);color:var(--ink)}
+  .change .tag.rule{background:var(--ink);color:var(--paper)}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-top:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+
+  .composer{border-top:2px solid var(--line);padding:14px 16px;flex-shrink:0}
+  .composer .box{border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);display:flex;align-items:flex-end;gap:8px;padding:10px 11px}
+  .composer textarea{flex:1;border:0;outline:0;resize:none;font-family:inherit;font-size:13.5px;background:none;color:var(--ink);line-height:1.4;max-height:110px}
+  .composer textarea::placeholder{color:var(--muted)}
+  .composer .send{width:32px;height:32px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .composer .send:hover{transform:translate(1px,1px)}
+  .composer .hint{font-size:10.5px;color:var(--muted);margin-top:9px;padding:0 2px;line-height:1.45}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+</style>
+</head>
+<body>
+  <!-- ============ HOME: EVENT LIST ============ -->
+  <div class="page">
+    <div class="topbar">
+      <div class="brand"><span class="mark"><span></span></span><b>Calink</b></div>
+      <button class="addbtn" onclick="openEditor('new')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New event
+      </button>
+      <span class="spacer"></span>
+      <div class="sublink">
+        <span class="lbl">Subscribe</span>
+        <div class="box">
+          <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="list" id="list">
+      <div class="seclabel">Recurring <span class="ct">· 6</span></div>
+      <div id="recur-rows"></div>
+      <div class="seclabel">One-off &amp; upcoming <span class="ct">· 4</span></div>
+      <div id="oneoff-rows"></div>
+    </div>
+  </div>
+
+  <!-- ============ FULL-SCREEN EDITOR ============ -->
+  <div class="overlay" id="overlay">
+    <div class="ovbar">
+      <button class="backbtn" onclick="closeEditor()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <div class="et">
+        <span class="cdot" id="ov-dot"></span>
+        <h1 id="ov-title">Sprint Planning</h1>
+        <span class="kick" id="ov-kick">Acme</span>
+      </div>
+      <span class="esc">Press <kbd>Esc</kbd> to close</span>
+    </div>
+
+    <div class="panes">
+      <!-- LEFT: tabbed editor -->
+      <section class="pane editor">
+        <div class="tabbar">
+          <button id="tab-details" class="on" onclick="showTab('details')">Details</button>
+          <button id="tab-recur" onclick="showTab('recur')">Recurrence</button>
+          <button id="tab-occ" onclick="showTab('occ')">Occurrences <span class="ct" id="occ-ct"></span></button>
+        </div>
+
+        <div class="tabscroll">
+          <!-- DETAILS -->
+          <div class="tabpanel on" id="panel-details">
+            <div class="frow title"><label>Title</label><div class="val"><input id="m-title"></div></div>
+            <div class="frow"><label>Calendar</label><div class="val">
+              <select id="m-cal" onchange="onCal()">
+                <option value="acme">Acme</option>
+                <option value="work">Workouts</option>
+                <option value="personal">Personal</option>
+                <option value="release">Release</option>
+                <option value="feeds">Calink feeds</option>
+              </select>
+            </div></div>
+            <div class="frow"><label>When</label><div class="val">
+              <div class="whenrow" id="when-timed">
+                <input id="m-date" type="date">
+                <input id="m-start" class="tnum" type="time">
+                <span class="dash">–</span>
+                <input id="m-end" class="tnum" type="time">
+              </div>
+              <div class="whenrow allday" id="when-allday" style="display:none">
+                <input id="m-date2" type="date">
+                <span class="allday-tag">All day</span>
+              </div>
+              <div class="sublabel" id="recur-note"></div>
+            </div></div>
+            <div class="frow"><label>Location</label><div class="val">
+              <input id="m-loc" placeholder="Add a place">
+            </div></div>
+            <div class="frow"><label>Meeting link</label><div class="val">
+              <input id="m-link" class="mono" placeholder="Add a video link">
+            </div></div>
+            <div class="frow"><label>Description</label><div class="val">
+              <textarea id="m-desc" placeholder="Add notes, agenda, prep…"></textarea>
+            </div></div>
+          </div>
+
+          <!-- RECURRENCE -->
+          <div class="tabpanel" id="panel-recur">
+           <div id="recur-none" style="display:none">
+             <div class="summary"><div class="skick">Repeats</div><div class="splain">Does not repeat</div><div class="srrule" style="border:0;padding:0;margin-top:8px">One-off event — no recurrence rule.</div></div>
+             <div class="noex" style="margin-top:18px">This event happens once. Ask the agent to "make this repeat" to add a schedule.</div>
+           </div>
+           <div id="recur-builder">
+            <div class="summary">
+              <div class="skick">Repeats</div>
+              <div class="splain" id="rc-plain">Every 2 weeks on Monday</div>
+              <div class="srrule">RRULE <b id="rc-rrule">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</b></div>
+            </div>
+
+            <div class="builder">
+              <div class="brow"><label>Frequency</label><div>
+                <select id="rc-freq" onchange="onFreq()">
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                </select>
+              </div></div>
+
+              <div class="brow"><label>Every</label><div class="interval">
+                <input id="rc-interval" type="number" min="1" value="2" oninput="recalc()">
+                <span class="unit" id="rc-unit">weeks</span>
+              </div></div>
+
+              <div class="brow" id="brow-days"><label>On days</label><div class="days" id="rc-days"></div></div>
+
+              <div class="brow" id="brow-month" style="display:none"><label>On</label><div class="monthmode">
+                <label class="moption"><input type="radio" name="mmode" value="day" onchange="recalc()" checked>
+                  <span>Day</span>
+                  <select id="rc-monthday" onchange="recalc()"></select>
+                  <span>of the month</span>
+                </label>
+                <label class="moption"><input type="radio" name="mmode" value="weekday" onchange="recalc()">
+                  <span>The</span>
+                  <select id="rc-nth" onchange="recalc()">
+                    <option value="1">first</option>
+                    <option value="2">second</option>
+                    <option value="3">third</option>
+                    <option value="4">fourth</option>
+                    <option value="-1">last</option>
+                  </select>
+                  <select id="rc-nthday" onchange="recalc()">
+                    <option value="MO">Monday</option><option value="TU">Tuesday</option>
+                    <option value="WE">Wednesday</option><option value="TH">Thursday</option>
+                    <option value="FR">Friday</option><option value="SA">Saturday</option>
+                    <option value="SU">Sunday</option>
+                  </select>
+                </label>
+              </div></div>
+
+              <div class="brow"><label>Ends</label><div class="ends">
+                <label class="eopt"><input type="radio" name="ends" value="never" onchange="recalc()" checked> Never</label>
+                <label class="eopt"><input type="radio" name="ends" value="on" onchange="recalc()"> On date
+                  <input id="rc-until" type="date" value="2026-12-31"></label>
+                <label class="eopt"><input type="radio" name="ends" value="after" onchange="recalc()"> After
+                  <input id="rc-count" type="number" min="1" value="12"> occurrences</label>
+              </div></div>
+
+              <div class="brow exrow"><label>Exceptions</label><div>
+                <div class="chips" id="rc-chips"></div>
+              </div></div>
+            </div>
+           </div>
+          </div>
+
+          <!-- OCCURRENCES -->
+          <div class="tabpanel" id="panel-occ">
+            <div class="occhead">
+              <div class="t">Future occurrences</div>
+              <div class="sub" id="occ-sub">Next 9 · Europe/Berlin</div>
+            </div>
+            <div id="occ-list"></div>
+          </div>
+        </div>
+
+        <div class="panefoot">
+          <button class="del" onclick="showToast('Event deleted · subscribers update within ~1h')">Delete</button>
+          <span class="spacer"></span>
+          <span class="scopehint" id="scopehint">Saves the whole series. Subscribers update within ~1h.</span>
+          <button class="save" onclick="saveEvent()">Save</button>
+        </div>
+      </section>
+
+      <!-- RIGHT: agent chat -->
+      <section class="pane agent">
+        <div class="agenthead">
+          <span class="ico"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+          <b>Agent</b>
+          <span class="status">editing <span id="ag-ev" style="margin-left:4px">Sprint Planning</span></span>
+        </div>
+        <div class="thread" id="thread">
+          <div class="m user">Move Sprint Planning to every 2 weeks (it was weekly), and skip the Aug 24 one — I'm on leave.</div>
+          <div class="m bot">
+            <div class="who">Calink Agent</div>
+            Done — updated the series:
+            <div class="change">
+              <div class="crow"><span class="tag rule">RULE</span><span>Now <b>every 2 weeks on Monday</b> · <span class="mono" style="font-size:11.5px">INTERVAL=2</span></span></div>
+              <div class="crow"><span class="tag mv">SKIP</span><span>Aug 24 marked as an exception (EXDATE)</span></div>
+              <div class="applied"><span>Auto-applied · subscribers update ~1h</span><button onclick="undoToast()">Undo</button></div>
+            </div>
+          </div>
+          <div class="m user">Great, leave the time at 11:00.</div>
+          <div class="m bot">
+            <div class="who">Calink Agent</div>
+            Kept at 11:00–12:30. The rule reads <span class="mono" style="font-size:12px">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</span> with one EXDATE on Aug 24.
+          </div>
+        </div>
+        <div class="composer">
+          <div class="box">
+            <textarea rows="1" placeholder="Tell the agent to change this event…"></textarea>
+            <button class="send" title="Send"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="hint">The agent edits this event directly (just-do-it) — every change has an Undo. Same tools your own AI gets over MCP.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span id="toast-msg">Change undone.</span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  const CAL = {
+    acme:    {name:"Acme",        dot:"var(--acme)"},
+    work:    {name:"Workouts",    dot:"var(--work)"},
+    personal:{name:"Personal",    dot:"var(--paper)"},
+    release: {name:"Release",     dot:"var(--release)"},
+    feeds:   {name:"Calink feeds",dot:"var(--acme)"},
+  };
+  const WD = [["MO","Mon"],["TU","Tue"],["WE","Wed"],["TH","Thu"],["FR","Fri"],["SA","Sat"],["SU","Sun"]];
+  const WD_FULL = {MO:"Monday",TU:"Tuesday",WE:"Wednesday",TH:"Thursday",FR:"Friday",SA:"Saturday",SU:"Sunday"};
+  const WD_NUM = {SU:0,MO:1,TU:2,WE:3,TH:4,FR:5,SA:6};
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const WD_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  // ===== DATASET =====
+  const DATA = {
+    sprint:{ section:"recur", title:"Sprint Planning", cal:"acme", date:"2026-06-29", start:"11:00", end:"12:30",
+      allday:false, loc:"", link:"meet.google.com/spr-plan",
+      desc:"Groom the backlog, commit the sprint scope, assign owners. Bring estimates.",
+      badge:"2 wks", schedText:"Every 2 weeks on Monday · 11:00–12:30",
+      rec:{freq:"WEEKLY",interval:2,byday:["MO"],ends:"never",exdates:["2026-08-24"]} },
+
+    standup:{ section:"recur", title:"Team Standup", cal:"acme", date:"2026-06-29", start:"09:30", end:"09:45",
+      allday:false, loc:"", link:"meet.google.com/std-acme",
+      desc:"Yesterday / today / blockers. 15 min max.",
+      badge:"Weekdays", schedText:"Every weekday · 09:30–09:45",
+      rec:{freq:"WEEKLY",interval:1,byday:["MO","TU","WE","TH","FR"],ends:"never",exdates:[]} },
+
+    run:{ section:"recur", title:"Morning Run", cal:"work", date:"2026-06-29", start:"07:00", end:"07:45",
+      allday:false, loc:"Riverside loop", link:"",
+      desc:"Easy 5k, zone 2.",
+      badge:"M·W·F", schedText:"Mon · Wed · Fri · 07:00–07:45",
+      rec:{freq:"WEEKLY",interval:1,byday:["MO","WE","FR"],ends:"never",exdates:[]} },
+
+    book:{ section:"recur", title:"Book Club", cal:"personal", date:"2026-07-14", start:"20:00", end:"21:30",
+      allday:false, loc:"rotating", link:"",
+      desc:"This month: 'The Shape of Things'. Bring 2 questions.",
+      badge:"Monthly", schedText:"2nd Tuesday monthly · 20:00–21:30",
+      rec:{freq:"MONTHLY",interval:1,mmode:"weekday",nth:"2",nthday:"TU",ends:"never",exdates:[]} },
+
+    sam:{ section:"recur", title:"1:1 with Sam", cal:"acme", date:"2026-07-02", start:"16:30", end:"17:00",
+      allday:false, loc:"", link:"meet.google.com/sam-1on1",
+      desc:"Career + project check-in.",
+      badge:"Weekly", schedText:"Weekly on Thursday · 16:30–17:00",
+      rec:{freq:"WEEKLY",interval:1,byday:["TH"],ends:"never",exdates:[]} },
+
+    rent:{ section:"recur", title:"Pay rent", cal:"personal", date:"2026-07-01", start:"", end:"",
+      allday:true, loc:"", link:"",
+      desc:"Transfer €1,450 to landlord.",
+      badge:"Monthly", schedText:"Monthly on day 1 · all-day",
+      rec:{freq:"MONTHLY",interval:1,mmode:"day",monthday:1,ends:"never",exdates:[]} },
+
+    design:{ section:"oneoff", title:"Design review — Calink feeds", cal:"feeds", date:"2026-06-29", start:"14:00", end:"15:00",
+      allday:false, loc:"Room 2", link:"meet.google.com/design-rev",
+      desc:"Review the .ics feed serializer and recurrence edge cases.",
+      schedText:"Mon Jun 29 · 14:00–15:00", rec:null },
+
+    cutoff:{ section:"oneoff", title:"v0.3 cut-off", cal:"release", date:"2026-06-29", start:"", end:"",
+      allday:true, loc:"", link:"",
+      desc:"Freeze scope for v0.3.",
+      schedText:"Mon Jun 29 · all-day", rec:null },
+
+    lunch:{ section:"oneoff", title:"Lunch with Priya", cal:"personal", date:"2026-07-06", start:"12:30", end:"13:30",
+      allday:false, loc:"Sona", link:"",
+      desc:"Catch up, she's back from Lisbon.",
+      schedText:"Mon Jul 6 · 12:30–13:30", rec:null },
+
+    board:{ section:"oneoff", title:"Quarterly board sync", cal:"acme", date:"2026-07-14", start:"15:00", end:"16:00",
+      allday:false, loc:"", link:"zoom.us/j/quarterly",
+      desc:"Deck due the night before.",
+      schedText:"Tue Jul 14 · 15:00–16:00", rec:null },
+    new:{ section:"oneoff", title:"", cal:"acme", date:"2026-06-29", start:"10:00", end:"10:30",
+      allday:false, loc:"", link:"", desc:"", schedText:"", rec:null },
+  };
+
+  // ===== RENDER HOME LIST =====
+  function rowHTML(key){
+    const d = DATA[key], c = CAL[d.cal];
+    const badge = d.badge ? `<span class="badge">${d.badge}</span>` : `<span></span>`;
+    const sw = d.cal==="personal" ? `style="background:var(--paper)"` : `style="background:${c.dot}"`;
+    return `<div class="row" onclick="openEditor('${key}')">
+      <span class="sw" ${sw}></span>
+      <div class="body">
+        <div class="ti">${d.title}</div>
+        <div class="sched"><span class="cal">${c.name}</span><span class="dot">·</span><span class="mono tnum">${d.schedText}</span>${d.loc?`<span class="dot">·</span><span>${d.loc}</span>`:""}</div>
+      </div>
+      ${badge}
+      <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+    </div>`;
+  }
+  document.getElementById('recur-rows').innerHTML =
+    ["sprint","standup","run","book","sam","rent"].map(rowHTML).join("");
+  document.getElementById('oneoff-rows').innerHTML =
+    ["design","cutoff","lunch","board"].map(rowHTML).join("");
+
+  // ===== RECURRENCE BUILDER =====
+  let cur = null;       // current event key
+  let state = null;     // working recurrence state
+  let skipped = {};     // occurrence skip/edit overrides keyed by ISO date
+
+  // build weekday toggle buttons once
+  const daysWrap = document.getElementById('rc-days');
+  daysWrap.innerHTML = WD.map(([code,lbl])=>`<button data-d="${code}" onclick="toggleDay('${code}')">${lbl}</button>`).join("");
+  // month-day select 1..31
+  const mdSel = document.getElementById('rc-monthday');
+  mdSel.innerHTML = Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+
+  function toggleDay(code){
+    const i = state.byday.indexOf(code);
+    if(i>=0) state.byday.splice(i,1); else state.byday.push(code);
+    recalc();
+  }
+
+  function readControls(){
+    state.freq = document.getElementById('rc-freq').value;
+    state.interval = Math.max(1, parseInt(document.getElementById('rc-interval').value)||1);
+    state.mmode = document.querySelector('input[name=mmode]:checked').value;
+    state.monthday = parseInt(document.getElementById('rc-monthday').value);
+    state.nth = document.getElementById('rc-nth').value;
+    state.nthday = document.getElementById('rc-nthday').value;
+    state.ends = document.querySelector('input[name=ends]:checked').value;
+    state.until = document.getElementById('rc-until').value;
+    state.count = parseInt(document.getElementById('rc-count').value)||1;
+  }
+
+  function syncControls(){
+    document.getElementById('rc-freq').value = state.freq;
+    document.getElementById('rc-interval').value = state.interval;
+    [...daysWrap.querySelectorAll('button')].forEach(b=>b.classList.toggle('on', state.byday.includes(b.dataset.d)));
+    document.querySelector(`input[name=mmode][value="${state.mmode||'day'}"]`).checked = true;
+    document.getElementById('rc-monthday').value = state.monthday||1;
+    document.getElementById('rc-nth').value = state.nth||"1";
+    document.getElementById('rc-nthday').value = state.nthday||"MO";
+    document.querySelector(`input[name=ends][value="${state.ends||'never'}"]`).checked = true;
+    if(state.until) document.getElementById('rc-until').value = state.until;
+    if(state.count) document.getElementById('rc-count').value = state.count;
+    applyFreqVisibility();
+  }
+
+  function applyFreqVisibility(){
+    const f = state.freq;
+    document.getElementById('rc-unit').textContent = {DAILY:"days",WEEKLY:"weeks",MONTHLY:"months"}[f];
+    document.getElementById('brow-days').style.display = f==="WEEKLY" ? "grid" : "none";
+    document.getElementById('brow-month').style.display = f==="MONTHLY" ? "grid" : "none";
+  }
+  function onFreq(){ readControls(); applyFreqVisibility(); recalc(); }
+
+  function buildRRULE(){
+    let p = ["FREQ="+state.freq];
+    if(state.interval>1) p.push("INTERVAL="+state.interval);
+    if(state.freq==="WEEKLY" && state.byday.length){
+      const ordered = WD.map(w=>w[0]).filter(c=>state.byday.includes(c));
+      p.push("BYDAY="+ordered.join(","));
+    }
+    if(state.freq==="MONTHLY"){
+      if(state.mmode==="weekday") p.push("BYDAY="+state.nth+state.nthday);
+      else p.push("BYMONTHDAY="+state.monthday);
+    }
+    if(state.ends==="on" && state.until) p.push("UNTIL="+state.until.replace(/-/g,"")+"T000000Z");
+    if(state.ends==="after") p.push("COUNT="+state.count);
+    return p.join(";");
+  }
+
+  function buildPlain(){
+    const iv = state.interval;
+    let s = "";
+    if(state.freq==="DAILY"){
+      s = iv===1 ? "Every day" : `Every ${iv} days`;
+    } else if(state.freq==="WEEKLY"){
+      const ordered = WD.map(w=>w[0]).filter(c=>state.byday.includes(c));
+      const isWeekdays = ordered.length===5 && ["MO","TU","WE","TH","FR"].every(d=>ordered.includes(d));
+      if(iv===1 && isWeekdays){ s = "Every weekday"; }
+      else {
+        const base = iv===1 ? "Every week" : `Every ${iv} weeks`;
+        if(!ordered.length){ s = base; }
+        else {
+          const names = ordered.map(c=>WD_FULL[c]);
+          const list = names.length===1 ? names[0]
+            : names.slice(0,-1).join(", ")+" and "+names[names.length-1];
+          s = `${base} on ${list}`;
+        }
+      }
+    } else if(state.freq==="MONTHLY"){
+      const base = iv===1 ? "Monthly" : `Every ${iv} months`;
+      if(state.mmode==="weekday"){
+        const nthName = {"1":"first","2":"second","3":"third","4":"fourth","-1":"last"}[state.nth];
+        s = `${base} on the ${nthName} ${WD_FULL[state.nthday]}`;
+      } else {
+        s = `${base} on day ${state.monthday}`;
+      }
+    }
+    // time
+    const d = DATA[cur];
+    if(d.allday) s += " · all-day";
+    else if(d.start) s += ` · ${d.start}–${d.end}`;
+    // ends
+    if(state.ends==="on" && state.until){
+      const dt = parseISO(state.until);
+      s += `, until ${MON[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`;
+    } else if(state.ends==="after"){
+      s += `, ${state.count} times`;
+    }
+    if(state.exdates && state.exdates.length){
+      s += ` · ${state.exdates.length} skipped`;
+    }
+    return s;
+  }
+
+  // ===== OCCURRENCE ENGINE =====
+  function parseISO(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+  function isoOf(dt){ return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"); }
+  function mondayOf(dt){ const x=new Date(dt); const off=(x.getDay()+6)%7; x.setDate(x.getDate()-off); return x; }
+
+  function genOccurrences(n){
+    const base = parseISO(DATA[cur].date);
+    const out = [];
+    if(state.freq==="WEEKLY"){
+      const anchor = mondayOf(base);
+      const days = state.byday.length ? state.byday : [Object.keys(WD_NUM).find(k=>WD_NUM[k]===base.getDay())];
+      let cursor = new Date(base);
+      while(out.length<n){
+        const wkIdx = Math.round((mondayOf(cursor)-anchor)/(7*86400000));
+        const code = Object.keys(WD_NUM).find(k=>WD_NUM[k]===cursor.getDay());
+        if(wkIdx>=0 && wkIdx%state.interval===0 && days.includes(code) && cursor>=base) out.push(new Date(cursor));
+        cursor.setDate(cursor.getDate()+1);
+        if(cursor.getFullYear()>2031) break;
+      }
+    } else if(state.freq==="DAILY"){
+      let cursor = new Date(base);
+      while(out.length<n){ out.push(new Date(cursor)); cursor.setDate(cursor.getDate()+state.interval); }
+    } else if(state.freq==="MONTHLY"){
+      let y=base.getFullYear(), m=base.getMonth(), guard=0;
+      while(out.length<n && guard<200){
+        guard++;
+        let dt;
+        if(state.mmode==="weekday"){
+          dt = nthWeekdayOf(y,m,state.nth,state.nthday);
+        } else {
+          dt = new Date(y,m,Math.min(state.monthday,daysInMonth(y,m)));
+        }
+        if(dt && dt>=base) out.push(dt);
+        m+=state.interval; if(m>11){ y+=Math.floor(m/12); m=m%12; }
+      }
+    }
+    return out;
+  }
+  function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+  function nthWeekdayOf(y,m,nth,code){
+    const target = WD_NUM[code];
+    if(nth==="-1"){
+      const last = daysInMonth(y,m);
+      for(let d=last; d>0; d--){ const dt=new Date(y,m,d); if(dt.getDay()===target) return dt; }
+    } else {
+      const k = parseInt(nth); let found=0;
+      for(let d=1; d<=daysInMonth(y,m); d++){ const dt=new Date(y,m,d); if(dt.getDay()===target){ found++; if(found===k) return dt; } }
+    }
+    return null;
+  }
+
+  // ===== EXCEPTION CHIPS =====
+  function renderChips(){
+    const wrap = document.getElementById('rc-chips');
+    let html = "";
+    if(!state.exdates || !state.exdates.length){
+      html += `<span class="noex">No skipped dates yet.</span>`;
+    } else {
+      html += state.exdates.map((iso,i)=>{
+        const dt = parseISO(iso);
+        const lbl = `${WD_SHORT[dt.getDay()]} ${MON[dt.getMonth()]} ${dt.getDate()}`;
+        return `<span class="chip mono">${lbl}<button onclick="removeEx(${i})" title="Remove"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+      }).join("");
+    }
+    html += `<button class="addchip" onclick="addEx()"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg>Add date</button>`;
+    wrap.innerHTML = html;
+  }
+  function removeEx(i){ state.exdates.splice(i,1); recalc(); }
+  function addEx(){
+    const v = prompt("Skip which date? (YYYY-MM-DD)","2026-09-21");
+    if(v && /^\d{4}-\d{2}-\d{2}$/.test(v)){ state.exdates.push(v); state.exdates.sort(); recalc(); }
+  }
+
+  // ===== OCCURRENCES TAB =====
+  function renderOcc(){
+    const wrap = document.getElementById('occ-list');
+    if(!state){
+      wrap.innerHTML = `<div class="noex">This is a one-off event — it has no future occurrences.</div>`;
+      document.getElementById('occ-ct').textContent = "";
+      return;
+    }
+    const occ = genOccurrences(9);
+    document.getElementById('occ-ct').textContent = "· "+occ.length;
+    const d = DATA[cur];
+    const timeStr = d.allday ? "all-day" : `${d.start}–${d.end}`;
+    wrap.innerHTML = occ.map(dt=>{
+      const iso = isoOf(dt);
+      const st = state.exdates && state.exdates.includes(iso) ? "skip" : (skipped[iso]||"");
+      const skipCls = st==="skip" ? "skipped" : "";
+      const stateBadge = st==="skip" ? `<span class="state skip">Skipped</span>`
+        : st==="edit" ? `<span class="state edit">Edited</span>` : "";
+      const acts = st==="skip"
+        ? `<button onclick="unskip('${iso}')"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/></svg>Restore</button>`
+        : `<button onclick="markSkip('${iso}')"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M6 6l12 12M18 6L6 18"/></svg>Skip</button>
+           <button onclick="markEdit('${iso}')"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M4 20h4L18 10l-4-4L4 16z"/></svg>Edit</button>`;
+      return `<div class="occ ${skipCls}">
+        <div class="wk">${WD_SHORT[dt.getDay()]}</div>
+        <div class="when"><span><span class="date">${MON[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}</span>${stateBadge?"  "+stateBadge:""}</span><span class="time">${timeStr}</span></div>
+        <div class="acts">${acts}</div>
+      </div>`;
+    }).join("");
+  }
+  function markSkip(iso){ if(!state.exdates) state.exdates=[]; if(!state.exdates.includes(iso)) state.exdates.push(iso); state.exdates.sort(); delete skipped[iso]; recalc(); showToast(`Occurrence skipped · ${iso}`); }
+  function unskip(iso){ const i=state.exdates.indexOf(iso); if(i>=0) state.exdates.splice(i,1); delete skipped[iso]; recalc(); }
+  function markEdit(iso){ skipped[iso]="edit"; renderOcc(); showToast(`Editing single occurrence · ${iso}`); }
+
+  // ===== RECALC: drive summary + rrule + occ from state =====
+  function recalc(){
+    readControls();
+    document.getElementById('rc-plain').textContent = buildPlain();
+    document.getElementById('rc-rrule').textContent = buildRRULE();
+    renderChips();
+    renderOcc();
+    // reflect onto details "when" note
+    document.getElementById('recur-note').textContent = "Repeats: " + buildPlain();
+  }
+
+  // ===== OPEN / CLOSE EDITOR =====
+  function showTab(t){
+    ["details","recur","occ"].forEach(x=>{
+      document.getElementById("panel-"+x).classList.toggle("on", x===t);
+      document.getElementById("tab-"+(x==="recur"?"recur":x==="occ"?"occ":"details")).classList.toggle("on", x===t);
+    });
+  }
+
+  function openEditor(key){
+    cur = key;
+    const d = DATA[key] || DATA.new;
+    skipped = {};
+    const c = CAL[d.cal];
+    document.getElementById('ov-title').textContent = d.title || "New event";
+    document.getElementById('ov-kick').textContent = c.name;
+    document.getElementById('ov-dot').style.background = d.cal==="personal" ? "var(--paper)" : c.dot;
+    document.getElementById('ag-ev').textContent = d.title || "new event";
+
+    document.getElementById('m-title').value = d.title;
+    document.getElementById('m-cal').value = d.cal;
+    document.getElementById('m-date').value = d.date;
+    document.getElementById('m-date2').value = d.date;
+    document.getElementById('m-start').value = d.start;
+    document.getElementById('m-end').value = d.end;
+    document.getElementById('m-loc').value = d.loc;
+    document.getElementById('m-link').value = d.link;
+    document.getElementById('m-desc').value = d.desc;
+    document.getElementById('when-timed').style.display = d.allday ? "none" : "grid";
+    document.getElementById('when-allday').style.display = d.allday ? "grid" : "none";
+
+    // recurrence
+    if(d.rec){
+      state = JSON.parse(JSON.stringify(d.rec));
+      state.byday = state.byday || [];
+      state.exdates = state.exdates || [];
+      document.getElementById('recur-builder').style.display = "block";
+      document.getElementById('recur-none').style.display = "none";
+      syncControls();
+      recalc();
+      document.getElementById('scopehint').textContent = "Saves the whole series. Subscribers update within ~1h.";
+    } else {
+      state = null;
+      document.getElementById('recur-builder').style.display = "none";
+      document.getElementById('recur-none').style.display = "block";
+      document.getElementById('recur-note').textContent = "Does not repeat — one-off event.";
+      document.getElementById('occ-ct').textContent = "";
+      renderOcc();
+      document.getElementById('scopehint').textContent = "One-off event. Subscribers update within ~1h.";
+    }
+    showTab('details');
+    document.getElementById('overlay').classList.add('open');
+  }
+  function closeEditor(){ document.getElementById('overlay').classList.remove('open'); }
+  function onCal(){
+    const v = document.getElementById('m-cal').value, c = CAL[v];
+    document.getElementById('ov-dot').style.background = v==="personal" ? "var(--paper)" : c.dot;
+    document.getElementById('ov-kick').textContent = c.name;
+  }
+  function saveEvent(){ showToast("Series saved · subscribers update within ~1h"); }
+
+  // ===== TOAST =====
+  let toastT;
+  function showToast(msg){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(hideToast,3200); }
+  function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+  function undoToast(){ showToast("Reverted — back to weekly, Aug 24 restored"); }
+  function copyFeed(btn){ const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1200); }
+
+  document.addEventListener('keydown',e=>{ if(e.key==="Escape") closeEditor(); });
+  const ta=document.querySelector('.composer textarea');
+  ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,110)+'px'; });
+
+  // default open on Sprint Planning
+  openEditor('sprint');
+</script>
+</body>
+</html>

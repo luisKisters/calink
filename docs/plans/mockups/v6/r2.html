@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Document + Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#15130D;
+    --release:#C98A1A;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+    --labelw:148px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer}
+  ::selection{background:var(--accent);color:#fff}
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+
+  /* ===== HOME: flat event list ===== */
+  .page{max-width:1440px;margin:0 auto;min-height:100vh;background:var(--paper);border-left:2px solid var(--line);border-right:2px solid var(--line);display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;gap:16px;padding:16px 32px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--paper);z-index:10}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .topbar .addbtn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px}
+  .topbar .addbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .topbar .addbtn:active{transform:translate(3px,3px);box-shadow:none}
+  .topbar .spacer{flex:1}
+  .sublink{display:flex;align-items:center;gap:9px}
+  .sublink .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .sublink .box{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);padding:6px 8px;box-shadow:var(--shadow-sm)}
+  .sublink code{font-size:11px;color:var(--ink);white-space:nowrap}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:5px 9px}
+  .sublink button:hover{background:var(--accent)}
+
+  .list{flex:1;overflow:auto;padding:4px 32px 80px;width:100%}
+  .listwrap{max-width:980px}
+  .seclabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:34px 0 14px;display:flex;align-items:center;gap:12px}
+  .seclabel:first-child{margin-top:26px}
+  .seclabel .ct{color:var(--ink);border:2px solid var(--hairline);padding:1px 7px;font-size:10px}
+  .seclabel::after{content:"";flex:1;height:2px;background:var(--hairline)}
+
+  .row{display:grid;grid-template-columns:13px 1fr auto auto;align-items:center;gap:18px;padding:15px 18px;border:2px solid var(--line);background:var(--paper);margin-bottom:10px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+  .row:hover{box-shadow:var(--shadow-sm);transform:translate(-1px,-1px)}
+  .row .sw{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .row .body{min-width:0}
+  .row .ti{font-size:15px;font-weight:600;line-height:1.25}
+  .row .sched{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .row .sched .cal{color:var(--ink);font-weight:500}
+  .row .sched .sep{color:var(--hairline)}
+  .row .badge{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--ink);padding:2px 7px;justify-self:end}
+  .row .chev{color:var(--muted);justify-self:end}
+  .row .allday{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:2px solid var(--hairline);padding:1px 7px}
+
+  /* ===== FULL-SCREEN EDITOR OVERLAY ===== */
+  .overlay{position:fixed;inset:0;background:var(--paper);z-index:40;display:none;flex-direction:column}
+  .overlay.open{display:flex}
+  .ovbar{display:flex;align-items:center;gap:18px;padding:14px 28px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .backbtn{display:flex;align-items:center;gap:8px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px;color:var(--ink)}
+  .backbtn:hover{background:var(--ink);color:var(--paper)}
+  .ovbar .et{display:flex;align-items:center;gap:10px}
+  .ovbar .cdot{width:12px;height:12px;border:2px solid var(--ink)}
+  .ovbar .kick{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .ovbar .esc{margin-left:auto;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .ovbar .esc kbd{font-family:"JetBrains Mono",monospace;border:2px solid var(--hairline);padding:1px 6px;font-size:10.5px;color:var(--ink)}
+
+  .panes{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+  .pane{min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .pane.doc{border-right:2px solid var(--line)}
+
+  /* ===== LEFT: the EVENT DOCUMENT ===== */
+  .doc .scroll{flex:1;overflow:auto;padding:40px 56px 36px}
+  .docwrap{max-width:600px}
+  .doc .eyebrow{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px}
+  .doc .eyebrow .cdot{width:11px;height:11px;border:2px solid var(--ink)}
+  .doc .titlein{width:100%;border:0;background:transparent;font-family:inherit;font-size:31px;font-weight:700;letter-spacing:-.015em;color:var(--ink);line-height:1.12;padding:0 0 4px}
+  .doc .titlein:focus{outline:0;box-shadow:0 3px 0 var(--accent)}
+
+  /* aligned field rows */
+  .rows{margin-top:30px;border-top:2px solid var(--hairline)}
+  .frow{display:grid;grid-template-columns:var(--labelw) 1fr;align-items:baseline;gap:18px;padding:15px 0;border-bottom:2px solid var(--hairline)}
+  .frow > .lab{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding-top:3px}
+  .frow > .v{min-width:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .vin{border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink);padding:1px 0}
+  .vin:focus{outline:0;box-shadow:0 2px 0 var(--accent)}
+  .vin.mono{font-size:13px}
+  .vin.grow{flex:1;min-width:120px}
+  .placeholderish{color:var(--muted)}
+  .calpick{display:inline-flex;align-items:center;gap:9px}
+  .calpick .sw{width:12px;height:12px;border:2px solid var(--ink)}
+  .calpick select{border:0;background:transparent;font-family:inherit;font-size:15px;font-weight:500;color:var(--ink);cursor:pointer}
+  .calpick select:focus{outline:0;box-shadow:0 2px 0 var(--accent)}
+  .when{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .when .dash{color:var(--muted)}
+  .linkin{color:var(--ink);text-decoration:none;border-bottom:2px solid var(--hairline)}
+  .linkin:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* description */
+  .descblock{padding:20px 0 6px}
+  .descblock .lab{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:9px}
+  .descblock textarea{width:100%;border:0;border-left:2px solid var(--hairline);background:transparent;font-family:inherit;font-size:14.5px;line-height:1.6;color:var(--ink);resize:none;min-height:48px;padding-left:14px}
+  .descblock textarea:focus{outline:0;border-left-color:var(--accent)}
+
+  /* ===== RECURRENCE SECTION ===== */
+  .rec{margin-top:30px;border:2px solid var(--ink);background:var(--cream)}
+  .rec .rechead{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:2px solid var(--ink)}
+  .rec .rechead .rico{width:18px;height:18px}
+  .rec .rechead .t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+  .rec .summary{padding:16px 16px 14px}
+  .rec .plain{font-size:17px;font-weight:600;line-height:1.35;letter-spacing:-.01em}
+  .rec .rrule{font-size:12px;color:var(--muted);margin-top:7px;display:flex;align-items:center;gap:8px}
+  .rec .rrule .k{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:2px solid var(--hairline);padding:1px 5px;color:var(--muted)}
+
+  .builder{padding:4px 16px 16px}
+  .brow{display:grid;grid-template-columns:var(--labelw) 1fr;align-items:center;gap:18px;padding:11px 0;border-top:2px solid var(--hairline)}
+  .brow > .lab{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+  .brow > .ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .selbox,.numbox{border:2px solid var(--ink);background:var(--paper);font-family:inherit;font-size:13px;color:var(--ink);padding:6px 9px}
+  .selbox:focus,.numbox:focus{outline:3px solid var(--accent);outline-offset:0}
+  .numbox{width:62px;text-align:center}
+  .ctl .lead{font-size:13px;color:var(--muted)}
+  .days{display:flex;gap:5px;flex-wrap:wrap}
+  .day{width:34px;height:32px;border:2px solid var(--ink);background:var(--paper);font-size:11px;font-weight:600;color:var(--muted);display:grid;place-items:center;text-transform:uppercase;letter-spacing:.02em}
+  .day.on{background:var(--ink);color:var(--paper)}
+  .radio{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink)}
+  .radio input{width:15px;height:15px;accent-color:var(--accent)}
+  .endsrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+  /* exceptions */
+  .exc{padding:13px 16px 16px;border-top:2px solid var(--ink);background:var(--paper)}
+  .exc .lab{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:10px}
+  .chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--ink);background:var(--cream);font-size:12px;padding:4px 5px 4px 9px}
+  .chip .x{width:18px;height:18px;border:0;background:transparent;display:grid;place-items:center;color:var(--muted)}
+  .chip .x:hover{color:var(--accent)}
+  .addchip{display:inline-flex;align-items:center;gap:6px;border:2px dashed var(--hairline);background:transparent;font-size:12px;font-weight:600;color:var(--muted);padding:5px 9px}
+  .addchip:hover{border-color:var(--ink);color:var(--ink)}
+
+  /* ===== UPCOMING OCCURRENCES ===== */
+  .occ{margin-top:30px}
+  .occ .occhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+  .occ .occhead .t{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+  .occ .occhead .more{font-size:12px;color:var(--accent);background:none;border:0;font-weight:600;text-decoration:underline;text-underline-offset:2px}
+  .occlist{border-top:2px solid var(--hairline)}
+  .orow{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:16px;padding:11px 2px;border-bottom:2px solid var(--hairline);font-size:14px}
+  .orow .ord{font-size:11px;color:var(--muted);text-align:right}
+  .orow .od{display:flex;align-items:baseline;gap:12px}
+  .orow .od .wd{font-weight:600;width:42px;display:inline-block}
+  .orow .od .dt{color:var(--ink)}
+  .orow .od .tm{color:var(--muted);font-size:13px}
+  .orow .acts{display:flex;gap:6px}
+  .orow .oact{border:2px solid var(--hairline);background:transparent;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:4px 8px}
+  .orow .oact:hover{border-color:var(--ink);color:var(--ink)}
+  .orow.skipped{opacity:.55}
+  .orow.skipped .dt,.orow.skipped .wd{text-decoration:line-through}
+  .orow.skipped .tm{text-decoration:line-through}
+  .orow .stag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);border:2px solid var(--accent);padding:2px 6px}
+
+  .docfoot{display:flex;align-items:center;gap:12px;padding:14px 56px;border-top:2px solid var(--line);flex-shrink:0;background:var(--paper)}
+  .docfoot .del{background:none;border:2px solid var(--ink);padding:9px 14px;font-size:13px;font-weight:600;color:var(--ink)}
+  .docfoot .del:hover{background:var(--ink);color:var(--paper)}
+  .docfoot .scopeNote{font-size:11px;color:var(--muted);max-width:240px;line-height:1.4}
+  .docfoot .spacer{flex:1}
+  .docfoot .save{background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);padding:9px 22px;font-size:13px;font-weight:700}
+  .docfoot .save:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  /* ===== RIGHT: agent chat ===== */
+  .agent{background:var(--cream)}
+  .agenthead{display:flex;align-items:center;gap:9px;padding:18px 24px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .agenthead .ico{width:22px;height:22px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper)}
+  .agenthead b{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .agenthead .status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .agenthead .status::before{content:"";width:7px;height:7px;background:var(--work);border-radius:50%}
+
+  .thread{flex:1;overflow:auto;padding:22px 24px;display:flex;flex-direction:column;gap:16px}
+  .m{font-size:13.5px;line-height:1.5}
+  .m.user{align-self:flex-end;max-width:82%;background:var(--ink);color:var(--paper);padding:10px 13px;border:2px solid var(--ink)}
+  .m.bot{align-self:flex-start;max-width:94%}
+  .m.bot .who{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+  .change{margin-top:10px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm)}
+  .change .crow{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;font-size:12.5px;line-height:1.4}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .tag{font-size:10px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0}
+  .change .tag.add{background:var(--work);color:#fff}
+  .change .tag.mv{background:var(--release);color:#fff}
+  .change .crow .mono{font-size:11.5px}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-top:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+
+  .composer{border-top:2px solid var(--line);padding:14px 16px;flex-shrink:0}
+  .composer .box{border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);display:flex;align-items:flex-end;gap:8px;padding:10px 11px}
+  .composer textarea{flex:1;border:0;outline:0;resize:none;font-family:inherit;font-size:13.5px;background:none;color:var(--ink);line-height:1.4;max-height:110px}
+  .composer textarea::placeholder{color:var(--muted)}
+  .composer .send{width:32px;height:32px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .composer .send:hover{transform:translate(1px,1px)}
+  .composer .hint{font-size:10.5px;color:var(--muted);margin-top:9px;padding:0 2px;line-height:1.45}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+</style>
+</head>
+<body>
+  <!-- ============ HOME: EVENT LIST ============ -->
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <span class="mark"><span></span></span>
+        <b>Calink</b>
+      </div>
+      <button class="addbtn" onclick="openEditor('new')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New event
+      </button>
+      <span class="spacer"></span>
+      <div class="sublink">
+        <span class="lbl">Live feed</span>
+        <div class="box">
+          <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="list">
+     <div class="listwrap">
+      <div class="seclabel">Recurring <span class="ct tnum">6</span></div>
+
+      <div class="row" onclick="openEditor('sprint')">
+        <span class="sw" style="background:var(--acme)"></span>
+        <div class="body">
+          <div class="ti">Sprint Planning</div>
+          <div class="sched"><span class="cal">Acme</span><span class="sep">·</span><span class="mono tnum">Every 2 weeks · Mon 11:00–12:30</span><span class="sep">·</span><span>Meet</span></div>
+        </div>
+        <span class="badge">Bi-weekly</span>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('standup')">
+        <span class="sw" style="background:var(--acme)"></span>
+        <div class="body">
+          <div class="ti">Team Standup</div>
+          <div class="sched"><span class="cal">Acme</span><span class="sep">·</span><span class="mono tnum">Weekdays 09:30–09:45</span><span class="sep">·</span><span>Meet</span></div>
+        </div>
+        <span class="badge">Weekdays</span>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('run')">
+        <span class="sw" style="background:var(--work)"></span>
+        <div class="body">
+          <div class="ti">Morning Run</div>
+          <div class="sched"><span class="cal">Workouts</span><span class="sep">·</span><span class="mono tnum">Mon·Wed·Fri 07:00–07:45</span><span class="sep">·</span><span>Riverside loop</span></div>
+        </div>
+        <span class="badge">M·W·F</span>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('book')">
+        <span class="sw" style="background:var(--paper)"></span>
+        <div class="body">
+          <div class="ti">Book Club</div>
+          <div class="sched"><span class="cal">Personal</span><span class="sep">·</span><span class="mono tnum">2nd Tue monthly · 20:00–21:30</span><span class="sep">·</span><span>rotating</span></div>
+        </div>
+        <span class="badge">Monthly</span>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('sam')">
+        <span class="sw" style="background:var(--acme)"></span>
+        <div class="body">
+          <div class="ti">1:1 with Sam</div>
+          <div class="sched"><span class="cal">Acme</span><span class="sep">·</span><span class="mono tnum">Thursdays 16:30–17:00</span><span class="sep">·</span><span>Meet</span></div>
+        </div>
+        <span class="badge">Weekly</span>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('rent')">
+        <span class="sw" style="background:var(--paper)"></span>
+        <div class="body">
+          <div class="ti">Pay rent</div>
+          <div class="sched"><span class="cal">Personal</span><span class="sep">·</span><span class="mono tnum">Monthly on day 1</span><span class="sep">·</span><span class="allday">All day</span></div>
+        </div>
+        <span class="badge">Monthly</span>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="seclabel">One-off &amp; upcoming <span class="ct tnum">4</span></div>
+
+      <div class="row" onclick="openEditor('design')">
+        <span class="sw" style="background:var(--acme)"></span>
+        <div class="body">
+          <div class="ti">Design review — Calink feeds</div>
+          <div class="sched"><span class="cal">Acme</span><span class="sep">·</span><span class="mono tnum">Mon Jun 29, 14:00–15:00</span><span class="sep">·</span><span>Room 2 + Meet</span></div>
+        </div>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('cutoff')">
+        <span class="sw" style="background:var(--release)"></span>
+        <div class="body">
+          <div class="ti">v0.3 cut-off</div>
+          <div class="sched"><span class="cal">Release</span><span class="sep">·</span><span class="mono tnum">Mon Jun 29</span><span class="sep">·</span><span class="allday">All day</span></div>
+        </div>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('lunch')">
+        <span class="sw" style="background:var(--paper)"></span>
+        <div class="body">
+          <div class="ti">Lunch with Priya</div>
+          <div class="sched"><span class="cal">Personal</span><span class="sep">·</span><span class="mono tnum">Mon Jul 6, 12:30–13:30</span><span class="sep">·</span><span>Sona</span></div>
+        </div>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="row" onclick="openEditor('board')">
+        <span class="sw" style="background:var(--acme)"></span>
+        <div class="body">
+          <div class="ti">Quarterly board sync</div>
+          <div class="sched"><span class="cal">Acme</span><span class="sep">·</span><span class="mono tnum">Tue Jul 14, 15:00–16:00</span><span class="sep">·</span><span>Zoom</span></div>
+        </div>
+        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+     </div>
+    </div>
+  </div>
+
+  <!-- ============ FULL-SCREEN EDITOR OVERLAY ============ -->
+  <div class="overlay" id="overlay">
+    <div class="ovbar">
+      <button class="backbtn" onclick="closeEditor()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <div class="et">
+        <span class="cdot" id="ov-dot" style="background:var(--acme)"></span>
+        <span class="kick" id="ov-kick">Acme · Recurring</span>
+      </div>
+      <span class="esc">Press <kbd>Esc</kbd> to close</span>
+    </div>
+
+    <div class="panes">
+      <!-- LEFT: the event DOCUMENT -->
+      <section class="pane doc">
+        <div class="scroll">
+         <div class="docwrap">
+          <div class="eyebrow"><span class="cdot" id="d-dot" style="background:var(--acme)"></span><span id="d-eyebrow">Recurring event</span></div>
+          <input class="titlein" id="m-title" value="Sprint Planning">
+
+          <!-- aligned field rows -->
+          <div class="rows">
+            <div class="frow">
+              <span class="lab">Calendar</span>
+              <span class="v">
+                <span class="calpick">
+                  <span class="sw" id="m-cal-sw" style="background:var(--acme)"></span>
+                  <select id="m-cal" onchange="onCal()">
+                    <option value="acme">Acme</option>
+                    <option value="work">Workouts</option>
+                    <option value="personal">Personal</option>
+                    <option value="release">Release</option>
+                  </select>
+                </span>
+              </span>
+            </div>
+            <div class="frow">
+              <span class="lab">When</span>
+              <span class="v">
+                <span class="when">
+                  <input class="vin grow" id="m-date" value="Mon 29 Jun 2026" style="min-width:140px;flex:0 1 auto">
+                  <span class="mono tnum"><input class="vin mono tnum" id="m-start" value="11:00" size="5" style="width:48px"> <span class="dash">–</span> <input class="vin mono tnum" id="m-end" value="12:30" size="5" style="width:48px"></span>
+                </span>
+              </span>
+            </div>
+            <div class="frow">
+              <span class="lab">Location</span>
+              <span class="v"><input class="vin grow" id="m-loc" value="" placeholder="Add a place"></span>
+            </div>
+            <div class="frow">
+              <span class="lab">Meeting link</span>
+              <span class="v"><input class="vin mono grow" id="m-link" value="meet.google.com/spr-plan" placeholder="Add a video link"></span>
+            </div>
+          </div>
+
+          <!-- description -->
+          <div class="descblock">
+            <div class="lab">Description</div>
+            <textarea id="m-desc" rows="2">Groom the backlog, commit the sprint scope, assign owners. Bring estimates.</textarea>
+          </div>
+
+          <!-- recurrence -->
+          <div class="rec" id="recBox">
+            <div class="rechead">
+              <svg class="icon rico" viewBox="0 0 24 24"><path d="M4 5v6h6M20 19v-6h-6"/><path d="M6.5 9a7 7 0 0 1 11-2.5L20 9M17.5 15a7 7 0 0 1-11 2.5L4 15"/></svg>
+              <span class="t">Recurrence</span>
+            </div>
+            <div class="summary">
+              <div class="plain" id="rec-plain">Every 2 weeks on Monday</div>
+              <div class="rrule"><span class="k">RRULE</span><span class="mono" id="rec-rrule">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</span></div>
+            </div>
+            <div class="builder">
+              <div class="brow">
+                <span class="lab">Frequency</span>
+                <span class="ctl">
+                  <select class="selbox" id="b-freq" onchange="onFreq()">
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY" selected>Weekly</option>
+                    <option value="MONTHLY">Monthly</option>
+                  </select>
+                </span>
+              </div>
+              <div class="brow">
+                <span class="lab">Repeat every</span>
+                <span class="ctl">
+                  <input class="numbox tnum" id="b-interval" type="number" min="1" value="2" oninput="recompute()">
+                  <span class="lead" id="b-unit">weeks</span>
+                </span>
+              </div>
+              <div class="brow" id="b-weekrow">
+                <span class="lab">On days</span>
+                <span class="ctl">
+                  <span class="days" id="b-days">
+                    <button class="day on" data-d="MO">Mo</button>
+                    <button class="day" data-d="TU">Tu</button>
+                    <button class="day" data-d="WE">We</button>
+                    <button class="day" data-d="TH">Th</button>
+                    <button class="day" data-d="FR">Fr</button>
+                    <button class="day" data-d="SA">Sa</button>
+                    <button class="day" data-d="SU">Su</button>
+                  </span>
+                </span>
+              </div>
+              <div class="brow" id="b-monthrow" style="display:none">
+                <span class="lab">On</span>
+                <span class="ctl" style="flex-direction:column;align-items:flex-start;gap:10px">
+                  <label class="radio"><input type="radio" name="mmode" value="day" checked onchange="recompute()"> day <input class="numbox tnum" id="b-monthday" type="number" min="1" max="31" value="1" oninput="recompute()" style="width:54px"> of the month</label>
+                  <label class="radio"><input type="radio" name="mmode" value="nth" onchange="recompute()">
+                    the
+                    <select class="selbox" id="b-nth" onchange="recompute()"><option value="1">first</option><option value="2" selected>second</option><option value="3">third</option><option value="4">fourth</option><option value="-1">last</option></select>
+                    <select class="selbox" id="b-nthday" onchange="recompute()"><option value="MO">Monday</option><option value="TU" selected>Tuesday</option><option value="WE">Wednesday</option><option value="TH">Thursday</option><option value="FR">Friday</option><option value="SA">Saturday</option><option value="SU">Sunday</option></select>
+                  </label>
+                </span>
+              </div>
+              <div class="brow">
+                <span class="lab">Ends</span>
+                <span class="ctl endsrow">
+                  <select class="selbox" id="b-ends" onchange="onEnds()">
+                    <option value="never" selected>Never</option>
+                    <option value="on">On date</option>
+                    <option value="after">After N times</option>
+                  </select>
+                  <input class="vin" id="b-enddate" value="31 Dec 2026" style="display:none;border-bottom:2px solid var(--hairline)" oninput="recompute()">
+                  <span id="b-afterwrap" style="display:none"><input class="numbox tnum" id="b-aftern" type="number" min="1" value="13" oninput="recompute()"> <span class="lead">occurrences</span></span>
+                </span>
+              </div>
+            </div>
+            <div class="exc">
+              <div class="lab">Exceptions — skipped dates</div>
+              <div class="chips" id="excChips">
+                <span class="chip"><span class="mono">17 Aug 2026</span><button class="x" onclick="this.parentElement.remove()" aria-label="Remove"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+                <button class="addchip" onclick="addException()"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg>Add date</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- upcoming occurrences -->
+          <div class="occ" id="occBox">
+            <div class="occhead">
+              <span class="t">Upcoming occurrences</span>
+              <button class="more" onclick="showToast('Showing the next 50 computed occurrences')">See all future events</button>
+            </div>
+            <div class="occlist" id="occList">
+              <!-- filled by JS -->
+            </div>
+          </div>
+         </div>
+        </div>
+        <div class="docfoot">
+          <button class="del" onclick="showToast('Event deleted · subscribers update within ~1h')">Delete</button>
+          <span class="scopeNote">Saving updates <b>all future occurrences</b> in the live feed.</span>
+          <span class="spacer"></span>
+          <button class="save" onclick="saveEvent()">Save changes</button>
+        </div>
+      </section>
+
+      <!-- RIGHT: agent chat -->
+      <section class="pane agent">
+        <div class="agenthead">
+          <span class="ico"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+          <b>Agent</b>
+          <span class="status">editing <span id="ag-ev" style="margin-left:4px">Sprint Planning</span></span>
+        </div>
+        <div class="thread" id="thread">
+          <div class="m user">Move Sprint Planning to every 2 weeks instead of weekly, and skip the one on Aug 17 — I'm on leave.</div>
+          <div class="m bot">
+            <div class="who">Calink Agent</div>
+            Done — two edits to Sprint Planning:
+            <div class="change">
+              <div class="crow"><span class="tag mv">RRULE</span><span>Weekly → <span class="mono">INTERVAL=2</span> (every 2 weeks on Monday)</span></div>
+              <div class="crow"><span class="tag add">SKIP</span><span>Added exception <span class="mono">17 Aug 2026</span></span></div>
+              <div class="applied"><span>Auto-applied · feed updates ~1h</span><button onclick="undoToast()">Undo</button></div>
+            </div>
+          </div>
+          <div class="m user">Perfect, leave the time as is.</div>
+          <div class="m bot">
+            <div class="who">Calink Agent</div>
+            Kept at 11:00–12:30. The rule now reads <span class="mono" style="font-size:12px">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</span> — visible in the recurrence panel on the left.
+          </div>
+        </div>
+        <div class="composer">
+          <div class="box">
+            <textarea rows="1" placeholder="Tell the agent to change this event…"></textarea>
+            <button class="send" title="Send"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="hint">The agent edits this event directly (just-do-it) — every change has an Undo. Same tools your own AI gets over MCP.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span id="toast-msg">Change undone.</span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  const DAYNAME = {MO:"Monday",TU:"Tuesday",WE:"Wednesday",TH:"Thursday",FR:"Friday",SA:"Saturday",SU:"Sunday"};
+  const NTH = {"1":"first","2":"second","3":"third","4":"fourth","-1":"last"};
+  const CALDOT = {acme:"var(--acme)", work:"var(--work)", personal:"var(--personal)", release:"var(--release)"};
+  const CALNAME = {acme:"Acme", work:"Workouts", personal:"Personal", release:"Release"};
+
+  // ---- dataset ----
+  const DATA = {
+    new: {title:"", cal:"acme", date:"Mon 29 Jun 2026", start:"10:00", end:"10:30", loc:"", link:"", desc:"",
+          recurs:false, freq:"WEEKLY", interval:1, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[], occ:[]},
+    sprint: {title:"Sprint Planning", cal:"acme", date:"Mon 29 Jun 2026", start:"11:00", end:"12:30",
+          loc:"", link:"meet.google.com/spr-plan",
+          desc:"Groom the backlog, commit the sprint scope, assign owners. Bring estimates.",
+          recurs:true, freq:"WEEKLY", interval:2, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"31 Dec 2026", aftern:13, exc:["17 Aug 2026"],
+          occ:[["Mon","29 Jun 2026"],["Mon","13 Jul 2026"],["Mon","27 Jul 2026"],["Mon","10 Aug 2026"],["Mon","24 Aug 2026"],["Mon","7 Sep 2026"],["Mon","21 Sep 2026"],["Mon","5 Oct 2026"],["Mon","19 Oct 2026"]]},
+    standup:{title:"Team Standup", cal:"acme", date:"Mon 29 Jun 2026", start:"09:30", end:"09:45",
+          loc:"", link:"meet.google.com/std-acme",
+          desc:"Yesterday / today / blockers. 15 min max.",
+          recurs:true, freq:"WEEKLY", interval:1, days:["MO","TU","WE","TH","FR"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[],
+          occ:[["Mon","29 Jun 2026"],["Tue","30 Jun 2026"],["Wed","1 Jul 2026"],["Thu","2 Jul 2026"],["Fri","3 Jul 2026"],["Mon","6 Jul 2026"]]},
+    run:    {title:"Morning Run", cal:"work", date:"Mon 29 Jun 2026", start:"07:00", end:"07:45",
+          loc:"Riverside loop", link:"",
+          desc:"Easy 5k, zone 2.",
+          recurs:true, freq:"WEEKLY", interval:1, days:["MO","WE","FR"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[],
+          occ:[["Mon","29 Jun 2026"],["Wed","1 Jul 2026"],["Fri","3 Jul 2026"],["Mon","6 Jul 2026"],["Wed","8 Jul 2026"]]},
+    book:   {title:"Book Club", cal:"personal", date:"Tue 14 Jul 2026", start:"20:00", end:"21:30",
+          loc:"rotating", link:"",
+          desc:"This month: 'The Shape of Things'. Bring 2 questions.",
+          recurs:true, freq:"MONTHLY", interval:1, days:["TU"], mmode:"nth", monthday:1, nth:"2", nthday:"TU",
+          ends:"never", enddate:"", aftern:13, exc:[],
+          occ:[["Tue","14 Jul 2026"],["Tue","11 Aug 2026"],["Tue","8 Sep 2026"],["Tue","13 Oct 2026"]]},
+    sam:    {title:"1:1 with Sam", cal:"acme", date:"Thu 2 Jul 2026", start:"16:30", end:"17:00",
+          loc:"", link:"meet.google.com/sam-1on1",
+          desc:"Career + project check-in.",
+          recurs:true, freq:"WEEKLY", interval:1, days:["TH"], mmode:"day", monthday:1, nth:"1", nthday:"TH",
+          ends:"never", enddate:"", aftern:13, exc:[],
+          occ:[["Thu","2 Jul 2026"],["Thu","9 Jul 2026"],["Thu","16 Jul 2026"],["Thu","23 Jul 2026"]]},
+    rent:   {title:"Pay rent", cal:"personal", date:"Wed 1 Jul 2026", start:"", end:"",
+          loc:"", link:"",
+          desc:"Transfer €1,450 to landlord.",
+          recurs:true, freq:"MONTHLY", interval:1, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[],
+          occ:[["Wed","1 Jul 2026"],["Sat","1 Aug 2026"],["Tue","1 Sep 2026"],["Thu","1 Oct 2026"]]},
+    design: {title:"Design review — Calink feeds", cal:"acme", date:"Mon 29 Jun 2026", start:"14:00", end:"15:00",
+          loc:"Room 2", link:"meet.google.com/design-rv",
+          desc:"Review the .ics feed serializer and recurrence edge cases.",
+          recurs:false, freq:"WEEKLY", interval:1, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[], occ:[]},
+    cutoff: {title:"v0.3 cut-off", cal:"release", date:"Mon 29 Jun 2026", start:"", end:"",
+          loc:"", link:"",
+          desc:"Freeze scope for v0.3.",
+          recurs:false, freq:"WEEKLY", interval:1, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[], occ:[]},
+    lunch:  {title:"Lunch with Priya", cal:"personal", date:"Mon 6 Jul 2026", start:"12:30", end:"13:30",
+          loc:"Sona", link:"",
+          desc:"Catch up, she's back from Lisbon.",
+          recurs:false, freq:"WEEKLY", interval:1, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[], occ:[]},
+    board:  {title:"Quarterly board sync", cal:"acme", date:"Tue 14 Jul 2026", start:"15:00", end:"16:00",
+          loc:"", link:"zoom.us/j/board-q3",
+          desc:"Deck due the night before.",
+          recurs:false, freq:"WEEKLY", interval:1, days:["MO"], mmode:"day", monthday:1, nth:"1", nthday:"MO",
+          ends:"never", enddate:"", aftern:13, exc:[], occ:[]},
+  };
+
+  let cur = null;
+
+  function openEditor(key){
+    const d = DATA[key] || DATA.new;
+    cur = d;
+    // header
+    document.getElementById('ov-dot').style.background = CALDOT[d.cal];
+    document.getElementById('d-dot').style.background = CALDOT[d.cal];
+    document.getElementById('ov-kick').textContent = CALNAME[d.cal] + (d.recurs ? " · Recurring" : " · One-off");
+    document.getElementById('d-eyebrow').textContent = d.recurs ? "Recurring event" : "One-off event";
+    document.getElementById('ag-ev').textContent = d.title || "new event";
+    // fields
+    document.getElementById('m-title').value = d.title;
+    document.getElementById('m-title').setAttribute('placeholder','Untitled event');
+    document.getElementById('m-cal').value = d.cal;
+    document.getElementById('m-cal-sw').style.background = CALDOT[d.cal];
+    document.getElementById('m-date').value = d.date;
+    document.getElementById('m-start').value = d.start || "";
+    document.getElementById('m-end').value = d.end || "";
+    document.getElementById('m-loc').value = d.loc;
+    document.getElementById('m-link').value = d.link;
+    document.getElementById('m-desc').value = d.desc;
+    autoDesc();
+    // recurrence builder
+    document.getElementById('recBox').style.display = d.recurs ? "" : "none";
+    document.getElementById('occBox').style.display = d.recurs ? "" : "none";
+    if(d.recurs){
+      document.getElementById('b-freq').value = d.freq;
+      document.getElementById('b-interval').value = d.interval;
+      document.querySelectorAll('#b-days .day').forEach(b=>{
+        b.classList.toggle('on', d.days.includes(b.dataset.d));
+      });
+      document.querySelectorAll('input[name="mmode"]').forEach(r=>{ r.checked = (r.value===d.mmode); });
+      document.getElementById('b-monthday').value = d.monthday;
+      document.getElementById('b-nth').value = d.nth;
+      document.getElementById('b-nthday').value = d.nthday;
+      document.getElementById('b-ends').value = d.ends;
+      document.getElementById('b-enddate').value = d.enddate;
+      document.getElementById('b-aftern').value = d.aftern;
+      // exceptions
+      renderExceptions(d.exc);
+      onFreq();   // sets visibility + recompute
+      onEnds();
+      renderOcc(d);
+    }
+    document.getElementById('overlay').classList.add('open');
+    document.querySelector('.doc .scroll').scrollTop = 0;
+  }
+  function closeEditor(){ document.getElementById('overlay').classList.remove('open'); }
+
+  function onCal(){
+    const v = document.getElementById('m-cal').value;
+    document.getElementById('ov-dot').style.background = CALDOT[v];
+    document.getElementById('d-dot').style.background = CALDOT[v];
+    document.getElementById('m-cal-sw').style.background = CALDOT[v];
+    document.getElementById('ov-kick').textContent = CALNAME[v] + (cur && cur.recurs ? " · Recurring" : " · One-off");
+  }
+
+  // weekday toggles
+  document.querySelectorAll('#b-days .day').forEach(b=>{
+    b.onclick = ()=>{ b.classList.toggle('on'); recompute(); };
+  });
+
+  function onFreq(){
+    const f = document.getElementById('b-freq').value;
+    document.getElementById('b-weekrow').style.display = (f==="WEEKLY") ? "" : "none";
+    document.getElementById('b-monthrow').style.display = (f==="MONTHLY") ? "" : "none";
+    const n = parseInt(document.getElementById('b-interval').value)||1;
+    document.getElementById('b-unit').textContent = (f==="DAILY"?"day":f==="WEEKLY"?"week":"month") + (n>1?"s":"");
+    recompute();
+  }
+  function onEnds(){
+    const v = document.getElementById('b-ends').value;
+    document.getElementById('b-enddate').style.display = (v==="on") ? "" : "none";
+    document.getElementById('b-afterwrap').style.display = (v==="after") ? "" : "none";
+    recompute();
+  }
+
+  function getDays(){
+    const order = ["MO","TU","WE","TH","FR","SA","SU"];
+    return order.filter(d=>document.querySelector('#b-days .day[data-d="'+d+'"]').classList.contains('on'));
+  }
+
+  function recompute(){
+    const f = document.getElementById('b-freq').value;
+    const n = parseInt(document.getElementById('b-interval').value)||1;
+    document.getElementById('b-unit').textContent = (f==="DAILY"?"day":f==="WEEKLY"?"week":"month") + (n>1?"s":"");
+    let plain="", rrule="FREQ="+f;
+    if(n>1) rrule += ";INTERVAL="+n;
+
+    if(f==="DAILY"){
+      plain = n>1 ? ("Every "+n+" days") : "Every day";
+    } else if(f==="WEEKLY"){
+      const days = getDays();
+      const everyWeekday = days.length===5 && ["MO","TU","WE","TH","FR"].every(d=>days.includes(d));
+      let dlabel;
+      if(everyWeekday) dlabel = "every weekday";
+      else if(days.length===0) dlabel = "(pick a day)";
+      else dlabel = "on " + days.map(d=>DAYNAME[d]).join(", ").replace(/, ([^,]*)$/, " & $1");
+      plain = (n>1 ? ("Every "+n+" weeks ") : "Every week ") + dlabel;
+      if(days.length) rrule += ";BYDAY=" + days.join(",");
+    } else { // MONTHLY
+      const mode = document.querySelector('input[name="mmode"]:checked').value;
+      if(mode==="day"){
+        const md = parseInt(document.getElementById('b-monthday').value)||1;
+        plain = (n>1 ? ("Every "+n+" months ") : "Monthly ") + "on day " + md;
+        rrule += ";BYMONTHDAY=" + md;
+      } else {
+        const nth = document.getElementById('b-nth').value;
+        const wd = document.getElementById('b-nthday').value;
+        plain = (n>1 ? ("Every "+n+" months ") : "Monthly ") + "on the " + NTH[nth] + " " + DAYNAME[wd];
+        rrule += ";BYDAY=" + nth + wd;
+      }
+    }
+
+    // ends
+    const ends = document.getElementById('b-ends').value;
+    if(ends==="on"){
+      const ed = document.getElementById('b-enddate').value.trim();
+      if(ed){ plain += " · until " + ed; rrule += ";UNTIL=" + toUntil(ed); }
+    } else if(ends==="after"){
+      const cnt = parseInt(document.getElementById('b-aftern').value)||1;
+      plain += " · " + cnt + " times"; rrule += ";COUNT=" + cnt;
+    }
+
+    document.getElementById('rec-plain').textContent = plain;
+    document.getElementById('rec-rrule').textContent = rrule;
+  }
+
+  function toUntil(s){
+    const m = {Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12"};
+    const p = s.split(/\s+/);
+    if(p.length>=3 && m[p[1]]) return p[2]+m[p[1]]+String(p[0]).padStart(2,"0")+"T000000Z";
+    return "20261231T000000Z";
+  }
+
+  function renderExceptions(list){
+    const box = document.getElementById('excChips');
+    box.querySelectorAll('.chip').forEach(c=>c.remove());
+    const addBtn = box.querySelector('.addchip');
+    list.forEach(d=>{
+      const chip = document.createElement('span');
+      chip.className="chip";
+      chip.innerHTML = '<span class="mono">'+d+'</span><button class="x" onclick="this.parentElement.remove()" aria-label="Remove"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      box.insertBefore(chip, addBtn);
+    });
+  }
+  function addException(){
+    const d = prompt("Skip which date? (e.g. 5 Oct 2026)");
+    if(!d) return;
+    const box = document.getElementById('excChips');
+    const addBtn = box.querySelector('.addchip');
+    const chip = document.createElement('span');
+    chip.className="chip";
+    chip.innerHTML = '<span class="mono">'+d+'</span><button class="x" onclick="this.parentElement.remove()" aria-label="Remove"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    box.insertBefore(chip, addBtn);
+  }
+
+  function renderOcc(d){
+    const list = document.getElementById('occList');
+    list.innerHTML = "";
+    const tm = d.start ? (d.start + "–" + d.end) : "All day";
+    d.occ.forEach((o,i)=>{
+      const skipped = d.exc.includes(o[1]);
+      const row = document.createElement('div');
+      row.className = "orow" + (skipped ? " skipped" : "");
+      row.innerHTML =
+        '<span class="ord tnum">'+(i+1)+'</span>'+
+        '<span class="od"><span class="wd">'+o[0]+'</span><span class="dt mono tnum">'+o[1]+'</span><span class="tm mono tnum">'+tm+'</span></span>'+
+        '<span class="acts">'+
+          (skipped
+            ? '<span class="stag">Skipped</span><button class="oact" onclick="toggleSkip(this)">Restore</button>'
+            : '<button class="oact" onclick="toggleSkip(this)">Skip</button><button class="oact" onclick="showToast(\'Editing this single occurrence — other dates unchanged\')">Edit</button>')+
+        '</span>';
+      list.appendChild(row);
+    });
+  }
+  function toggleSkip(btn){
+    const row = btn.closest('.orow');
+    const isSkip = !row.classList.contains('skipped');
+    row.classList.toggle('skipped');
+    const acts = row.querySelector('.acts');
+    if(isSkip){
+      acts.innerHTML = '<span class="stag">Skipped</span><button class="oact" onclick="toggleSkip(this)">Restore</button>';
+      showToast("Occurrence skipped — added to exceptions");
+    } else {
+      acts.innerHTML = '<button class="oact" onclick="toggleSkip(this)">Skip</button><button class="oact" onclick="showToast(\'Editing this single occurrence — other dates unchanged\')">Edit</button>';
+    }
+  }
+
+  function saveEvent(){ showToast("Saved · subscribers update within ~1h"); }
+
+  // desc autogrow
+  const desc = document.getElementById('m-desc');
+  function autoDesc(){ desc.style.height='auto'; desc.style.height=desc.scrollHeight+'px'; }
+  desc.addEventListener('input', autoDesc);
+
+  let toastT;
+  function showToast(msg){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(hideToast,3500); }
+  function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+  function undoToast(){ showToast("Reverted — back to weekly, Aug 17 exception removed"); }
+  function copyFeed(btn){ const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1200); }
+
+  document.addEventListener('keydown',e=>{ if(e.key==="Escape") closeEditor(); });
+  const ta=document.querySelector('.composer textarea');
+  ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,110)+'px'; });
+
+  // open by default on Sprint Planning
+  openEditor('sprint');
+</script>
+</body>
+</html>

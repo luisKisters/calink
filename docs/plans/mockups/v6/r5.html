@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Timeline editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#15130D;
+    --release:#C98A1A;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer;color:inherit}
+  ::selection{background:var(--accent);color:#fff}
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+
+  /* ===================== HOME: flat event list ===================== */
+  .page{max-width:1440px;margin:0 auto;min-height:100vh;background:var(--paper);border-left:2px solid var(--line);border-right:2px solid var(--line);display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;gap:16px;padding:16px 32px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--paper);z-index:10}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .topbar .addbtn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px}
+  .topbar .addbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .topbar .spacer{flex:1}
+  .sublink{display:flex;align-items:center;gap:9px}
+  .sublink .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .sublink .box{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);padding:6px 8px;box-shadow:var(--shadow-sm)}
+  .sublink code{font-size:11px;color:var(--ink);white-space:nowrap}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:5px 9px}
+  .sublink button:hover{background:var(--accent)}
+
+  .list{flex:1;overflow:auto;padding:6px 32px 80px;width:100%}
+  .seclabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:30px 0 12px;display:flex;align-items:center;gap:12px}
+  .seclabel:first-child{margin-top:24px}
+  .seclabel::after{content:"";flex:1;height:2px;background:var(--hairline)}
+
+  /* list rows use a fixed grid so calendar + cadence + time align */
+  .row{display:grid;grid-template-columns:15px 200px 1fr 150px 22px;align-items:center;gap:18px;padding:15px 18px;border:2px solid var(--line);background:var(--paper);margin-bottom:10px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+  .row:hover{box-shadow:var(--shadow-sm);transform:translate(-1px,-1px)}
+  .sw{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .row .ti{font-size:15px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .cadence{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .cadence b{color:var(--ink);font-weight:600}
+  .row .when{font-size:12.5px;color:var(--muted);text-align:right;white-space:nowrap}
+  .row .chev{color:var(--muted);display:flex;justify-content:flex-end}
+  .calname{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+
+  /* ===================== FULL-SCREEN EDITOR ===================== */
+  .editor{position:fixed;inset:0;background:var(--paper);z-index:40;display:none;flex-direction:column}
+  .editor.open{display:flex}
+
+  /* TOP HEADER: title + plain-english recurrence summary */
+  .edhead{display:flex;align-items:center;gap:20px;padding:15px 28px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .backbtn{display:flex;align-items:center;gap:8px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:9px 13px;flex-shrink:0}
+  .backbtn:hover{background:var(--ink);color:var(--paper)}
+  .edtitlewrap{display:flex;align-items:center;gap:13px;min-width:0}
+  .edtitlewrap .cdot{width:14px;height:14px;border:2px solid var(--ink);flex-shrink:0}
+  .edtitlewrap h1{font-size:22px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .summarypill{margin-left:auto;display:flex;align-items:center;gap:9px;border:2px solid var(--ink);background:var(--cream);padding:8px 14px;flex-shrink:0}
+  .summarypill .rk{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .summarypill .rv{font-size:14px;font-weight:600}
+  .summarypill .rep{color:var(--accent)}
+
+  /* BODY: timeline (hero, ~60%) | controls (~40%) */
+  .body{flex:1;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);min-height:0}
+  .pane{min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .timeline{border-right:2px solid var(--line)}
+
+  .tlhead{display:flex;align-items:baseline;gap:12px;padding:20px 30px 14px;border-bottom:2px solid var(--hairline);flex-shrink:0}
+  .tlhead h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+  .tlhead .cnt{font-size:12px;color:var(--muted)}
+  .tlhead .cnt b{color:var(--ink)}
+  .tlhead .feed{margin-left:auto;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .tlhead .feed code{font-size:11px;color:var(--ink)}
+
+  .tlscroll{flex:1;overflow:auto;padding:6px 30px 40px}
+  .monthhdr{display:flex;align-items:center;gap:12px;margin:22px 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink)}
+  .monthhdr:first-child{margin-top:14px}
+  .monthhdr .ln{flex:1;height:2px;background:var(--hairline)}
+  .monthhdr .mc{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em}
+
+  /* occurrence row — fixed columns keep weekday / date / time aligned */
+  .occ{display:grid;grid-template-columns:44px 104px 150px 1fr;align-items:center;gap:14px;padding:11px 14px;border:2px solid var(--line);background:var(--paper);margin-bottom:8px}
+  .occ .owd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .occ .odate{font-size:14px;font-weight:600}
+  .occ .otime{font-size:13px;color:var(--muted)}
+  .occ .oact{display:flex;justify-content:flex-end;gap:6px;opacity:0;transition:opacity .1s}
+  .occ:hover .oact{opacity:1}
+  .occ .minibtn{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--ink);background:var(--paper);padding:4px 8px}
+  .occ .minibtn:hover{background:var(--ink);color:var(--paper)}
+  .occ.first{box-shadow:var(--shadow-sm)}
+  .occ.first .odate::after{content:"NEXT";margin-left:9px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;position:relative;top:-1px}
+  /* exceptions: visibly struck through */
+  .occ.skip{background:var(--cream);border-color:var(--hairline)}
+  .occ.skip .owd,.occ.skip .odate,.occ.skip .otime{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px}
+  .occ.skip .oact{opacity:1}
+  .occ .skiptag{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:2px solid var(--muted);color:var(--muted);padding:2px 6px;margin-right:auto}
+
+  /* ===================== RIGHT: fields + recurrence builder ===================== */
+  .controls{background:var(--paper)}
+  .ctscroll{flex:1;overflow:auto;padding:22px 26px 30px}
+  .secttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .secttl::after{content:"";flex:1;height:2px;background:var(--hairline)}
+  .secttl.mt{margin-top:28px}
+
+  /* aligned field rows: fixed label column */
+  .frow{display:grid;grid-template-columns:104px 1fr;align-items:start;gap:12px;margin-bottom:13px}
+  .frow > label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding-top:11px}
+  .frow input,.frow select,.frow textarea{width:100%;border:2px solid var(--ink);background:var(--paper);padding:9px 10px;font-family:inherit;font-size:13.5px;color:var(--ink)}
+  .frow textarea{resize:vertical;line-height:1.45;min-height:62px}
+  .frow input:focus,.frow select:focus,.frow textarea:focus{outline:3px solid var(--accent);outline-offset:0}
+  .frow input.mono{font-size:12.5px}
+  .twin{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .twin .sub{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;display:block}
+
+  /* recurrence builder */
+  .rsummary{border:2px solid var(--ink);background:var(--cream);padding:11px 13px;margin-bottom:16px}
+  .rsummary .plain{font-size:14px;font-weight:600}
+  .rsummary .rrule{font-size:11.5px;color:var(--muted);margin-top:5px;word-break:break-all}
+  .rsummary .rrule b{color:var(--ink)}
+
+  .bldr{display:grid;grid-template-columns:104px 1fr;align-items:center;gap:12px;margin-bottom:13px}
+  .bldr > label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .bldr select,.bldr input[type=number],.bldr input[type=date]{border:2px solid var(--ink);background:var(--paper);padding:8px 10px;font-family:inherit;font-size:13.5px;color:var(--ink);width:100%}
+  .bldr select:focus,.bldr input:focus{outline:3px solid var(--accent)}
+  .intervalrow{display:flex;align-items:center;gap:9px}
+  .intervalrow input{width:64px;text-align:center}
+  .intervalrow .unit{font-size:13px;color:var(--muted)}
+
+  .wdtoggle{display:flex;gap:6px;flex-wrap:wrap}
+  .wdtoggle button{width:38px;height:36px;border:2px solid var(--ink);background:var(--paper);font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted)}
+  .wdtoggle button.on{background:var(--ink);color:var(--paper)}
+  .wdtoggle button:hover{border-color:var(--accent)}
+
+  .radioset{display:flex;flex-direction:column;gap:8px}
+  .radioline{display:flex;align-items:center;gap:9px;font-size:13px;flex-wrap:wrap}
+  .radioline input[type=radio]{width:15px;height:15px;accent-color:var(--accent);flex-shrink:0}
+  .radioline select,.radioline input[type=number],.radioline input[type=date]{border:2px solid var(--ink);background:var(--paper);padding:5px 7px;font-family:inherit;font-size:12.5px;color:var(--ink)}
+  .radioline input[type=number]{width:56px;text-align:center}
+  .radioline label{display:flex;align-items:center;gap:8px;cursor:pointer}
+
+  .exwrap{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px}
+  .exchip{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--ink);background:var(--cream);padding:4px 8px;font-size:12px;font-weight:600}
+  .exchip button{background:none;border:0;color:var(--muted);display:flex}
+  .exchip button:hover{color:var(--accent)}
+  .exadd{display:flex;gap:8px}
+  .exadd input{flex:1;border:2px solid var(--ink);background:var(--paper);padding:7px 9px;font-family:inherit;font-size:12.5px}
+  .exadd button{border:2px solid var(--ink);background:var(--paper);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:7px 11px}
+  .exadd button:hover{background:var(--ink);color:var(--paper)}
+
+  .hide{display:none !important}
+
+  /* ===================== DOCKED AGENT BAR ===================== */
+  .agentbar{flex-shrink:0;border-top:2px solid var(--line);background:var(--cream)}
+  .agentthread{max-height:0;overflow:hidden;transition:max-height .2s ease}
+  .agentbar.exp .agentthread{max-height:280px;overflow:auto;border-bottom:2px solid var(--hairline)}
+  .agentthread .inner{padding:18px 28px;display:flex;flex-direction:column;gap:14px}
+  .m{font-size:13px;line-height:1.5}
+  .m.user{align-self:flex-end;max-width:70%;background:var(--ink);color:var(--paper);padding:9px 12px;border:2px solid var(--ink)}
+  .m.bot{align-self:flex-start;max-width:80%}
+  .m.bot .who{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+  .change{margin-top:9px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm)}
+  .change .crow{display:flex;align-items:center;gap:9px;padding:8px 11px;font-size:12.5px}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .tag{font-size:9.5px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0}
+  .change .tag.mv{background:#E7B23A;color:var(--ink)}
+  .change .tag.add{background:var(--work);color:#fff}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 11px;border-top:2px solid var(--ink);background:var(--cream);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+
+  .agentdock{display:flex;align-items:center;gap:14px;padding:12px 28px}
+  .agentdock .ico{width:24px;height:24px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper);flex-shrink:0}
+  .lastchange{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);min-width:0}
+  .lastchange .tag{font-size:9.5px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);background:#E7B23A;color:var(--ink);flex-shrink:0}
+  .lastchange .ctxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lastchange .undo{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:12px;flex-shrink:0}
+  .lastchange .undo:hover{color:var(--accent)}
+  .agentdock .expbtn{margin-left:auto;display:flex;align-items:center;gap:6px;border:2px solid var(--ink);background:var(--paper);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:7px 11px;flex-shrink:0}
+  .agentdock .expbtn:hover{background:var(--ink);color:var(--paper)}
+  .composer{display:flex;align-items:flex-end;gap:9px;flex:1;min-width:280px;max-width:640px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);padding:8px 10px}
+  .composer textarea{flex:1;border:0;outline:0;resize:none;font-family:inherit;font-size:13px;background:none;color:var(--ink);line-height:1.4;max-height:80px}
+  .composer textarea::placeholder{color:var(--muted)}
+  .composer .send{width:30px;height:30px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .composer .send:hover{transform:translate(1px,1px)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+</style>
+</head>
+<body>
+  <!-- ============ HOME: EVENT LIST ============ -->
+  <div class="page">
+    <div class="topbar">
+      <div class="brand"><span class="mark"><span></span></span><b>Calink</b></div>
+      <button class="addbtn" onclick="openEditor('sprint')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New event
+      </button>
+      <span class="spacer"></span>
+      <div class="sublink">
+        <span class="lbl">Subscribe</span>
+        <div class="box">
+          <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="list" id="list">
+      <div class="seclabel">Recurring</div>
+      <!-- rows injected -->
+      <div class="seclabel">One-off &amp; upcoming</div>
+      <!-- rows injected -->
+    </div>
+  </div>
+
+  <!-- ============ FULL-SCREEN EDITOR ============ -->
+  <div class="editor" id="editor">
+    <!-- TOP HEADER -->
+    <div class="edhead">
+      <button class="backbtn" onclick="closeEditor()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        Events
+      </button>
+      <div class="edtitlewrap">
+        <span class="cdot" id="ed-dot"></span>
+        <h1 id="ed-title">Sprint Planning</h1>
+      </div>
+      <div class="summarypill">
+        <span class="rk">Repeats</span>
+        <span class="rv" id="ed-summary">Every 2 weeks on Monday</span>
+      </div>
+    </div>
+
+    <!-- BODY: timeline | controls -->
+    <div class="body">
+      <!-- LEFT: HERO timeline of future occurrences -->
+      <section class="pane timeline">
+        <div class="tlhead">
+          <h2>Upcoming occurrences</h2>
+          <span class="cnt"><b id="tl-count">14</b> ahead</span>
+          <span class="feed">
+            <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+            <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          </span>
+        </div>
+        <div class="tlscroll" id="tl-scroll"><!-- occurrences injected --></div>
+      </section>
+
+      <!-- RIGHT: compact fields + recurrence builder -->
+      <section class="pane controls">
+        <div class="ctscroll">
+          <div class="secttl">Event</div>
+          <div class="frow"><label for="f-title">Title</label><input id="f-title" oninput="onTitle()"></div>
+          <div class="frow"><label for="f-cal">Calendar</label>
+            <select id="f-cal" onchange="onCal()">
+              <option value="acme">Acme</option>
+              <option value="work">Workouts</option>
+              <option value="personal">Personal</option>
+              <option value="release">Release</option>
+            </select>
+          </div>
+          <div class="frow"><label for="f-start">Date</label><input id="f-start" type="date" onchange="render()"></div>
+          <div class="frow" id="f-timerow"><label>Time</label>
+            <div class="twin">
+              <div><span class="sub">Start</span><input id="f-st" class="tnum" type="time" onchange="render()"></div>
+              <div><span class="sub">End</span><input id="f-et" class="tnum" type="time" onchange="render()"></div>
+            </div>
+          </div>
+          <div class="frow"><label for="f-desc">Description</label><textarea id="f-desc"></textarea></div>
+          <div class="frow"><label for="f-loc">Location</label><input id="f-loc" placeholder="Add a place"></div>
+          <div class="frow"><label for="f-link">Meeting link</label><input id="f-link" class="mono" placeholder="Add a link"></div>
+
+          <div class="secttl mt">Recurrence</div>
+          <div class="rsummary">
+            <div class="plain" id="b-plain">Every 2 weeks on Monday</div>
+            <div class="rrule mono">RRULE: <b id="b-rrule">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</b></div>
+          </div>
+
+          <div class="bldr"><label for="b-freq">Frequency</label>
+            <select id="b-freq" onchange="onFreq()">
+              <option value="NONE">Does not repeat</option>
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
+          </div>
+
+          <div class="bldr" id="b-intervalrow"><label>Every</label>
+            <div class="intervalrow">
+              <input id="b-interval" type="number" min="1" max="99" value="2" onchange="render()" oninput="render()">
+              <span class="unit" id="b-unit">weeks</span>
+            </div>
+          </div>
+
+          <div class="bldr" id="b-weeklyrow"><label>On days</label>
+            <div class="wdtoggle" id="b-weekdays">
+              <button data-d="MO">Mo</button><button data-d="TU">Tu</button><button data-d="WE">We</button>
+              <button data-d="TH">Th</button><button data-d="FR">Fr</button><button data-d="SA">Sa</button><button data-d="SU">Su</button>
+            </div>
+          </div>
+
+          <div class="bldr" id="b-monthlyrow"><label>On</label>
+            <div class="radioset">
+              <div class="radioline">
+                <label><input type="radio" name="mmode" value="day" onchange="onMmode()"> Day</label>
+                <input id="b-monthday" type="number" min="1" max="31" value="1" onchange="render()" oninput="render()"> of the month
+              </div>
+              <div class="radioline">
+                <label><input type="radio" name="mmode" value="nth" onchange="onMmode()"> The</label>
+                <select id="b-nth" onchange="render()">
+                  <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
+                  <option value="4">4th</option><option value="-1">last</option>
+                </select>
+                <select id="b-nthwd" onchange="render()">
+                  <option value="MO">Monday</option><option value="TU">Tuesday</option><option value="WE">Wednesday</option>
+                  <option value="TH">Thursday</option><option value="FR">Friday</option><option value="SA">Saturday</option><option value="SU">Sunday</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="bldr" id="b-endsrow"><label>Ends</label>
+            <div class="radioset">
+              <div class="radioline"><label><input type="radio" name="ends" value="never" onchange="onEnds()"> Never</label></div>
+              <div class="radioline"><label><input type="radio" name="ends" value="on" onchange="onEnds()"> On</label>
+                <input id="b-until" type="date" onchange="render()">
+              </div>
+              <div class="radioline"><label><input type="radio" name="ends" value="after" onchange="onEnds()"> After</label>
+                <input id="b-count" type="number" min="1" max="200" value="13" onchange="render()" oninput="render()"> occurrences
+              </div>
+            </div>
+          </div>
+
+          <div class="bldr" id="b-exrow"><label>Exceptions</label>
+            <div>
+              <div class="exwrap" id="b-exchips"></div>
+              <div class="exadd">
+                <input id="b-exdate" type="date">
+                <button onclick="addException()">Add skip</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- DOCKED AGENT BAR -->
+    <div class="agentbar" id="agentbar">
+      <div class="agentthread"><div class="inner">
+        <div class="m user">This sprint cadence is too noisy weekly — make it every two weeks on Mondays.</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Done — switched Sprint Planning to a 2-week cadence and kept the Monday 11:00 slot.
+          <div class="change">
+            <div class="crow"><span class="tag mv">CHANGE</span><span>Recurrence → <span class="mono">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</span></span></div>
+            <div class="crow"><span class="tag add">SKIP</span><span>Aug 24 marked as an exception (company offsite)</span></div>
+            <div class="applied"><span>Auto-applied · subscribers update ~1h</span><button onclick="undoToast()">Undo</button></div>
+          </div>
+        </div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Your timeline on the left now reflects it. Same tools are available to your own AI over MCP.
+        </div>
+      </div></div>
+      <div class="agentdock">
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+        <div class="composer">
+          <textarea rows="1" placeholder="Tell the agent to reshape this event…"></textarea>
+          <button class="send" title="Send"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="lastchange">
+          <span class="tag">CHANGE</span>
+          <span class="ctxt">Switched to every 2 weeks on Monday · Aug 24 skipped</span>
+          <button class="undo" onclick="undoToast()">Undo</button>
+        </div>
+        <button class="expbtn" onclick="toggleAgent()" id="exp-label">
+          <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M6 15l6-6 6 6"/></svg>
+          Chat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span id="toast-msg">Change undone.</span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  /* ---------- constants ---------- */
+  const WD = ['SU','MO','TU','WE','TH','FR','SA'];
+  const WDFULL = {SU:'Sunday',MO:'Monday',TU:'Tuesday',WE:'Wednesday',TH:'Thursday',FR:'Friday',SA:'Saturday'};
+  const WDSHORT = {SU:'Sun',MO:'Mon',TU:'Tue',WE:'Wed',TH:'Thu',FR:'Fri',SA:'Sat'};
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTHSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const NTH = {1:'first',2:'second',3:'third',4:'fourth','-1':'last'};
+  const NTHORD = {1:'1st',2:'2nd',3:'3rd',4:'4th','-1':'last'};
+  const CAL = {
+    acme:{name:'Acme',dot:'var(--acme)'},
+    work:{name:'Workouts',dot:'var(--work)'},
+    personal:{name:'Personal',dot:'var(--paper)'},
+    release:{name:'Release',dot:'var(--release)'}
+  };
+
+  /* ---------- dataset ---------- */
+  const DATA = {
+    sprint:{title:'Sprint Planning',cal:'acme',desc:'Groom the backlog, commit the sprint scope, assign owners. Bring estimates.',loc:'',link:'meet.google.com/spr-plan',allday:false,
+      cfg:{freq:'WEEKLY',interval:2,byday:['MO'],mmode:'day',monthday:29,nth:2,nthwd:'TU',ends:'never',until:'',count:13,start:'2026-06-29',st:'11:00',et:'12:30',ex:['2026-08-24']}},
+    standup:{title:'Team Standup',cal:'acme',desc:'Yesterday / today / blockers. 15 min max.',loc:'',link:'meet.google.com/std-acme',allday:false,
+      cfg:{freq:'WEEKLY',interval:1,byday:['MO','TU','WE','TH','FR'],mmode:'day',monthday:29,nth:1,nthwd:'MO',ends:'never',until:'',count:20,start:'2026-06-29',st:'09:30',et:'09:45',ex:[]}},
+    run:{title:'Morning Run',cal:'work',desc:'Easy 5k, zone 2.',loc:'Riverside loop',link:'',allday:false,
+      cfg:{freq:'WEEKLY',interval:1,byday:['MO','WE','FR'],mmode:'day',monthday:29,nth:1,nthwd:'MO',ends:'never',until:'',count:20,start:'2026-06-29',st:'07:00',et:'07:45',ex:[]}},
+    book:{title:'Book Club',cal:'personal',desc:"This month: 'The Shape of Things'. Bring 2 questions.",loc:'rotating',link:'',allday:false,
+      cfg:{freq:'MONTHLY',interval:1,byday:['TU'],mmode:'nth',monthday:1,nth:2,nthwd:'TU',ends:'never',until:'',count:12,start:'2026-07-14',st:'20:00',et:'21:30',ex:[]}},
+    sam:{title:'1:1 with Sam',cal:'acme',desc:'Career + project check-in.',loc:'',link:'meet.google.com/sam-1on1',allday:false,
+      cfg:{freq:'WEEKLY',interval:1,byday:['TH'],mmode:'day',monthday:2,nth:1,nthwd:'TH',ends:'never',until:'',count:20,start:'2026-07-02',st:'16:30',et:'17:00',ex:[]}},
+    rent:{title:'Pay rent',cal:'personal',desc:'Transfer €1,450 to landlord.',loc:'',link:'',allday:true,
+      cfg:{freq:'MONTHLY',interval:1,byday:['MO'],mmode:'day',monthday:1,nth:1,nthwd:'MO',ends:'never',until:'',count:12,start:'2026-07-01',st:'',et:'',ex:[]}},
+    design:{title:'Design review — Calink feeds',cal:'acme',desc:'Review the .ics feed serializer and recurrence edge cases.',loc:'Room 2 + Meet',link:'meet.google.com/dsn-rev',allday:false,
+      cfg:{freq:'NONE',interval:1,byday:['MO'],mmode:'day',monthday:29,nth:1,nthwd:'MO',ends:'never',until:'',count:1,start:'2026-06-29',st:'14:00',et:'15:00',ex:[]}},
+    cutoff:{title:'v0.3 cut-off',cal:'release',desc:'Freeze scope for v0.3.',loc:'',link:'',allday:true,
+      cfg:{freq:'NONE',interval:1,byday:['MO'],mmode:'day',monthday:29,nth:1,nthwd:'MO',ends:'never',until:'',count:1,start:'2026-06-29',st:'',et:'',ex:[]}},
+    lunch:{title:'Lunch with Priya',cal:'personal',desc:"Catch up, she's back from Lisbon.",loc:'Sona',link:'',allday:false,
+      cfg:{freq:'NONE',interval:1,byday:['MO'],mmode:'day',monthday:6,nth:1,nthwd:'MO',ends:'never',until:'',count:1,start:'2026-07-06',st:'12:30',et:'13:30',ex:[]}},
+    board:{title:'Quarterly board sync',cal:'acme',desc:'Deck due the night before.',loc:'Zoom',link:'',allday:false,
+      cfg:{freq:'NONE',interval:1,byday:['TU'],mmode:'day',monthday:14,nth:2,nthwd:'TU',ends:'never',until:'',count:1,start:'2026-07-14',st:'15:00',et:'16:00',ex:[]}},
+  };
+
+  const ROWS_RECURRING = ['sprint','standup','run','book','sam','rent'];
+  const ROWS_ONEOFF = ['design','cutoff','lunch','board'];
+
+  /* ---------- date helpers ---------- */
+  function parseISO(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+  function isoOf(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+  function mondayOf(d){const x=new Date(d);const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);x.setHours(0,0,0,0);return x;}
+  function nthWeekdayOfMonth(y,m,wd,nth){
+    const dow=WD.indexOf(wd);
+    if(nth>0){let d=new Date(y,m,1),c=0;while(d.getMonth()===m){if(d.getDay()===dow){c++;if(c===nth)return new Date(d);}d.setDate(d.getDate()+1);}return null;}
+    let d=new Date(y,m+1,0);while(d.getMonth()===m){if(d.getDay()===dow)return new Date(d);d.setDate(d.getDate()-1);}return null;
+  }
+
+  /* ---------- occurrence generator (live-driven by builder) ---------- */
+  function generate(cfg){
+    const start=parseISO(cfg.start);start.setHours(0,0,0,0);
+    if(cfg.freq==='NONE') return [{date:start}];
+    const out=[];
+    const maxOcc = cfg.ends==='after' ? Math.max(1,cfg.count) : 40;
+    const until = (cfg.ends==='on'&&cfg.until) ? parseISO(cfg.until) : null;
+    const horizon = new Date(start);
+    horizon.setMonth(horizon.getMonth() + (cfg.freq==='MONTHLY'?12:6));
+    const stop = d => out.length>=maxOcc || (until && d>until) || (!until && cfg.ends!=='after' && d>horizon);
+
+    if(cfg.freq==='DAILY'){
+      let d=new Date(start);
+      while(!stop(d) && out.length<200){ out.push({date:new Date(d)}); d.setDate(d.getDate()+cfg.interval); }
+    } else if(cfg.freq==='WEEKLY'){
+      const anchor=mondayOf(start);
+      let d=new Date(start);let guard=0;
+      while(out.length<maxOcc && guard<800){
+        if(until && d>until) break;
+        if(!until && cfg.ends!=='after' && d>horizon) break;
+        const wi=Math.round((mondayOf(d)-anchor)/(7*86400000));
+        if(wi%cfg.interval===0 && cfg.byday.includes(WD[d.getDay()])) out.push({date:new Date(d)});
+        d.setDate(d.getDate()+1);guard++;
+      }
+    } else if(cfg.freq==='MONTHLY'){
+      let mo=0;let guard=0;
+      while(out.length<maxOcc && guard<240){
+        if(mo%cfg.interval===0){
+          const y=start.getFullYear(), m=start.getMonth()+mo;
+          let occ;
+          if(cfg.mmode==='nth'){ occ=nthWeekdayOfMonth(new Date(y,m,1).getFullYear(),new Date(y,m,1).getMonth(),cfg.nthwd,parseInt(cfg.nth)); }
+          else { const dim=new Date(y,m+1,0).getDate(); if(cfg.monthday<=dim) occ=new Date(y,m,cfg.monthday); }
+          if(occ){ occ.setHours(0,0,0,0);
+            if(occ>=start){
+              if(until && occ>until) break;
+              if(!until && cfg.ends!=='after' && occ>horizon) break;
+              out.push({date:occ});
+            }
+          }
+        }
+        mo++;guard++;
+      }
+    }
+    return out;
+  }
+
+  /* ---------- summary + rrule ---------- */
+  function plainSummary(cfg){
+    if(cfg.freq==='NONE') return 'Does not repeat';
+    const iv=cfg.interval;
+    if(cfg.freq==='DAILY') return iv===1?'Every day':`Every ${iv} days`;
+    if(cfg.freq==='WEEKLY'){
+      const days=cfg.byday;
+      const set=new Set(days);
+      if(iv===1 && set.size===5 && ['MO','TU','WE','TH','FR'].every(x=>set.has(x))) return 'Every weekday';
+      const names=days.map(d=>WDSHORT[d]).join(', ');
+      if(!days.length) return iv===1?'Every week':`Every ${iv} weeks`;
+      return (iv===1?'Every week on ':`Every ${iv} weeks on `)+(days.length===1?WDFULL[days[0]]:names);
+    }
+    // monthly
+    const base = iv===1?'Monthly':`Every ${iv} months`;
+    if(cfg.mmode==='nth') return `${base} on the ${NTH[cfg.nth]} ${WDFULL[cfg.nthwd]}`;
+    return `${base} on day ${cfg.monthday}`;
+  }
+  function rruleText(cfg){
+    if(cfg.freq==='NONE') return '—';
+    let p=['FREQ='+cfg.freq];
+    if(cfg.interval>1) p.push('INTERVAL='+cfg.interval);
+    if(cfg.freq==='WEEKLY' && cfg.byday.length) p.push('BYDAY='+cfg.byday.join(','));
+    if(cfg.freq==='MONTHLY'){
+      if(cfg.mmode==='nth') p.push('BYDAY='+(cfg.nth==-1?'-1':cfg.nth)+cfg.nthwd);
+      else p.push('BYMONTHDAY='+cfg.monthday);
+    }
+    if(cfg.ends==='on' && cfg.until) p.push('UNTIL='+cfg.until.replace(/-/g,''));
+    if(cfg.ends==='after') p.push('COUNT='+cfg.count);
+    return p.join(';');
+  }
+
+  /* ---------- state ---------- */
+  let state=null, currentKey=null;
+
+  function openEditor(key){
+    currentKey=key;
+    const ev=DATA[key];
+    state=JSON.parse(JSON.stringify(ev));
+    // fields
+    document.getElementById('f-title').value=ev.title;
+    document.getElementById('f-cal').value=ev.cal;
+    document.getElementById('f-start').value=ev.cfg.start;
+    document.getElementById('f-st').value=ev.cfg.st;
+    document.getElementById('f-et').value=ev.cfg.et;
+    document.getElementById('f-desc').value=ev.desc;
+    document.getElementById('f-loc').value=ev.loc;
+    document.getElementById('f-link').value=ev.link;
+    document.getElementById('ed-title').textContent=ev.title;
+    document.getElementById('ed-dot').style.background=CAL[ev.cal].dot;
+    // builder
+    document.getElementById('b-freq').value=ev.cfg.freq;
+    document.getElementById('b-interval').value=ev.cfg.interval;
+    document.getElementById('b-monthday').value=ev.cfg.monthday;
+    document.getElementById('b-nth').value=ev.cfg.nth;
+    document.getElementById('b-nthwd').value=ev.cfg.nthwd;
+    document.getElementById('b-count').value=ev.cfg.count;
+    document.getElementById('b-until').value=ev.cfg.until||'';
+    document.querySelectorAll('#b-weekdays button').forEach(b=>b.classList.toggle('on', ev.cfg.byday.includes(b.dataset.d)));
+    document.querySelectorAll('input[name=mmode]').forEach(r=>r.checked=(r.value===ev.cfg.mmode));
+    document.querySelectorAll('input[name=ends]').forEach(r=>r.checked=(r.value===ev.cfg.ends));
+    render();
+    document.getElementById('editor').classList.add('open');
+  }
+  function closeEditor(){ document.getElementById('editor').classList.remove('open'); }
+
+  /* ---------- pull current control values into state.cfg ---------- */
+  function sync(){
+    const c=state.cfg;
+    c.freq=document.getElementById('b-freq').value;
+    c.interval=Math.max(1,parseInt(document.getElementById('b-interval').value)||1);
+    c.start=document.getElementById('f-start').value;
+    c.st=document.getElementById('f-st').value;
+    c.et=document.getElementById('f-et').value;
+    c.monthday=Math.min(31,Math.max(1,parseInt(document.getElementById('b-monthday').value)||1));
+    c.nth=document.getElementById('b-nth').value;
+    c.nthwd=document.getElementById('b-nthwd').value;
+    c.count=Math.max(1,parseInt(document.getElementById('b-count').value)||1);
+    c.until=document.getElementById('b-until').value;
+    c.byday=[...document.querySelectorAll('#b-weekdays button.on')].map(b=>b.dataset.d);
+    const m=document.querySelector('input[name=mmode]:checked'); if(m) c.mmode=m.value;
+    const e=document.querySelector('input[name=ends]:checked'); if(e) c.ends=e.value;
+  }
+
+  /* ---------- main render ---------- */
+  function render(){
+    sync();
+    const c=state.cfg;
+    // builder visibility
+    const isRec=c.freq!=='NONE';
+    document.getElementById('b-intervalrow').classList.toggle('hide',!isRec);
+    document.getElementById('b-weeklyrow').classList.toggle('hide',c.freq!=='WEEKLY');
+    document.getElementById('b-monthlyrow').classList.toggle('hide',c.freq!=='MONTHLY');
+    document.getElementById('b-endsrow').classList.toggle('hide',!isRec);
+    document.getElementById('b-exrow').classList.toggle('hide',!isRec);
+    document.getElementById('b-unit').textContent = {DAILY:'days',WEEKLY:'weeks',MONTHLY:'months'}[c.freq]||'';
+    // summary + rrule
+    const plain=plainSummary(c), rr=rruleText(c);
+    document.getElementById('ed-summary').textContent=plain;
+    document.getElementById('b-plain').textContent=plain;
+    document.getElementById('b-rrule').textContent=rr;
+    // exception chips
+    renderExChips();
+    // timeline
+    renderTimeline();
+  }
+
+  function timeLabel(){
+    const c=state.cfg;
+    if(state.allday || (!c.st&&!c.et)) return 'All day';
+    return c.st+'–'+c.et;
+  }
+
+  function renderTimeline(){
+    const c=state.cfg;
+    const occ=generate(c);
+    const scroll=document.getElementById('tl-scroll');
+    const exSet=new Set(c.ex);
+    // count (excluding skipped)
+    const activeCount=occ.filter(o=>!exSet.has(isoOf(o.date))).length;
+    document.getElementById('tl-count').textContent = c.freq==='NONE'?'1':activeCount;
+
+    if(c.freq==='NONE'){
+      const d=occ[0].date;
+      scroll.innerHTML=`<div class="monthhdr">${MONTHS[d.getMonth()].toUpperCase()} ${d.getFullYear()}<span class="ln"></span><span class="mc">one-time event</span></div>`+
+        occRow(d,true,false)+
+        `<div style="margin-top:14px;font-size:12.5px;color:var(--muted);padding:0 2px">This event does not repeat. Set a frequency on the right to generate a recurring timeline.</div>`;
+      return;
+    }
+
+    let html='';
+    let curKey='';
+    let first=true;
+    occ.forEach(o=>{
+      const d=o.date;
+      const mk=d.getFullYear()+'-'+d.getMonth();
+      if(mk!==curKey){
+        curKey=mk;
+        html+=`<div class="monthhdr">${MONTHS[d.getMonth()].toUpperCase()} ${d.getFullYear()}<span class="ln"></span></div>`;
+      }
+      const skipped=exSet.has(isoOf(d));
+      html+=occRow(d,first&&!skipped,skipped);
+      if(first&&!skipped) first=false;
+    });
+    scroll.innerHTML=html;
+  }
+
+  function occRow(d, isFirst, skipped){
+    const iso=isoOf(d);
+    const wd=WDSHORT[WD[d.getDay()]];
+    const dateStr=MONTHSHORT[d.getMonth()]+' '+d.getDate();
+    const time=timeLabel();
+    if(skipped){
+      return `<div class="occ skip">
+        <span class="owd">${wd}</span>
+        <span class="odate">${dateStr}</span>
+        <span class="otime">${time}</span>
+        <span class="oact"><span class="skiptag">Skipped</span><button class="minibtn" onclick="restoreException('${iso}')">Restore</button></span>
+      </div>`;
+    }
+    return `<div class="occ${isFirst?' first':''}">
+      <span class="owd">${wd}</span>
+      <span class="odate">${dateStr}</span>
+      <span class="otime">${time}</span>
+      <span class="oact">
+        <button class="minibtn" onclick="editOcc('${dateStr}')">Edit</button>
+        <button class="minibtn" onclick="skipOcc('${iso}')">Skip</button>
+      </span>
+    </div>`;
+  }
+
+  /* ---------- exceptions ---------- */
+  function renderExChips(){
+    const wrap=document.getElementById('b-exchips');
+    if(!state.cfg.ex.length){ wrap.innerHTML='<span style="font-size:12px;color:var(--muted)">No skipped dates</span>'; return; }
+    wrap.innerHTML=state.cfg.ex.slice().sort().map(iso=>{
+      const d=parseISO(iso);
+      return `<span class="exchip">${MONTHSHORT[d.getMonth()]} ${d.getDate()}<button onclick="restoreException('${iso}')" title="Restore"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+    }).join('');
+  }
+  function skipOcc(iso){ if(!state.cfg.ex.includes(iso)) state.cfg.ex.push(iso); render(); showToast('Occurrence skipped · '+fmt(iso)); }
+  function restoreException(iso){ state.cfg.ex=state.cfg.ex.filter(x=>x!==iso); render(); showToast('Occurrence restored · '+fmt(iso)); }
+  function addException(){ const v=document.getElementById('b-exdate').value; if(v && !state.cfg.ex.includes(v)){ state.cfg.ex.push(v); document.getElementById('b-exdate').value=''; render(); showToast('Skip added · '+fmt(v)); } }
+  function fmt(iso){ const d=parseISO(iso); return MONTHSHORT[d.getMonth()]+' '+d.getDate(); }
+  function editOcc(ds){ showToast('Editing just this occurrence ('+ds+') — split from the series'); }
+
+  /* ---------- field handlers ---------- */
+  function onTitle(){ const v=document.getElementById('f-title').value; document.getElementById('ed-title').textContent=v||'New event'; }
+  function onCal(){ const v=document.getElementById('f-cal').value; state.cal=v; document.getElementById('ed-dot').style.background=CAL[v].dot; }
+  function onFreq(){ render(); }
+  function onMmode(){ render(); }
+  function onEnds(){ render(); }
+  document.querySelectorAll('#b-weekdays button').forEach(b=>b.onclick=()=>{ b.classList.toggle('on'); render(); });
+
+  /* ---------- home list ---------- */
+  function homeRow(key){
+    const ev=DATA[key];
+    const cal=CAL[ev.cal];
+    let cadence,when;
+    if(ev.cfg.freq==='NONE'){
+      const d=parseISO(ev.cfg.start);
+      cadence='<b>One-time</b>';
+      when=WDSHORT[WD[d.getDay()]]+' '+MONTHSHORT[d.getMonth()]+' '+d.getDate()+(ev.allday?' · All day':', '+ev.cfg.st+'–'+ev.cfg.et);
+    }else{
+      cadence='<b>'+plainSummary(ev.cfg)+'</b>';
+      when=ev.allday?'All day':ev.cfg.st+'–'+ev.cfg.et;
+    }
+    return `<div class="row" onclick="openEditor('${key}')">
+      <span class="sw" style="background:${cal.dot}"></span>
+      <span class="calname"><span class="ti">${ev.title}</span></span>
+      <span class="cadence">${cadence}</span>
+      <span class="when tnum">${when}</span>
+      <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+    </div>`;
+  }
+  function buildHome(){
+    const list=document.getElementById('list');
+    list.innerHTML =
+      '<div class="seclabel">Recurring</div>'+ROWS_RECURRING.map(homeRow).join('')+
+      '<div class="seclabel">One-off &amp; upcoming</div>'+ROWS_ONEOFF.map(homeRow).join('');
+  }
+
+  /* ---------- agent bar ---------- */
+  function toggleAgent(){
+    const bar=document.getElementById('agentbar');
+    bar.classList.toggle('exp');
+    const expanded=bar.classList.contains('exp');
+    document.getElementById('exp-label').innerHTML=
+      (expanded?'<svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M6 9l6 6 6-6"/></svg>':'<svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M6 15l6-6 6 6"/></svg>')+' Chat';
+  }
+
+  /* ---------- misc ---------- */
+  let toastT;
+  function showToast(msg){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(hideToast,3000); }
+  function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+  function undoToast(){ showToast('Reverted — Sprint Planning back to weekly, Aug 24 restored'); }
+  function copyFeed(btn){ const o=btn.textContent; btn.textContent='Copied'; setTimeout(()=>btn.textContent=o,1200); }
+
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeEditor(); });
+  const ta=document.querySelector('.composer textarea');
+  ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,80)+'px'; });
+
+  /* ---------- init ---------- */
+  buildHome();
+  openEditor('sprint'); // default-open on Sprint Planning
+</script>
+</body>
+</html>

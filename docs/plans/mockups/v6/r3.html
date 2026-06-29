@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Recurrence Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#FFFDF5;
+    --release:#C98A1A;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer;color:inherit}
+  ::selection{background:var(--accent);color:#fff}
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+
+  /* ============ HOME: FLAT EVENT LIST ============ */
+  .page{max-width:1440px;margin:0 auto;min-height:100vh;background:var(--paper);border-left:2px solid var(--line);border-right:2px solid var(--line);display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;gap:16px;padding:16px 32px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--paper);z-index:10}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .topbar .addbtn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px}
+  .topbar .addbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .topbar .addbtn:active{transform:translate(3px,3px);box-shadow:none}
+  .topbar .spacer{flex:1}
+  .sublink{display:flex;align-items:center;gap:9px}
+  .sublink .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .sublink .box{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);padding:6px 8px;box-shadow:var(--shadow-sm)}
+  .sublink code{font-size:11px;color:var(--ink);white-space:nowrap}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:5px 9px}
+  .sublink button:hover{background:var(--accent)}
+
+  .list{flex:1;overflow:auto;padding:6px 32px 80px;width:100%}
+  .seclabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:34px 0 14px;display:flex;align-items:center;gap:14px}
+  .seclabel:first-child{margin-top:26px}
+  .seclabel .cnt{color:var(--ink)}
+  .seclabel::after{content:"";flex:1;height:2px;background:var(--hairline)}
+
+  .row{display:flex;align-items:center;gap:16px;padding:15px 18px;border:2px solid var(--line);background:var(--paper);margin-bottom:10px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+  .row:hover{box-shadow:var(--shadow-sm);transform:translate(-1px,-1px)}
+  .row .sw{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .row .body{flex:1;min-width:0}
+  .row .ti{font-size:15px;font-weight:600;line-height:1.25}
+  /* fixed label/value alignment in list */
+  .row .sched{margin-top:5px;display:flex;align-items:center;gap:0;font-size:12.5px;color:var(--muted)}
+  .row .sched .cal{width:90px;flex-shrink:0;color:var(--ink);font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:11px}
+  .row .sched .when{width:300px;flex-shrink:0;color:var(--ink)}
+  .row .sched .at{color:var(--muted)}
+  .row .badge{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--ink);padding:2px 8px;flex-shrink:0;display:flex;align-items:center;gap:6px}
+  .row .badge svg{width:12px;height:12px}
+  .row .allday{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:2px solid var(--hairline);padding:2px 8px;flex-shrink:0}
+  .row .chev{color:var(--muted);flex-shrink:0}
+
+  /* ============ FULL-SCREEN EDITOR : RECURRENCE COCKPIT ============ */
+  .overlay{position:fixed;inset:0;background:var(--cream);z-index:40;display:none;flex-direction:column}
+  .overlay.open{display:flex}
+  .ovbar{display:flex;align-items:center;gap:18px;padding:14px 28px;border-bottom:2px solid var(--line);flex-shrink:0;background:var(--paper)}
+  .backbtn{display:flex;align-items:center;gap:8px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:12px;font-weight:700;padding:8px 13px;text-transform:uppercase;letter-spacing:.04em}
+  .backbtn:hover{background:var(--ink);color:var(--paper)}
+  .backbtn:active{transform:translate(2px,2px);box-shadow:none}
+  .ovbar .et{display:flex;align-items:center;gap:11px;min-width:0}
+  .ovbar .cdot{width:13px;height:13px;border:2px solid var(--ink);flex-shrink:0}
+  .ovbar h1{font-size:18px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+  .ovbar .kick{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border:2px solid var(--hairline);padding:3px 8px}
+  .ovbar .spacer{flex:1}
+  .ovbar .esc{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .ovbar .esc kbd{font-family:"JetBrains Mono",monospace;border:2px solid var(--hairline);padding:1px 6px;margin-left:6px;font-size:11px}
+
+  /* 3-column cockpit body */
+  .cockpitwrap{flex:1;display:grid;grid-template-columns:288px minmax(0,1fr) 332px;min-height:0}
+
+  /* LEFT RAIL : compact fields */
+  .rail{border-right:2px solid var(--line);background:var(--paper);overflow:auto;padding:22px 20px 28px;display:flex;flex-direction:column}
+  .railhead{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:18px}
+  .f{margin-bottom:15px}
+  .f label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+  .f input,.f select,.f textarea{width:100%;border:2px solid var(--ink);background:var(--paper);padding:9px 10px;font-family:inherit;font-size:13px;color:var(--ink)}
+  .f input:focus,.f select:focus,.f textarea:focus{outline:3px solid var(--accent);outline-offset:0}
+  .f.title input{font-size:15px;font-weight:600}
+  .f textarea{resize:vertical;min-height:74px;line-height:1.45}
+  .f .mono{font-size:12px}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .withicon{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--paper);padding:0 10px}
+  .withicon:focus-within{outline:3px solid var(--accent)}
+  .withicon svg{flex-shrink:0;color:var(--muted)}
+  .withicon input{border:0;padding:9px 0;outline:0}
+  .railfoot{margin-top:auto;padding-top:18px}
+  .del{width:100%;background:none;border:2px solid var(--ink);padding:9px 14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .del:hover{background:var(--ink);color:var(--paper)}
+
+  /* CENTER : RECURRENCE COCKPIT (hero) */
+  .cockpit{overflow:auto;padding:26px 34px 30px;min-width:0}
+  .cockpit .ckhead{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:16px}
+  .cockpit .ckhead svg{width:15px;height:15px;color:var(--ink)}
+
+  /* hero summary */
+  .hero{border:3px solid var(--ink);background:var(--paper);box-shadow:var(--shadow);padding:22px 24px;margin-bottom:26px}
+  .hero .sumlabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px}
+  .hero .summary{font-size:30px;font-weight:700;line-height:1.12;letter-spacing:-.015em}
+  .hero .summary .at{color:var(--accent)}
+  .hero .metaline{display:flex;align-items:center;gap:18px;margin-top:14px;flex-wrap:wrap}
+  .hero .next{font-size:12.5px;color:var(--muted)}
+  .hero .next b{color:var(--ink);font-weight:600}
+  .hero .rrule{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .hero .rrule .rl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .hero .rrule code{font-size:11.5px;color:var(--muted);background:var(--cream);border:2px solid var(--hairline);padding:4px 8px}
+
+  /* control panel */
+  .panel{border:2px solid var(--ink);background:var(--paper)}
+  .prow{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:flex-start;gap:18px;padding:18px 22px}
+  .prow+.prow{border-top:2px solid var(--hairline)}
+  .prow .plabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink);padding-top:9px}
+  .prow .pctrl{min-width:0}
+  .prow.off{opacity:.35;pointer-events:none}
+
+  /* segmented (frequency) */
+  .seg{display:inline-flex;border:2px solid var(--ink)}
+  .seg button{border:0;background:var(--paper);font-size:12px;font-weight:700;padding:9px 16px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .seg button+button{border-left:2px solid var(--ink)}
+  .seg button.on{background:var(--ink);color:var(--paper)}
+
+  /* interval stepper */
+  .interval{display:flex;align-items:center;gap:12px}
+  .stepper{display:inline-flex;align-items:center;border:2px solid var(--ink)}
+  .stepper button{width:36px;height:38px;border:0;background:var(--paper);font-size:18px;font-weight:600;display:grid;place-items:center}
+  .stepper button:hover{background:var(--ink);color:var(--paper)}
+  .stepper .val{width:46px;text-align:center;font-size:15px;font-weight:700;border-left:2px solid var(--ink);border-right:2px solid var(--ink);height:38px;line-height:38px}
+  .interval .unit{font-size:13px;color:var(--muted)}
+
+  /* weekday toggles */
+  .wdays{display:flex;gap:8px}
+  .wday{width:42px;height:42px;border:2px solid var(--ink);background:var(--paper);font-size:13px;font-weight:700;display:grid;place-items:center;text-transform:uppercase}
+  .wday:hover{background:var(--cream)}
+  .wday.on{background:var(--ink);color:var(--paper)}
+
+  /* monthly mode */
+  .opt{display:flex;align-items:center;gap:11px;padding:9px 0;cursor:pointer;font-size:14px}
+  .opt+.opt{border-top:2px solid var(--hairline)}
+  .radio{width:18px;height:18px;border:2px solid var(--ink);flex-shrink:0;display:grid;place-items:center;background:var(--paper)}
+  .opt.on .radio::after{content:"";width:8px;height:8px;background:var(--ink)}
+  .opt .otxt{flex:1}
+  .opt .mininput{width:64px;border:2px solid var(--ink);background:var(--paper);padding:5px 7px;font-family:inherit;font-size:13px;font-weight:600;text-align:center}
+  .opt select.mininput{width:auto}
+
+  /* ends */
+  .ends{display:flex;flex-direction:column;gap:0}
+
+  /* exceptions */
+  .exhint{font-size:12px;color:var(--muted);margin-bottom:11px;line-height:1.4}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--cream);padding:5px 5px 5px 10px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+  .chip button{width:18px;height:18px;border:0;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+  .chip button:hover{background:var(--accent)}
+  .addchip{display:inline-flex;align-items:center;gap:6px;border:2px dashed var(--hairline);background:none;padding:6px 11px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .addchip:hover{border-color:var(--ink);color:var(--ink)}
+  .addchip svg{width:13px;height:13px}
+
+  /* one-off state */
+  .oneoff{border:2px dashed var(--hairline);padding:18px 20px;text-align:center}
+  .oneoff p{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .oneoff button{background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:9px 16px}
+  .oneoff button:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  /* RIGHT : future occurrences timeline */
+  .timeline{border-left:2px solid var(--line);background:var(--cream);overflow:auto;display:flex;flex-direction:column}
+  .tlhead{padding:20px 22px 14px;border-bottom:2px solid var(--line);flex-shrink:0}
+  .tlhead .t1{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .tlhead .t1 svg{width:14px;height:14px;color:var(--ink)}
+  .tlhead .t2{font-size:12px;color:var(--muted);margin-top:6px}
+  .tlhead .t2 b{color:var(--ink)}
+  .tlist{padding:8px 18px 28px}
+  .occ{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:11px 0;border-bottom:2px solid var(--hairline);position:relative}
+  .occ .wk{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center}
+  .occ .dt{min-width:0}
+  .occ .dt .d{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+  .occ .dt .tm{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:1px}
+  .occ .acts{display:flex;gap:6px;opacity:0;transition:.1s}
+  .occ:hover .acts{opacity:1}
+  .occ .acts button{width:26px;height:26px;border:2px solid var(--ink);background:var(--paper);display:grid;place-items:center}
+  .occ .acts button svg{width:13px;height:13px}
+  .occ .acts button:hover{background:var(--ink);color:var(--paper)}
+  .occ .tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border:2px solid var(--ink)}
+  .occ.skipped .dt .d{text-decoration:line-through;color:var(--muted)}
+  .occ.skipped .tag{background:var(--cream)}
+  .occ.edited .dt .d{color:var(--release)}
+  .occ.edited .tag{background:var(--release);color:#fff;border-color:var(--ink)}
+  .occ.first .wk{color:var(--accent)}
+  .occ.first::before{content:"NEXT";position:absolute;left:34px;top:-7px;font-size:8px;font-weight:700;letter-spacing:.08em;background:var(--accent);color:#fff;padding:1px 5px}
+  .occ.first{padding-top:18px}
+  .tlmore{margin-top:14px;width:100%;border:2px dashed var(--hairline);background:none;padding:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .tlmore:hover{border-color:var(--ink);color:var(--ink)}
+
+  /* ============ AGENT DOCK (bottom bar) ============ */
+  .dock{flex-shrink:0;border-top:2px solid var(--line);background:var(--paper)}
+  .dockthread{max-height:0;overflow:hidden;transition:max-height .22s ease}
+  .dock.open .dockthread{max-height:340px;overflow:auto;border-bottom:2px solid var(--hairline)}
+  .thread{padding:18px 28px;display:flex;flex-direction:column;gap:14px}
+  .m{font-size:13px;line-height:1.5}
+  .m.user{align-self:flex-end;max-width:62%;background:var(--ink);color:var(--paper);padding:9px 12px;border:2px solid var(--ink)}
+  .m.bot{align-self:flex-start;max-width:74%}
+  .m.bot .who{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+  .change{margin-top:9px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm)}
+  .change .crow{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:12.5px}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .ctag{font-size:9.5px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0;text-transform:uppercase}
+  .change .ctag.mv{background:var(--release);color:#fff}
+  .change .ctag.ex{background:var(--ink);color:var(--paper)}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-top:2px solid var(--ink);background:var(--cream);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+  .mcp{align-self:center;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.45;max-width:80%;border-top:2px solid var(--hairline);padding-top:12px}
+
+  .dockbar{display:flex;align-items:center;gap:16px;padding:12px 28px}
+  .dockbar .ico{width:26px;height:26px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--accent);color:#fff;flex-shrink:0}
+  .dockbar .ico svg{width:14px;height:14px}
+  .dockbar .last{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--muted);flex-shrink:0;max-width:330px}
+  .dockbar .last .lt{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink);border:2px solid var(--ink);padding:2px 6px}
+  .dockbar .last .lx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dockbar .last .undo{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:11.5px;flex-shrink:0}
+  .dockbar .last .undo:hover{color:var(--accent)}
+  .dockbar .sep{width:2px;height:26px;background:var(--hairline);flex-shrink:0}
+  .composer{flex:1;display:flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);padding:6px 8px 6px 12px;min-width:0}
+  .composer input{flex:1;border:0;outline:0;background:none;font-family:inherit;font-size:13px;color:var(--ink);min-width:0}
+  .composer input::placeholder{color:var(--muted)}
+  .composer .send{width:32px;height:32px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .composer .send:hover{transform:translate(1px,1px)}
+  .expand{display:flex;align-items:center;gap:7px;border:2px solid var(--ink);background:var(--paper);padding:8px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+  .expand:hover{background:var(--ink);color:var(--paper)}
+  .expand svg{width:13px;height:13px;transition:transform .2s}
+  .dock.open .expand svg{transform:rotate(180deg)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(40px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s;pointer-events:none}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+</style>
+</head>
+<body>
+  <!-- ============ HOME : FLAT EVENT LIST ============ -->
+  <div class="page">
+    <div class="topbar">
+      <div class="brand"><span class="mark"><span></span></span><b>Calink</b></div>
+      <button class="addbtn" onclick="openEditor('new')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New event
+      </button>
+      <span class="spacer"></span>
+      <div class="sublink">
+        <span class="lbl">Subscribe</span>
+        <div class="box">
+          <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- ============ FULL-SCREEN EDITOR : RECURRENCE COCKPIT ============ -->
+  <div class="overlay" id="overlay">
+    <div class="ovbar">
+      <button class="backbtn" onclick="closeEditor()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <div class="et">
+        <span class="cdot" id="ov-dot"></span>
+        <h1 id="ov-title">Sprint Planning</h1>
+        <span class="kick" id="ov-kick">Acme</span>
+      </div>
+      <span class="spacer"></span>
+      <span class="esc">Close <kbd>Esc</kbd></span>
+    </div>
+
+    <div class="cockpitwrap">
+      <!-- LEFT RAIL : compact fields -->
+      <aside class="rail">
+        <div class="railhead">Event</div>
+        <div class="f title"><label>Title</label><input id="f-title" value="Sprint Planning"></div>
+        <div class="f"><label>Calendar</label>
+          <select id="f-cal" onchange="onCal()">
+            <option value="acme">Acme</option>
+            <option value="work">Workouts</option>
+            <option value="personal">Personal</option>
+            <option value="release">Release</option>
+          </select>
+        </div>
+        <div class="f"><label>Start date</label><input id="f-date" class="tnum" value="2026-06-29"></div>
+        <div class="twocol">
+          <div class="f"><label>Start</label><input id="f-start" class="tnum" value="11:00"></div>
+          <div class="f"><label>End</label><input id="f-end" class="tnum" value="12:30"></div>
+        </div>
+        <div class="f"><label>Location</label>
+          <div class="withicon">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <input id="f-loc" placeholder="Add location" value="">
+          </div>
+        </div>
+        <div class="f"><label>Meeting link</label>
+          <div class="withicon">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M9 15l6-6M10 6l1-1a4 4 0 015.7 5.7l-1 1M14 18l-1 1A4 4 0 017.3 13.3l1-1"/></svg>
+            <input id="f-meet" class="mono" placeholder="Add link" value="meet.google.com/spr-plan">
+          </div>
+        </div>
+        <div class="f"><label>Description</label><textarea id="f-desc">Groom the backlog, commit the sprint scope, assign owners. Bring estimates.</textarea></div>
+        <div class="railfoot">
+          <button class="del" onclick="showToast('Event deleted · subscribers update within ~1h')">Delete event</button>
+        </div>
+      </aside>
+
+      <!-- CENTER : RECURRENCE COCKPIT -->
+      <main class="cockpit">
+        <div class="ckhead">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/><path d="M17 2l3 3-3 3" fill="none"/></svg>
+          Recurrence
+        </div>
+
+        <!-- HERO summary -->
+        <div class="hero">
+          <div class="sumlabel">This event repeats</div>
+          <div class="summary" id="sum-text">Every 2 weeks on Monday</div>
+          <div class="metaline">
+            <span class="next" id="sum-next"></span>
+            <span class="rrule"><span class="rl">RRULE</span><code class="mono" id="sum-rrule">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</code></span>
+          </div>
+        </div>
+
+        <!-- recurring control panel -->
+        <div class="panel" id="panel">
+          <div class="prow">
+            <div class="plabel">Frequency</div>
+            <div class="pctrl">
+              <div class="seg" id="freq-seg">
+                <button data-f="DAILY">Daily</button>
+                <button data-f="WEEKLY">Weekly</button>
+                <button data-f="MONTHLY">Monthly</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="prow">
+            <div class="plabel">Interval</div>
+            <div class="pctrl">
+              <div class="interval">
+                <span class="unit">Every</span>
+                <div class="stepper">
+                  <button onclick="bumpInterval(-1)" aria-label="decrease">–</button>
+                  <span class="val tnum" id="iv-val">2</span>
+                  <button onclick="bumpInterval(1)" aria-label="increase">+</button>
+                </div>
+                <span class="unit" id="iv-unit">weeks</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="prow" id="row-weekly">
+            <div class="plabel">On these days</div>
+            <div class="pctrl">
+              <div class="wdays" id="wdays"></div>
+            </div>
+          </div>
+
+          <div class="prow" id="row-monthly" style="display:none">
+            <div class="plabel">Monthly on</div>
+            <div class="pctrl">
+              <div class="opt" id="mm-day" onclick="setMonthMode('day')">
+                <span class="radio"></span>
+                <span class="otxt">Day <input class="mininput tnum" id="mm-daynum" value="1" onclick="event.stopPropagation()" oninput="recompute()"> of the month</span>
+              </div>
+              <div class="opt" id="mm-nth" onclick="setMonthMode('nth')">
+                <span class="radio"></span>
+                <span class="otxt">The
+                  <select class="mininput" id="mm-ord" onclick="event.stopPropagation()" onchange="recompute()">
+                    <option value="1">first</option><option value="2">second</option>
+                    <option value="3">third</option><option value="4">fourth</option><option value="-1">last</option>
+                  </select>
+                  <select class="mininput" id="mm-wd" onclick="event.stopPropagation()" onchange="recompute()">
+                    <option value="MO">Monday</option><option value="TU">Tuesday</option>
+                    <option value="WE">Wednesday</option><option value="TH">Thursday</option>
+                    <option value="FR">Friday</option><option value="SA">Saturday</option><option value="SU">Sunday</option>
+                  </select>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="prow">
+            <div class="plabel">Ends</div>
+            <div class="pctrl">
+              <div class="ends">
+                <div class="opt" id="end-never" onclick="setEnd('never')"><span class="radio"></span><span class="otxt">Never</span></div>
+                <div class="opt" id="end-on" onclick="setEnd('on')"><span class="radio"></span><span class="otxt">On <input class="mininput tnum" id="end-date" style="width:130px" value="2026-12-31" onclick="event.stopPropagation()" oninput="recompute()"></span></div>
+                <div class="opt" id="end-after" onclick="setEnd('after')"><span class="radio"></span><span class="otxt">After <input class="mininput tnum" id="end-count" value="12" onclick="event.stopPropagation()" oninput="recompute()"> occurrences</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="prow">
+            <div class="plabel">Exceptions</div>
+            <div class="pctrl">
+              <div class="exhint">Dates pulled out of the series. Add one here or hit skip on any future date.</div>
+              <div class="chips" id="chips"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- one-off state -->
+        <div class="oneoff" id="oneoff" style="display:none">
+          <p>This is a one-off event — it does not repeat.</p>
+          <button onclick="makeRecurring()">Make it recurring</button>
+        </div>
+      </main>
+
+      <!-- RIGHT : future occurrences timeline -->
+      <aside class="timeline">
+        <div class="tlhead">
+          <div class="t1">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
+            Future occurrences
+          </div>
+          <div class="t2" id="tl-sub"><b>9</b> upcoming · mark any as skipped or edited</div>
+        </div>
+        <div class="tlist" id="tlist"></div>
+      </aside>
+    </div>
+
+    <!-- AGENT DOCK -->
+    <div class="dock" id="dock">
+      <div class="dockthread">
+        <div class="thread" id="thread">
+          <div class="m user">Push Sprint Planning to every 2 weeks instead of weekly, and skip the Aug 10 one — I'm on leave.</div>
+          <div class="m bot">
+            <div class="who">Calink Agent</div>
+            Done — two edits to Sprint Planning:
+            <div class="change">
+              <div class="crow"><span class="ctag mv">RULE</span><span>Interval → every 2 weeks (Mondays)</span></div>
+              <div class="crow"><span class="ctag ex">SKIP</span><span>Exception added · Mon, Aug 10</span></div>
+              <div class="applied"><span>Auto-applied · subscribers update ~1h</span><button onclick="undoToast()">Undo</button></div>
+            </div>
+          </div>
+          <div class="m user">Perfect, leave it.</div>
+          <div class="m bot">
+            <div class="who">Calink Agent</div>
+            Kept. Rule is now <span class="mono" style="font-size:12px">FREQ=WEEKLY;INTERVAL=2;BYDAY=MO</span> with one EXDATE.
+          </div>
+          <div class="mcp">The agent edits this calendar with the same tools your own AI gets over MCP — every change is auto-applied with an Undo.</div>
+        </div>
+      </div>
+      <div class="dockbar">
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+        <div class="last">
+          <span class="lt">Last</span>
+          <span class="lx" id="last-x">Interval → every 2 weeks · Aug 10 skipped</span>
+          <button class="undo" onclick="undoToast()">Undo</button>
+        </div>
+        <span class="sep"></span>
+        <div class="composer">
+          <input id="ag-input" placeholder="Tell the agent to change this recurring event…">
+          <button class="send" title="Send" onclick="agentSend()"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <button class="expand" onclick="toggleDock()">
+          <span>Chat</span>
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><span id="toast-msg">Change undone.</span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  /* ---------- data ---------- */
+  const CAL = {
+    acme:    {name:"Acme",     dot:"var(--acme)"},
+    work:    {name:"Workouts", dot:"var(--work)"},
+    personal:{name:"Personal", dot:"var(--personal)"},
+    release: {name:"Release",  dot:"var(--release)"},
+  };
+  const WD_ORDER = ["MO","TU","WE","TH","FR","SA","SU"];
+  const WD_LABEL = {MO:"M",TU:"T",WE:"W",TH:"T",FR:"F",SA:"S",SU:"S"};
+  const WD_FULL  = {MO:"Monday",TU:"Tuesday",WE:"Wednesday",TH:"Thursday",FR:"Friday",SA:"Saturday",SU:"Sunday"};
+  const WD_NUM   = {SU:0,MO:1,TU:2,WE:3,TH:4,FR:5,SA:6};
+  const WD_JS    = ["SU","MO","TU","WE","TH","FR","SA"];
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  const EV = {
+    sprint:{title:"Sprint Planning",cal:"acme",date:"2026-06-29",start:"11:00",end:"12:30",allday:false,
+            loc:"",meet:"meet.google.com/spr-plan",desc:"Groom the backlog, commit the sprint scope, assign owners. Bring estimates.",
+            rec:{repeats:true,freq:"WEEKLY",interval:2,byday:["MO"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:["2026-08-10"]}},
+    standup:{title:"Team Standup",cal:"acme",date:"2026-06-29",start:"09:30",end:"09:45",allday:false,
+            loc:"",meet:"meet.google.com/std-acme",desc:"Yesterday / today / blockers. 15 min max.",
+            rec:{repeats:true,freq:"WEEKLY",interval:1,byday:["MO","TU","WE","TH","FR"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    run:{title:"Morning Run",cal:"work",date:"2026-06-29",start:"07:00",end:"07:45",allday:false,
+            loc:"Riverside loop",meet:"",desc:"Easy 5k, zone 2.",
+            rec:{repeats:true,freq:"WEEKLY",interval:1,byday:["MO","WE","FR"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    book:{title:"Book Club",cal:"personal",date:"2026-07-14",start:"20:00",end:"21:30",allday:false,
+            loc:"rotating",meet:"",desc:"This month: 'The Shape of Things'. Bring 2 questions.",
+            rec:{repeats:true,freq:"MONTHLY",interval:1,byday:["TU"],mmode:"nth",mday:14,mord:2,mwd:"TU",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    sam:{title:"1:1 with Sam",cal:"acme",date:"2026-07-02",start:"16:30",end:"17:00",allday:false,
+            loc:"",meet:"meet.google.com/sam-1on1",desc:"Career + project check-in.",
+            rec:{repeats:true,freq:"WEEKLY",interval:1,byday:["TH"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    rent:{title:"Pay rent",cal:"personal",date:"2026-07-01",start:"",end:"",allday:true,
+            loc:"",meet:"",desc:"Transfer €1,450 to landlord.",
+            rec:{repeats:true,freq:"MONTHLY",interval:1,byday:["MO"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    /* one-off */
+    design:{title:"Design review — Calink feeds",cal:"acme",date:"2026-06-29",start:"14:00",end:"15:00",allday:false,
+            loc:"Room 2",meet:"meet.google.com/design-rev",desc:"Review the .ics feed serializer and recurrence edge cases.",
+            rec:{repeats:false,freq:"WEEKLY",interval:1,byday:["MO"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    cutoff:{title:"v0.3 cut-off",cal:"release",date:"2026-06-29",start:"",end:"",allday:true,
+            loc:"",meet:"",desc:"Freeze scope for v0.3.",
+            rec:{repeats:false,freq:"WEEKLY",interval:1,byday:["MO"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    lunch:{title:"Lunch with Priya",cal:"personal",date:"2026-07-06",start:"12:30",end:"13:30",allday:false,
+            loc:"Sona",meet:"",desc:"Catch up, she's back from Lisbon.",
+            rec:{repeats:false,freq:"WEEKLY",interval:1,byday:["MO"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+    board:{title:"Quarterly board sync",cal:"acme",date:"2026-07-14",start:"15:00",end:"16:00",allday:false,
+            loc:"Zoom",meet:"",desc:"Deck due the night before.",
+            rec:{repeats:false,freq:"WEEKLY",interval:1,byday:["MO"],mmode:"day",mday:1,mord:1,mwd:"MO",ends:"never",endDate:"2026-12-31",endCount:12,ex:[]}},
+  };
+
+  /* HOME list config */
+  const RECURRING = [
+    {key:"sprint",  sched:"Every 2 weeks · Mon",  at:"11:00–12:30", badge:"2 WKS"},
+    {key:"standup", sched:"Every weekday",        at:"09:30–09:45", badge:"WEEKDAYS"},
+    {key:"run",     sched:"Mon · Wed · Fri",      at:"07:00–07:45", badge:"M·W·F"},
+    {key:"book",    sched:"2nd Tuesday monthly",  at:"20:00–21:30", badge:"MONTHLY"},
+    {key:"sam",     sched:"Every Thursday",       at:"16:30–17:00", badge:"WEEKLY"},
+    {key:"rent",    sched:"Monthly on day 1",     at:"",            badge:"MONTHLY", allday:true},
+  ];
+  const UPCOMING = [
+    {key:"design", when:"Mon, Jun 29", at:"14:00–15:00", place:"Room 2 + Meet"},
+    {key:"cutoff", when:"Mon, Jun 29", at:"",            place:"", allday:true},
+    {key:"lunch",  when:"Mon, Jul 6",  at:"12:30–13:30", place:"Sona"},
+    {key:"board",  when:"Tue, Jul 14", at:"15:00–16:00", place:"Zoom"},
+  ];
+
+  const REPEAT_ICON = '<svg class="icon" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
+
+  /* ---------- render HOME ---------- */
+  function renderList(){
+    let h = '<div class="seclabel">Recurring <span class="cnt">·&nbsp;'+RECURRING.length+'</span></div>';
+    RECURRING.forEach(r=>{
+      const e = EV[r.key];
+      h += '<div class="row" onclick="openEditor(\''+r.key+'\')">'
+        + '<span class="sw" style="background:'+CAL[e.cal].dot+'"></span>'
+        + '<div class="body"><div class="ti">'+e.title+'</div>'
+        + '<div class="sched"><span class="cal">'+CAL[e.cal].name+'</span>'
+        + '<span class="when">'+r.sched+'</span>'
+        + (r.allday?'<span class="at">all-day</span>':'<span class="at mono tnum">'+r.at+'</span>')
+        + '</div></div>'
+        + '<span class="badge">'+REPEAT_ICON+r.badge+'</span>'
+        + '<span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>';
+    });
+    h += '<div class="seclabel">One-off &amp; upcoming <span class="cnt">·&nbsp;'+UPCOMING.length+'</span></div>';
+    UPCOMING.forEach(r=>{
+      const e = EV[r.key];
+      h += '<div class="row" onclick="openEditor(\''+r.key+'\')">'
+        + '<span class="sw" style="background:'+CAL[e.cal].dot+'"></span>'
+        + '<div class="body"><div class="ti">'+e.title+'</div>'
+        + '<div class="sched"><span class="cal">'+CAL[e.cal].name+'</span>'
+        + '<span class="when mono tnum">'+r.when+'</span>'
+        + (r.allday?'<span class="at">all-day</span>':'<span class="at mono tnum">'+r.at+'</span>')
+        + (r.place?'&nbsp;&nbsp;<span class="at">'+r.place+'</span>':'')
+        + '</div></div>'
+        + (r.allday?'<span class="allday">All day</span>':'')
+        + '<span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>';
+    });
+    document.getElementById('list').innerHTML = h;
+  }
+
+  /* ---------- editor state ---------- */
+  let R = null;            // current recurrence (clone)
+  let curAllday = false, curStart="", curEnd="", curDate="";
+  let editedDates = new Set();
+
+  function openEditor(key){
+    const e = EV[key] || EV.sprint;
+    R = JSON.parse(JSON.stringify(e.rec));
+    editedDates = new Set();
+    curAllday = e.allday; curStart = e.start; curEnd = e.end; curDate = e.date;
+
+    document.getElementById('ov-title').textContent = e.title || "New event";
+    document.getElementById('ov-kick').textContent = CAL[e.cal].name;
+    document.getElementById('ov-dot').style.background = CAL[e.cal].dot;
+    document.getElementById('f-title').value = e.title;
+    document.getElementById('f-cal').value = e.cal;
+    document.getElementById('f-date').value = e.date;
+    document.getElementById('f-start').value = e.start;
+    document.getElementById('f-end').value = e.end;
+    document.getElementById('f-loc').value = e.loc;
+    document.getElementById('f-meet').value = e.meet;
+    document.getElementById('f-desc').value = e.desc;
+
+    // ends inputs
+    document.getElementById('end-date').value = R.endDate;
+    document.getElementById('end-count').value = R.endCount;
+    document.getElementById('mm-daynum').value = R.mday;
+    document.getElementById('mm-ord').value = R.mord;
+    document.getElementById('mm-wd').value = R.mwd;
+
+    syncControls();
+    recompute();
+    document.getElementById('overlay').classList.add('open');
+  }
+  function closeEditor(){ document.getElementById('overlay').classList.remove('open'); }
+  function onCal(){
+    const v = document.getElementById('f-cal').value;
+    document.getElementById('ov-dot').style.background = CAL[v].dot;
+    document.getElementById('ov-kick').textContent = CAL[v].name;
+  }
+
+  /* build weekday toggles once */
+  (function(){
+    const w = document.getElementById('wdays');
+    WD_ORDER.forEach(c=>{
+      const b = document.createElement('button');
+      b.className='wday'; b.dataset.wd=c; b.textContent=WD_LABEL[c];
+      b.onclick=()=>{ toggleWeekday(c); };
+      w.appendChild(b);
+    });
+    document.querySelectorAll('#freq-seg button').forEach(b=>{
+      b.onclick=()=>{ R.freq=b.dataset.f; syncControls(); recompute(); };
+    });
+  })();
+
+  function toggleWeekday(c){
+    const i = R.byday.indexOf(c);
+    if(i>=0){ if(R.byday.length>1) R.byday.splice(i,1); }
+    else R.byday.push(c);
+    syncControls(); recompute();
+  }
+  function bumpInterval(d){ R.interval = Math.max(1, R.interval + d); document.getElementById('iv-val').textContent=R.interval; recompute(); }
+  function setMonthMode(m){ R.mmode=m; syncControls(); recompute(); }
+  function setEnd(m){ R.ends=m; syncControls(); recompute(); }
+  function makeRecurring(){ R.repeats=true; R.freq="WEEKLY"; R.byday=[WD_JS[new Date(curDate+'T00:00').getDay()]]; syncControls(); recompute(); }
+
+  /* sync DOM control states from R */
+  function syncControls(){
+    const recur = R.repeats;
+    document.getElementById('panel').style.display = recur?'block':'none';
+    document.getElementById('oneoff').style.display = recur?'none':'block';
+    document.querySelector('.hero').style.display = recur?'block':'none';
+    if(!recur) return;
+
+    // frequency seg
+    document.querySelectorAll('#freq-seg button').forEach(b=>b.classList.toggle('on', b.dataset.f===R.freq));
+    // interval unit
+    document.getElementById('iv-val').textContent = R.interval;
+    document.getElementById('iv-unit').textContent = {DAILY:"days",WEEKLY:"weeks",MONTHLY:"months"}[R.freq];
+    // weekly vs monthly rows
+    document.getElementById('row-weekly').style.display = R.freq==="WEEKLY"?"grid":"none";
+    document.getElementById('row-monthly').style.display = R.freq==="MONTHLY"?"grid":"none";
+    // weekday toggles
+    document.querySelectorAll('#wdays .wday').forEach(b=>b.classList.toggle('on', R.byday.includes(b.dataset.wd)));
+    // monthly mode
+    document.getElementById('mm-day').classList.toggle('on', R.mmode==="day");
+    document.getElementById('mm-nth').classList.toggle('on', R.mmode==="nth");
+    // ends
+    document.getElementById('end-never').classList.toggle('on', R.ends==="never");
+    document.getElementById('end-on').classList.toggle('on', R.ends==="on");
+    document.getElementById('end-after').classList.toggle('on', R.ends==="after");
+  }
+
+  /* read mutable inputs into R */
+  function pull(){
+    R.mday = parseInt(document.getElementById('mm-daynum').value)||1;
+    R.mord = parseInt(document.getElementById('mm-ord').value);
+    R.mwd = document.getElementById('mm-wd').value;
+    R.endDate = document.getElementById('end-date').value;
+    R.endCount = parseInt(document.getElementById('end-count').value)||1;
+    curStart = document.getElementById('f-start').value;
+    curEnd = document.getElementById('f-end').value;
+    curDate = document.getElementById('f-date').value;
+  }
+
+  /* ---------- plain-english + RRULE ---------- */
+  const ORD = {1:"first",2:"second",3:"third",4:"fourth","-1":"last"};
+  function joinNames(arr){
+    if(arr.length===1) return arr[0];
+    if(arr.length===2) return arr[0]+" & "+arr[1];
+    return arr.slice(0,-1).join(", ")+" & "+arr[arr.length-1];
+  }
+  function summaryText(){
+    let s="";
+    const iv=R.interval;
+    if(R.freq==="DAILY"){
+      s = iv===1?"Every day":"Every "+iv+" days";
+    } else if(R.freq==="WEEKLY"){
+      const ordered = WD_ORDER.filter(d=>R.byday.includes(d));
+      const isWeekdays = ordered.length===5 && ["MO","TU","WE","TH","FR"].every(d=>R.byday.includes(d));
+      const names = joinNames(ordered.map(d=>WD_FULL[d]));
+      if(isWeekdays && iv===1) s="Every weekday";
+      else if(iv===1) s="Every "+names;
+      else s="Every "+iv+" weeks on "+names;
+    } else {
+      const base = iv===1?"Every month":"Every "+iv+" months";
+      if(R.mmode==="day") s = base+" on day "+R.mday;
+      else s = base+" on the "+ORD[R.mord]+" "+WD_FULL[R.mwd];
+    }
+    if(R.ends==="on") s += ", until "+fmtLong(parseISO(R.endDate));
+    if(R.ends==="after") s += ", "+R.endCount+" times";
+    return s;
+  }
+  function rruleText(){
+    let p=["FREQ="+R.freq];
+    if(R.interval>1) p.push("INTERVAL="+R.interval);
+    if(R.freq==="WEEKLY") p.push("BYDAY="+WD_ORDER.filter(d=>R.byday.includes(d)).join(","));
+    if(R.freq==="MONTHLY"){
+      if(R.mmode==="day") p.push("BYMONTHDAY="+R.mday);
+      else p.push("BYDAY="+(R.mord)+R.mwd);
+    }
+    if(R.ends==="on") p.push("UNTIL="+R.endDate.replace(/-/g,""));
+    if(R.ends==="after") p.push("COUNT="+R.endCount);
+    return p.join(";");
+  }
+
+  /* ---------- occurrence generation ---------- */
+  function parseISO(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+  function fmtLong(d){ return d.getDate()+" "+MON[d.getMonth()]+" "+d.getFullYear(); }
+  function mondayOf(date){ const d=new Date(date); const wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd); d.setHours(0,0,0,0); return d; }
+
+  function genOccurrences(count){
+    const start = parseISO(curDate);
+    const res=[];
+    const limitDate = R.ends==="on" ? parseISO(R.endDate) : null;
+    const maxCount  = R.ends==="after" ? R.endCount : Infinity;
+    let produced=0;
+    function push(d){
+      if(limitDate && d>limitDate) return false;
+      if(produced>=maxCount) return false;
+      produced++; res.push(new Date(d)); return true;
+    }
+    if(R.freq==="DAILY"){
+      let cur=new Date(start);
+      while(res.length<count){ if(!push(cur)) break; cur.setDate(cur.getDate()+R.interval); }
+    } else if(R.freq==="WEEKLY"){
+      const base=mondayOf(start); let cur=new Date(start); cur.setHours(0,0,0,0);
+      let guard=0;
+      while(res.length<count && guard<1500){
+        guard++;
+        const wd=WD_JS[cur.getDay()];
+        const weekIdx=Math.round((mondayOf(cur)-base)/(7*86400000));
+        if(weekIdx%R.interval===0 && R.byday.includes(wd) && cur>=start){
+          if(produced>=maxCount) break;
+          if(!push(cur)) break;
+        }
+        cur.setDate(cur.getDate()+1);
+      }
+    } else { // MONTHLY
+      let y=start.getFullYear(), m=start.getMonth(), guard=0;
+      while(res.length<count && guard<200){
+        guard++;
+        let d;
+        if(R.mmode==="day"){ d=new Date(y,m,R.mday); if(d.getMonth()!==m){ /*skip overflow*/ } }
+        else {
+          const target=WD_NUM[R.mwd]; let occs=[];
+          for(let dd=1;dd<=31;dd++){ const t=new Date(y,m,dd); if(t.getMonth()!==m) break; if(t.getDay()===target) occs.push(t); }
+          d = R.mord===-1 ? occs[occs.length-1] : occs[R.mord-1];
+        }
+        if(d && d.getMonth()===m && d>=start){ if(produced>=maxCount) break; if(!push(d)) break; }
+        m += R.interval; while(m>11){m-=12;y++;}
+      }
+    }
+    return res;
+  }
+
+  /* ---------- render cockpit ---------- */
+  function recompute(){
+    pull();
+    if(!R.repeats){
+      renderTimelineOneoff();
+      return;
+    }
+    document.getElementById('sum-text').textContent = summaryText();
+    document.getElementById('sum-rrule').textContent = rruleText();
+    const occ = genOccurrences(2);
+    if(occ.length){ const d=occ[0]; document.getElementById('sum-next').innerHTML = 'Next: <b>'+WD_JS_FULL(d)+', '+MON[d.getMonth()]+' '+d.getDate()+'</b> · '+timeLabel(); }
+    else document.getElementById('sum-next').textContent="";
+    renderChips();
+    renderTimeline();
+  }
+
+  function renderChips(){
+    const c = document.getElementById('chips'); c.innerHTML="";
+    R.ex.forEach((iso,idx)=>{
+      const d=parseISO(iso);
+      const chip=document.createElement('span'); chip.className='chip';
+      chip.innerHTML = '<span>'+WD_JS_FULL(d)+', '+MON[d.getMonth()]+' '+d.getDate()+'</span>';
+      const x=document.createElement('button'); x.setAttribute('aria-label','remove');
+      x.innerHTML='<svg class="icon" viewBox="0 0 24 24" style="width:11px;height:11px"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      x.onclick=()=>{ R.ex.splice(idx,1); recompute(); };
+      chip.appendChild(x); c.appendChild(chip);
+    });
+    const add=document.createElement('button'); add.className='addchip';
+    add.innerHTML='<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add date';
+    add.onclick=addException;
+    c.appendChild(add);
+  }
+  function WD_JS_FULL(d){ return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]; }
+
+  function addException(){
+    // add the next non-excepted occurrence as a demo
+    const occ = genOccurrences(40);
+    for(const d of occ){
+      const iso = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+      if(!R.ex.includes(iso)){ R.ex.push(iso); recompute(); return; }
+    }
+  }
+
+  function timeLabel(){ return curAllday ? "All day" : (curStart+"–"+curEnd); }
+
+  function renderTimeline(){
+    const occ = genOccurrences(9);
+    const t = document.getElementById('tlist'); t.innerHTML="";
+    document.getElementById('tl-sub').innerHTML = '<b>'+occ.length+'</b> shown · mark any as skipped or edited';
+    occ.forEach((d,i)=>{
+      const iso = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+      const skipped = R.ex.includes(iso);
+      const edited = editedDates.has(iso) && !skipped;
+      const row=document.createElement('div');
+      row.className='occ'+(i===0&&!skipped?' first':'')+(skipped?' skipped':'')+(edited?' edited':'');
+      let right = '<div class="acts">'
+        + '<button title="Skip this date" onclick="skipDate(\''+iso+'\')"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+        + '<button title="Edit this date" onclick="editDate(\''+iso+'\')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20h4L18 10l-4-4L4 16z"/></svg></button>'
+        + '</div>';
+      if(skipped) right = '<span class="tag">Skipped</span>';
+      else if(edited) right = '<span class="tag">Edited</span>';
+      row.innerHTML = '<div class="wk">'+WD_JS_FULL(d).toUpperCase()+'</div>'
+        + '<div class="dt"><div class="d">'+MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+'</div>'
+        + '<div class="tm">'+timeLabel()+'</div></div>'
+        + right;
+      t.appendChild(row);
+    });
+    const more=document.createElement('button'); more.className='tlmore';
+    more.textContent="See all future events";
+    more.onclick=()=>showToast("Showing the full series timeline");
+    t.appendChild(more);
+  }
+  function renderTimelineOneoff(){
+    const d = parseISO(curDate);
+    const t = document.getElementById('tlist'); t.innerHTML="";
+    document.getElementById('tl-sub').innerHTML = '<b>One-off</b> · happens once';
+    const row=document.createElement('div'); row.className='occ first';
+    row.innerHTML = '<div class="wk">'+WD_JS_FULL(d).toUpperCase()+'</div>'
+      + '<div class="dt"><div class="d">'+MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+'</div>'
+      + '<div class="tm">'+timeLabel()+'</div></div>';
+    t.appendChild(row);
+  }
+
+  function skipDate(iso){ if(!R.ex.includes(iso)){ R.ex.push(iso); setLast("Skipped "+isoShort(iso)); recompute(); } }
+  function editDate(iso){ editedDates.add(iso); setLast("Edited "+isoShort(iso)); recompute(); }
+  function isoShort(iso){ const d=parseISO(iso); return MON[d.getMonth()]+" "+d.getDate(); }
+
+  /* ---------- agent dock ---------- */
+  function toggleDock(){ document.getElementById('dock').classList.toggle('open'); }
+  function setLast(txt){ document.getElementById('last-x').textContent = txt; }
+  function agentSend(){
+    const i=document.getElementById('ag-input'); const v=i.value.trim();
+    if(!v) return;
+    i.value="";
+    setLast("Applied: "+v.slice(0,40));
+    showToast("Agent applied your change · Undo available");
+    document.getElementById('dock').classList.add('open');
+  }
+
+  /* ---------- misc ---------- */
+  let toastT;
+  function showToast(msg){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(hideToast,3500); }
+  function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+  function undoToast(){ showToast("Change undone — Sprint Planning back to weekly, Aug 10 restored"); }
+  function copyFeed(btn){ const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1200); }
+
+  document.addEventListener('keydown',e=>{ if(e.key==="Escape" && document.getElementById('overlay').classList.contains('open')) closeEditor(); });
+
+  /* ---------- boot ---------- */
+  renderList();
+  openEditor('sprint');   // default-open on Sprint Planning
+</script>
+</body>
+</html>
