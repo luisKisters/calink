@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Agenda + Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;          /* the one real accent */
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#15130D;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer}
+  ::selection{background:var(--accent);color:#fff}
+
+  /* ===== shell: sidebar | agenda | agent ===== */
+  .app{display:grid;grid-template-columns:248px minmax(0,1fr) 340px;height:100vh;max-width:1440px;margin:0 auto;background:var(--paper);border-left:2px solid var(--line);border-right:2px solid var(--line)}
+
+  /* ===== sidebar ===== */
+  .side{border-right:2px solid var(--line);display:flex;flex-direction:column;background:var(--cream)}
+  .brand{display:flex;align-items:center;gap:9px;padding:18px 18px 16px;border-bottom:2px solid var(--line)}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+
+  .side .scroll{flex:1;overflow:auto;padding:16px 12px}
+  .grouplabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:6px 6px 8px}
+  .cal{display:flex;align-items:center;gap:10px;padding:9px 10px;border:2px solid transparent;cursor:pointer;margin-bottom:2px}
+  .cal:hover{background:var(--paper);border-color:var(--hairline)}
+  .cal.on{background:var(--ink);color:var(--paper)}
+  .cal.on .count{color:var(--paper);opacity:.7}
+  .sw{width:12px;height:12px;border:2px solid var(--ink);flex-shrink:0}
+  .cal.on .sw{border-color:var(--paper)}
+  .cal .nm{font-size:13.5px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal .count{font-size:12px;color:var(--muted)}
+  .newcal{display:flex;align-items:center;gap:8px;width:100%;background:none;border:2px dashed var(--hairline);padding:9px 10px;margin-top:8px;font-size:13px;font-weight:500;color:var(--muted)}
+  .newcal:hover{border-color:var(--ink);color:var(--ink)}
+
+  .side .foot{border-top:2px solid var(--line);padding:14px 14px 16px}
+  .foot .flabel{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px}
+  .sublink{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);padding:8px 9px;box-shadow:var(--shadow-sm)}
+  .sublink code{font-size:11px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:4px 8px}
+  .sublink button:hover{background:var(--accent)}
+  .foot .row2{display:flex;gap:8px;margin-top:10px}
+  .foot .row2 a{flex:1;text-align:center;font-size:11px;font-weight:500;color:var(--muted);border:2px solid var(--hairline);padding:6px;text-decoration:none}
+  .foot .row2 a:hover{border-color:var(--ink);color:var(--ink)}
+
+  /* ===== center agenda ===== */
+  .main{display:flex;flex-direction:column;min-width:0}
+  .mainhead{display:flex;align-items:center;gap:14px;padding:20px 28px 16px;border-bottom:2px solid var(--line)}
+  .mainhead h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .mainhead .tz{font-size:12px;color:var(--muted);margin-top:2px}
+  .seg{margin-left:auto;display:flex;border:2px solid var(--line)}
+  .seg button{border:0;background:var(--paper);font-size:12px;font-weight:600;padding:7px 13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .seg button+button{border-left:2px solid var(--line)}
+  .seg button.on{background:var(--ink);color:var(--paper)}
+  .addbtn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;padding:8px 13px}
+  .addbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .addbtn:active{transform:translate(3px,3px);box-shadow:none}
+
+  .agenda{flex:1;overflow:auto;padding:8px 28px 60px}
+  .day{display:flex;align-items:baseline;gap:12px;margin:26px 0 10px}
+  .day:first-child{margin-top:18px}
+  .day .dnum{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .day .ddate{font-size:12px;color:var(--muted)}
+  .day.today .dnum::after{content:"TODAY";margin-left:8px;background:var(--accent);color:#fff;font-size:10px;padding:2px 6px;letter-spacing:.06em;position:relative;top:-1px}
+
+  .ev{display:flex;align-items:flex-start;gap:16px;padding:14px 16px;border:2px solid var(--line);background:var(--paper);margin-bottom:10px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+  .ev:hover{box-shadow:var(--shadow-sm);transform:translate(-1px,-1px)}
+  .ev .time{font-size:13px;font-weight:500;width:108px;flex-shrink:0;padding-top:1px}
+  .ev .time .dash{color:var(--muted)}
+  .ev .allday{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:2px solid var(--hairline);padding:2px 7px;display:inline-block}
+  .ev .body{flex:1;min-width:0}
+  .ev .ti{font-size:15px;font-weight:600;line-height:1.25}
+  .ev .meta{display:flex;align-items:center;gap:10px;margin-top:5px;font-size:12.5px;color:var(--muted)}
+  .ev .meta .calbar{display:inline-flex;align-items:center;gap:6px}
+  .ev .meta .cdot{width:9px;height:9px;border:1.5px solid var(--ink)}
+  .badge{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--ink);padding:2px 7px}
+  .ev .chev{align-self:center;color:var(--muted);flex-shrink:0}
+
+  /* ===== agent panel ===== */
+  .agent{border-left:2px solid var(--line);background:var(--cream);display:flex;flex-direction:column;min-width:0}
+  .agenthead{display:flex;align-items:center;gap:9px;padding:16px 18px;border-bottom:2px solid var(--line)}
+  .agenthead .ico{width:22px;height:22px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper)}
+  .agenthead b{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .agenthead .live{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .agenthead .live::before{content:"";width:7px;height:7px;background:var(--work);border-radius:50%}
+
+  .thread{flex:1;overflow:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+  .m{font-size:13px;line-height:1.5}
+  .m.user{align-self:flex-end;max-width:88%;background:var(--ink);color:var(--paper);padding:9px 12px;border:2px solid var(--ink)}
+  .m.bot{align-self:flex-start;max-width:94%}
+  .m.bot .who{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+  .change{margin-top:9px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm)}
+  .change .crow{display:flex;align-items:center;gap:9px;padding:8px 10px;font-size:12.5px}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .tag{font-size:10px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0}
+  .change .tag.add{background:var(--work);color:#fff;border-color:var(--ink)}
+  .change .tag.mv{background:#E7B23A;color:var(--ink)}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-top:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+
+  .composer{border-top:2px solid var(--line);padding:12px}
+  .composer .box{border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);display:flex;align-items:flex-end;gap:8px;padding:9px 10px}
+  .composer textarea{flex:1;border:0;outline:0;resize:none;font-family:inherit;font-size:13px;background:none;color:var(--ink);line-height:1.4;max-height:90px}
+  .composer textarea::placeholder{color:var(--muted)}
+  .composer .send{width:30px;height:30px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .composer .send:hover{transform:translate(1px,1px)}
+  .composer .hint{font-size:10.5px;color:var(--muted);margin-top:8px;padding:0 2px;line-height:1.4}
+
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+
+  /* ===== modal ===== */
+  .scrim{position:fixed;inset:0;background:rgba(21,19,13,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .scrim.open{display:flex}
+  .modal{width:520px;max-width:100%;max-height:90vh;overflow:auto;background:var(--paper);border:3px solid var(--ink);box-shadow:8px 8px 0 var(--ink)}
+  .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--line)}
+  .modal .mhead .et{display:flex;align-items:center;gap:9px}
+  .modal .mhead .cdot{width:11px;height:11px;border:2px solid var(--ink)}
+  .modal .mhead h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .modal .x{width:30px;height:30px;border:2px solid var(--ink);background:var(--paper);display:grid;place-items:center}
+  .modal .x:hover{background:var(--ink);color:var(--paper)}
+  .mbody{padding:20px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;border:2px solid var(--ink);background:var(--paper);padding:10px 11px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .field input:focus,.field select:focus{outline:3px solid var(--accent);outline-offset:0}
+  .field.title input{font-size:17px;font-weight:600}
+  .grid3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px}
+  .rrule{border:2px solid var(--ink);background:var(--cream);padding:11px 12px;margin-bottom:16px}
+  .rrule .rr{font-size:12px;color:var(--muted)}
+  .rrule .rr b{color:var(--ink)}
+  .scope{display:flex;border:2px solid var(--ink);margin-top:10px}
+  .scope button{flex:1;border:0;background:var(--paper);font-size:11.5px;font-weight:600;padding:8px 6px;color:var(--muted)}
+  .scope button+button{border-left:2px solid var(--ink)}
+  .scope button.on{background:var(--ink);color:var(--paper)}
+  .mfoot{display:flex;align-items:center;gap:10px;padding:16px 20px;border-top:2px solid var(--line)}
+  .mfoot .del{background:none;border:2px solid var(--ink);padding:9px 13px;font-size:13px;font-weight:600;color:var(--ink)}
+  .mfoot .del:hover{background:var(--ink);color:var(--paper)}
+  .mfoot .spacer{flex:1}
+  .mfoot .save{background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);padding:9px 18px;font-size:13px;font-weight:700}
+  .mfoot .save:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="app">
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="side">
+      <div class="brand">
+        <span class="mark"><span></span></span>
+        <b>Calink</b>
+      </div>
+      <div class="scroll">
+        <div class="grouplabel">Calendars</div>
+        <div class="cal on">
+          <span class="sw" style="background:var(--acme)"></span>
+          <span class="nm">Acme Team</span>
+          <span class="count tnum">5</span>
+        </div>
+        <div class="cal">
+          <span class="sw" style="background:var(--work)"></span>
+          <span class="nm">Workouts</span>
+          <span class="count tnum">3</span>
+        </div>
+        <div class="cal">
+          <span class="sw" style="background:var(--paper)"></span>
+          <span class="nm">Personal</span>
+          <span class="count tnum">2</span>
+        </div>
+        <button class="newcal">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          New calendar
+        </button>
+      </div>
+      <div class="foot">
+        <div class="flabel">Subscribe link</div>
+        <div class="sublink">
+          <code class="mono">webcal://…/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+        <div class="row2">
+          <a href="#" onclick="return false">MCP &amp; keys</a>
+          <a href="#" onclick="return false">Settings</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ AGENDA ============ -->
+    <main class="main">
+      <div class="mainhead">
+        <div>
+          <h1>Acme Team</h1>
+          <div class="tz">Upcoming · Europe/Berlin</div>
+        </div>
+        <div class="seg">
+          <button class="on">Upcoming</button>
+          <button>All</button>
+        </div>
+        <button class="addbtn" onclick="openModal('new')">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Add event
+        </button>
+      </div>
+
+      <div class="agenda" id="agenda">
+        <div class="day today"><span class="dnum">Mon</span><span class="ddate">June 29</span></div>
+
+        <div class="ev" onclick="openModal('standup')">
+          <div class="time tnum">09:30 <span class="dash">–</span> 09:45</div>
+          <div class="body">
+            <div class="ti">Standup</div>
+            <div class="meta">
+              <span class="calbar"><span class="cdot" style="background:var(--acme)"></span>Acme Team</span>
+              <span>Zoom</span>
+            </div>
+          </div>
+          <span class="badge">Weekdays</span>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+
+        <div class="ev" onclick="openModal('design')">
+          <div class="time tnum">14:00 <span class="dash">–</span> 15:00</div>
+          <div class="body">
+            <div class="ti">Design review — Calink feeds</div>
+            <div class="meta">
+              <span class="calbar"><span class="cdot" style="background:var(--acme)"></span>Acme Team</span>
+              <span>Room 2</span>
+            </div>
+          </div>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+
+        <div class="ev" onclick="openModal('cutoff')">
+          <div class="time"><span class="allday">All day</span></div>
+          <div class="body">
+            <div class="ti">v0.3 cut-off</div>
+            <div class="meta"><span class="calbar"><span class="cdot" style="background:var(--personal)"></span>Release</span></div>
+          </div>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+
+        <div class="day"><span class="dnum">Tue</span><span class="ddate">June 30</span></div>
+
+        <div class="ev" onclick="openModal('run')">
+          <div class="time tnum">08:00 <span class="dash">–</span> 08:45</div>
+          <div class="body">
+            <div class="ti">Morning run</div>
+            <div class="meta">
+              <span class="calbar"><span class="cdot" style="background:var(--work)"></span>Workouts</span>
+            </div>
+          </div>
+          <span class="badge">M·W·F</span>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+
+        <div class="ev" onclick="openModal('sam')">
+          <div class="time tnum">16:30 <span class="dash">–</span> 17:00</div>
+          <div class="body">
+            <div class="ti">1:1 with Sam</div>
+            <div class="meta"><span class="calbar"><span class="cdot" style="background:var(--acme)"></span>Acme Team</span></div>
+          </div>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+
+        <div class="day"><span class="dnum">Mon</span><span class="ddate">July 6</span></div>
+
+        <div class="ev" onclick="openModal('lunch')">
+          <div class="time tnum">12:30 <span class="dash">–</span> 13:30</div>
+          <div class="body">
+            <div class="ti">Lunch with Priya</div>
+            <div class="meta"><span class="calbar"><span class="cdot" style="background:var(--personal)"></span>Personal</span><span>Sona</span></div>
+          </div>
+          <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ AGENT CHAT ============ -->
+    <aside class="agent">
+      <div class="agenthead">
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+        <b>Agent</b>
+        <span class="live">editing Acme Team</span>
+      </div>
+      <div class="thread" id="thread">
+        <div class="m user">Add a 30-min buffer before each standup next week, and move the design review to 3pm.</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Done — two changes applied to Acme Team:
+          <div class="change">
+            <div class="crow"><span class="tag add">NEW</span><span>“Standup prep” · 09:00–09:30, Mon–Fri next week</span></div>
+            <div class="crow"><span class="tag mv">MOVE</span><span>Design review → 15:00–16:00 today</span></div>
+            <div class="applied"><span>Auto-applied · subscribers update ~1h</span><button onclick="undoToast()">Undo</button></div>
+          </div>
+        </div>
+        <div class="m user">Perfect. What's my subscribe link?</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          It's <span class="mono" style="font-size:12px">webcal://calink.app/feed/x9f2…a1.ics</span> — paste it into any calendar app and it stays live.
+        </div>
+      </div>
+      <div class="composer">
+        <div class="box">
+          <textarea rows="1" placeholder="Tell the agent to change your calendar…"></textarea>
+          <button class="send" title="Send"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="hint">The agent edits this calendar directly (just-do-it) — every change has an Undo. Same tools your own AI gets over MCP.</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ EDIT MODAL ============ -->
+  <div class="scrim" id="scrim" onclick="if(event.target===this)closeModal()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="mhead">
+        <div class="et"><span class="cdot" id="m-dot" style="background:var(--acme)"></span><h2 id="m-kicker">Edit event</h2></div>
+        <button class="x" onclick="closeModal()" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="mbody">
+        <div class="field title"><label>Title</label><input id="m-title" value="Standup"></div>
+        <div class="grid3">
+          <div class="field"><label>Date</label><input id="m-date" value="2026-06-29"></div>
+          <div class="field"><label>Start</label><input id="m-start" class="tnum" value="09:30"></div>
+          <div class="field"><label>End</label><input id="m-end" class="tnum" value="09:45"></div>
+        </div>
+        <div class="field"><label>Location</label><input id="m-loc" value="Zoom"></div>
+        <div class="field"><label>Repeat</label>
+          <select id="m-repeat" onchange="onRepeat()">
+            <option value="none">Does not repeat</option>
+            <option value="WEEKLY-MO" selected>Weekly on Monday</option>
+            <option value="WEEKDAYS">Every weekday (Mon–Fri)</option>
+            <option value="MWF">Mon · Wed · Fri</option>
+          </select>
+        </div>
+        <div class="rrule" id="m-rrule">
+          <div class="rr">Recurrence rule: <b class="mono" id="m-rrtext">RRULE:FREQ=WEEKLY;BYDAY=MO</b></div>
+          <div class="scope" id="m-scope">
+            <button class="on">This event</button>
+            <button>This &amp; following</button>
+            <button>All events</button>
+          </div>
+        </div>
+      </div>
+      <div class="mfoot">
+        <button class="del">Delete</button>
+        <span class="spacer"></span>
+        <button class="x2" onclick="closeModal()" style="background:none;border:2px solid var(--ink);padding:9px 13px;font-size:13px;font-weight:600">Cancel</button>
+        <button class="save" onclick="saveEvent()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span id="toast-msg">Change undone.</span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  const DATA = {
+    new:    {kicker:"New event", dot:"var(--acme)", title:"", date:"2026-06-29", start:"10:00", end:"10:30", loc:"", repeat:"none"},
+    standup:{kicker:"Acme Team", dot:"var(--acme)", title:"Standup", date:"2026-06-29", start:"09:30", end:"09:45", loc:"Zoom", repeat:"WEEKDAYS"},
+    design: {kicker:"Acme Team", dot:"var(--acme)", title:"Design review — Calink feeds", date:"2026-06-29", start:"14:00", end:"15:00", loc:"Room 2", repeat:"none"},
+    cutoff: {kicker:"Release", dot:"var(--personal)", title:"v0.3 cut-off", date:"2026-06-29", start:"", end:"", loc:"", repeat:"none"},
+    run:    {kicker:"Workouts", dot:"var(--work)", title:"Morning run", date:"2026-06-30", start:"08:00", end:"08:45", loc:"", repeat:"MWF"},
+    sam:    {kicker:"Acme Team", dot:"var(--acme)", title:"1:1 with Sam", date:"2026-06-30", start:"16:30", end:"17:00", loc:"", repeat:"none"},
+    lunch:  {kicker:"Personal", dot:"var(--personal)", title:"Lunch with Priya", date:"2026-07-06", start:"12:30", end:"13:30", loc:"Sona", repeat:"none"},
+  };
+  const RR = {
+    "none":     null,
+    "WEEKLY-MO":"RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "WEEKDAYS": "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+    "MWF":      "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR",
+  };
+  function openModal(key){
+    const d = DATA[key] || DATA.new;
+    document.getElementById('m-kicker').textContent = d.kicker;
+    document.getElementById('m-dot').style.background = d.dot;
+    document.getElementById('m-title').value = d.title;
+    document.getElementById('m-date').value = d.date;
+    document.getElementById('m-start').value = d.start;
+    document.getElementById('m-end').value = d.end;
+    document.getElementById('m-loc').value = d.loc;
+    const sel = document.getElementById('m-repeat');
+    sel.value = (d.repeat==="WEEKLY-MO")?"WEEKLY-MO":d.repeat;
+    if(![...sel.options].some(o=>o.value===sel.value)) sel.value="none";
+    onRepeat();
+    document.getElementById('scrim').classList.add('open');
+  }
+  function closeModal(){ document.getElementById('scrim').classList.remove('open'); }
+  function onRepeat(){
+    const v = document.getElementById('m-repeat').value;
+    const box = document.getElementById('m-rrule');
+    if(v==="none"){ box.style.display="none"; return; }
+    box.style.display="block";
+    document.getElementById('m-rrtext').textContent = RR[v] || RR["WEEKLY-MO"];
+  }
+  function saveEvent(){ closeModal(); showToast("Event saved · subscribers update within ~1h"); }
+  document.querySelectorAll('.scope button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.scope button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  });
+  document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  });
+  document.querySelectorAll('.cal').forEach(c=>c.onclick=()=>{
+    document.querySelectorAll('.cal').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+  });
+
+  let toastT;
+  function showToast(msg){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(hideToast,3500); }
+  function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+  function undoToast(){ showToast("Changes undone — Standup prep removed, design review back to 14:00"); }
+  function copyFeed(btn){ const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1200); }
+
+  document.addEventListener('keydown',e=>{ if(e.key==="Escape") closeModal(); });
+  // textarea autogrow
+  const ta=document.querySelector('.composer textarea');
+  ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,90)+'px'; });
+</script>
+</body>
+</html>

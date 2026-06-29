@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Acme Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFFDF5;
+    --ink:#000000;
+    --red:#FF5A5F;
+    --yellow:#FFD93D;
+    --violet:#B8A6FF;
+    --green:#3DBE6B;
+    --amber:#F2A93B;
+    --paper:#FFFFFF;
+    --muted:#3a3a3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--cream);color:var(--ink);font-family:"Space Grotesk",sans-serif;font-weight:500}
+  body{padding:32px 24px 80px;-webkit-font-smoothing:antialiased}
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .label{text-transform:uppercase;letter-spacing:.12em;font-weight:700;font-size:11px}
+
+  /* shared block primitives */
+  .block{background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink)}
+  .block-sm{border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+
+  /* buttons */
+  .btn{font-family:inherit;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;
+    background:var(--paper);color:var(--ink);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
+    padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    transition:transform 80ms,box-shadow 80ms;border-radius:0}
+  .btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+  .btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
+  .btn.primary{background:var(--red);color:#fff}
+  .btn.yellow{background:var(--yellow)}
+  .btn.ghost{box-shadow:none;border-width:2px}
+  .btn.ghost:hover{transform:none;box-shadow:none;background:var(--cream)}
+  .btn svg{width:16px;height:16px;display:block}
+
+  .wrap{max-width:1280px;margin:0 auto}
+
+  /* ===== header ===== */
+  header.bar{display:flex;align-items:center;justify-content:space-between;gap:24px;
+    background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);
+    padding:14px 20px;margin-bottom:28px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .wordmark{font-weight:700;font-size:26px;letter-spacing:-.02em;line-height:1}
+  .wordmark .dot{color:var(--yellow)}
+  .ctx{display:flex;align-items:center;gap:10px;padding-left:14px;border-left:2px solid #555}
+  .ctx .name{font-weight:700;font-size:15px}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--cream);color:var(--ink);
+    border:2px solid var(--ink);border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em}
+  .head-actions{display:flex;align-items:center;gap:10px}
+
+  /* ===== layout grid ===== */
+  .grid{display:grid;grid-template-columns:268px 1fr;gap:28px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:28px}
+
+  /* ===== sidebar ===== */
+  .panel{padding:18px}
+  .panel > .label{display:block;margin-bottom:14px;color:var(--muted)}
+  .cal-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border:2px solid var(--ink);
+    background:var(--cream);margin-bottom:10px;cursor:pointer;transition:transform 80ms,box-shadow 80ms}
+  .cal-item:last-child{margin-bottom:0}
+  .cal-item:hover{transform:translate(1px,1px)}
+  .cal-item.active{background:var(--paper);box-shadow:4px 4px 0 var(--ink)}
+  .swatch{width:16px;height:16px;border:2px solid var(--ink);flex:none}
+  .cal-item .nm{font-weight:700;font-size:14px;flex:1}
+  .cal-item .tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+  /* subscribe block */
+  .sub-box{background:var(--violet);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:18px}
+  .sub-box .label{margin-bottom:10px}
+  .copyrow{display:flex;border:2px solid var(--ink);background:var(--paper)}
+  .copyrow code{flex:1;font-family:inherit;font-size:12.5px;font-weight:500;padding:11px 12px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+  .copyrow button{flex:none;border:0;border-left:2px solid var(--ink);background:var(--yellow);
+    font-family:inherit;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    padding:0 14px;cursor:pointer;transition:background 80ms}
+  .copyrow button:hover{background:var(--ink);color:var(--yellow)}
+  .sub-note{font-size:11.5px;margin-top:11px;font-weight:500;line-height:1.4}
+
+  /* MCP */
+  .mcp .label{color:var(--muted);display:block;margin-bottom:12px}
+  .mcp p{font-size:12.5px;line-height:1.5;margin-bottom:13px}
+  .keyrow{display:flex;align-items:center;gap:8px;border:2px dashed var(--ink);background:var(--cream);
+    padding:9px 11px;margin-bottom:13px;font-size:12px}
+  .keyrow .k{font-weight:700;letter-spacing:.04em}
+  .keyrow .dots{flex:1;color:var(--muted)}
+
+  /* ===== main column ===== */
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .section-head h2{font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .section-head .sub{font-size:12px;color:var(--muted);font-weight:500}
+  .viewtabs{display:flex;gap:0}
+  .viewtabs button{font-family:inherit;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+    border:2px solid var(--ink);background:var(--paper);padding:7px 13px;cursor:pointer;margin-left:-2px}
+  .viewtabs button.on{background:var(--ink);color:var(--cream)}
+
+  /* agenda */
+  .agenda{padding:6px 0}
+  .day{border-top:2px solid var(--ink);display:grid;grid-template-columns:120px 1fr;gap:0}
+  .day:first-child{border-top:0}
+  .day .dcol{padding:16px 14px;border-right:2px solid var(--ink);background:var(--cream)}
+  .day.today .dcol{background:var(--yellow)}
+  .day .dnum{font-size:30px;font-weight:700;line-height:.95}
+  .day .ddow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+  .day .dtoday{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;background:var(--ink);color:var(--cream);padding:2px 7px}
+  .evs{padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+  .ev{display:grid;grid-template-columns:108px 1fr;gap:12px;align-items:start;
+    border:2px solid var(--ink);background:var(--paper);padding:10px 12px;cursor:pointer;
+    transition:transform 80ms,box-shadow 80ms}
+  .ev:hover{transform:translate(1px,1px);box-shadow:3px 3px 0 var(--ink)}
+  .ev.sel{box-shadow:4px 4px 0 var(--ink)}
+  .ev .time{font-size:12.5px;font-weight:700;line-height:1.35;border-right:2px solid #ddd;padding-right:10px}
+  .ev .body .t{font-weight:700;font-size:14px;line-height:1.25}
+  .ev .body .meta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;border:2px solid var(--ink);padding:1px 7px}
+  .chip.green{background:var(--green);color:#fff}
+  .chip.amber{background:var(--amber)}
+  .chip.rep{background:var(--cream)}
+  .bar-accent{width:6px;align-self:stretch;background:var(--red);border:2px solid var(--ink);margin-right:-4px}
+  .ev.allday{grid-template-columns:108px 1fr}
+  .ev.allday .time{color:var(--muted)}
+  .ev.green-l{border-left:6px solid var(--green)}
+  .ev.violet-l{border-left:6px solid var(--violet)}
+  .ev.red-l{border-left:6px solid var(--red)}
+
+  /* ===== paste -> events ===== */
+  .paste-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  textarea.drop{width:100%;min-height:172px;resize:none;font-family:inherit;font-size:13px;line-height:1.55;
+    border:2px dashed var(--ink);background:var(--cream);padding:14px;color:var(--ink);font-weight:500}
+  textarea.drop:focus{outline:3px solid var(--violet);outline-offset:0}
+  .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .auto-badge{display:inline-flex;align-items:center;gap:7px;background:var(--green);color:#fff;
+    border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:5px 10px;font-size:11px;
+    font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .undo-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;background:none;border:0;border-bottom:2px solid var(--ink);cursor:pointer;
+    font-family:inherit;padding:2px 0}
+  .undo-link:hover{color:var(--red);border-color:var(--red)}
+  .ex-row{display:flex;align-items:center;gap:11px;border:2px solid var(--ink);background:var(--paper);
+    padding:9px 11px;margin-bottom:9px}
+  .ex-row:last-child{margin-bottom:0}
+  .ex-check{width:20px;height:20px;flex:none;background:var(--green);border:2px solid var(--ink);
+    display:flex;align-items:center;justify-content:center}
+  .ex-check svg{width:13px;height:13px;color:#fff}
+  .ex-row .ex-t{font-weight:700;font-size:13px}
+  .ex-row .ex-when{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .ex-row .ex-main{flex:1}
+
+  /* ===== editor modal ===== */
+  .editor{position:relative}
+  .editor .label{color:var(--muted);display:block;margin-bottom:16px}
+  .ed-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .ed-title h3{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .field{margin-bottom:14px}
+  .field > label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--muted);margin-bottom:6px}
+  .field input,.field .selectish{width:100%;font-family:inherit;font-size:14px;font-weight:500;
+    border:2px solid var(--ink);background:var(--cream);padding:10px 12px;color:var(--ink)}
+  .field input:focus{outline:3px solid var(--violet);outline-offset:0;background:var(--paper)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .selectish{display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+  .repeat-box{border:2px solid var(--ink);background:var(--violet);padding:11px 12px}
+  .repeat-box .rr-line{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .repeat-box .rr-txt{font-weight:700;font-size:14px}
+  .repeat-box code{display:block;margin-top:7px;font-family:inherit;font-size:11.5px;font-weight:500;
+    background:var(--paper);border:2px solid var(--ink);padding:5px 8px}
+  .scope{margin-top:14px}
+  .scope .seg{display:flex;border:2px solid var(--ink)}
+  .scope .seg button{flex:1;font-family:inherit;font-weight:700;font-size:11px;text-transform:uppercase;
+    letter-spacing:.04em;background:var(--paper);border:0;border-left:2px solid var(--ink);padding:9px 6px;cursor:pointer}
+  .scope .seg button:first-child{border-left:0}
+  .scope .seg button.on{background:var(--ink);color:var(--cream)}
+  .ed-actions{display:flex;gap:11px;margin-top:20px;padding-top:16px;border-top:2px solid var(--ink)}
+  .ed-actions .grow{flex:1}
+
+  .rot{transform:rotate(-3deg)}
+  .icon{width:16px;height:16px;display:block}
+  footer.note{max-width:1280px;margin:34px auto 0;font-size:11px;color:var(--muted);text-align:center;
+    text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== HEADER ===== -->
+  <header class="bar">
+    <div class="brand">
+      <span class="wordmark">calink<span class="dot">.</span></span>
+      <span class="ctx">
+        <span class="name">Acme Team</span>
+        <span class="pill">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          Europe/Berlin
+        </span>
+      </span>
+    </div>
+    <div class="head-actions">
+      <button class="btn ghost" style="background:transparent;color:var(--cream);border-color:var(--cream)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+        Search
+      </button>
+      <button class="btn yellow">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        New event
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== GRID ===== -->
+  <div class="grid">
+
+    <!-- ===== LEFT COLUMN ===== -->
+    <div class="col">
+
+      <!-- calendars -->
+      <section class="block panel">
+        <span class="label">Calendars</span>
+        <div class="cal-item active">
+          <span class="swatch" style="background:var(--red)"></span>
+          <span class="nm">Acme Team</span>
+          <span class="tag">Primary</span>
+        </div>
+        <div class="cal-item">
+          <span class="swatch" style="background:var(--green)"></span>
+          <span class="nm">Workouts</span>
+        </div>
+        <div class="cal-item">
+          <span class="swatch" style="background:var(--amber)"></span>
+          <span class="nm">Release dates</span>
+        </div>
+        <button class="btn ghost" style="width:100%;justify-content:center;margin-top:14px">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add calendar
+        </button>
+      </section>
+
+      <!-- subscribe link -->
+      <section class="sub-box">
+        <span class="label">Live subscribe link</span>
+        <div class="copyrow">
+          <code class="tnum">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button>Copy</button>
+        </div>
+        <p class="sub-note">Share this once. Anyone who adds it sees every edit live — no re-import.</p>
+      </section>
+
+      <!-- MCP -->
+      <section class="block panel mcp">
+        <span class="label">Agent access · MCP</span>
+        <p>Let an AI agent read &amp; manage this calendar over the MCP server.</p>
+        <div class="keyrow">
+          <span class="k">Bearer</span>
+          <span class="dots tnum">sk_live_••••••••••4c7a</span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>
+        </div>
+        <button class="btn" style="width:100%;justify-content:center">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg>
+          Connect agent
+        </button>
+      </section>
+
+    </div>
+
+    <!-- ===== RIGHT COLUMN ===== -->
+    <div class="col">
+
+      <!-- agenda -->
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>This week</h2>
+            <span class="sub tnum">Jun 29 – Jul 6, 2026</span>
+          </div>
+          <div class="viewtabs">
+            <button>Day</button>
+            <button class="on">Agenda</button>
+            <button>Week</button>
+          </div>
+        </div>
+
+        <div class="block agenda">
+
+          <!-- Mon Jun 29 -->
+          <div class="day today">
+            <div class="dcol">
+              <div class="dnum tnum">29</div>
+              <div class="ddow">Mon · Jun</div>
+              <span class="dtoday">Today</span>
+            </div>
+            <div class="evs">
+              <div class="ev red-l sel" onclick="void 0">
+                <div class="time tnum">14:00<br>15:00</div>
+                <div class="body">
+                  <div class="t">Design review — Calink feeds</div>
+                  <div class="meta">
+                    <span><svg class="icon" style="width:13px;height:13px;display:inline;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg> Room 2</span>
+                    <span class="chip rep">Selected · editing</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ev">
+                <div class="time tnum">09:30<br>09:45</div>
+                <div class="body">
+                  <div class="t">Standup</div>
+                  <div class="meta"><span class="chip rep">↻ Weekdays</span></div>
+                </div>
+              </div>
+              <div class="ev allday">
+                <div class="time tnum">All-day</div>
+                <div class="body">
+                  <div class="t">v0.3 cut-off</div>
+                  <div class="meta"><span class="chip amber">Release dates</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tue Jun 30 -->
+          <div class="day">
+            <div class="dcol">
+              <div class="dnum tnum">30</div>
+              <div class="ddow">Tue · Jun</div>
+            </div>
+            <div class="evs">
+              <div class="ev green-l">
+                <div class="time tnum">08:00<br>08:45</div>
+                <div class="body">
+                  <div class="t">Morning run</div>
+                  <div class="meta"><span class="chip green">Workouts</span><span class="chip rep">↻ Mon / Wed / Fri</span></div>
+                </div>
+              </div>
+              <div class="ev">
+                <div class="time tnum">16:30<br>17:00</div>
+                <div class="body">
+                  <div class="t">1:1 with Sam</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wed Jul 1 -->
+          <div class="day">
+            <div class="dcol">
+              <div class="dnum tnum">01</div>
+              <div class="ddow">Wed · Jul</div>
+            </div>
+            <div class="evs">
+              <div class="ev">
+                <div class="time tnum">09:30<br>09:45</div>
+                <div class="body">
+                  <div class="t">Standup</div>
+                  <div class="meta"><span class="chip rep">↻ Weekdays</span></div>
+                </div>
+              </div>
+              <div class="ev">
+                <div class="time tnum">11:00<br>12:30</div>
+                <div class="body">
+                  <div class="t">Roadmap planning</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mon Jul 6 -->
+          <div class="day">
+            <div class="dcol">
+              <div class="dnum tnum">06</div>
+              <div class="ddow">Mon · Jul</div>
+            </div>
+            <div class="evs">
+              <div class="ev violet-l">
+                <div class="time tnum">12:30<br>13:30</div>
+                <div class="body">
+                  <div class="t">Lunch with Priya</div>
+                  <div class="meta"><span><svg class="icon" style="width:13px;height:13px;display:inline;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg> Sona</span></div>
+                </div>
+              </div>
+              <div class="ev">
+                <div class="time tnum">20:00<br>21:00</div>
+                <div class="body">
+                  <div class="t">Book club</div>
+                  <div class="meta"><span class="chip rep">↻ Thursdays</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- paste -> events -->
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Paste anything</h2>
+            <span class="sub">Drop messy text — Calink turns it into events</span>
+          </div>
+        </div>
+
+        <div class="block panel">
+          <div class="paste-grid">
+
+            <!-- left: textarea -->
+            <div>
+              <span class="label" style="display:block;margin-bottom:10px;color:var(--muted)">Pasted text</span>
+              <textarea class="drop" spellcheck="false">Team offsite next Mon 9-5 @ Studio B
+Standup every weekday 9:30
+Morning run Mon/Wed/Fri 8am
+Lunch w/ Priya Jul 6 12:30 at Sona</textarea>
+              <button class="btn primary" style="width:100%;justify-content:center;margin-top:12px">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l3.5 8.5L25 14l-8.5 2.5L13 25l-2.5-8.5L2 14l8.5-2.5L13 3Z" transform="scale(.85) translate(2 1)"/></svg>
+                Extract with AI
+              </button>
+            </div>
+
+            <!-- right: auto-applied preview -->
+            <div>
+              <div class="preview-head">
+                <span class="auto-badge">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  4 events added
+                </span>
+                <button class="undo-link">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+                  Undo
+                </button>
+              </div>
+
+              <div class="ex-row">
+                <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="ex-main"><div class="ex-t">Team offsite</div><div class="ex-when tnum">Mon Jul 6 · 09:00–17:00 · Studio B</div></span>
+              </div>
+              <div class="ex-row">
+                <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="ex-main"><div class="ex-t">Standup <span class="chip rep" style="vertical-align:1px">↻ Weekdays</span></div><div class="ex-when tnum">Every weekday · 09:30</div></span>
+              </div>
+              <div class="ex-row">
+                <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="ex-main"><div class="ex-t">Morning run</div><div class="ex-when tnum">Mon / Wed / Fri · 08:00</div></span>
+              </div>
+              <div class="ex-row">
+                <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="ex-main"><div class="ex-t">Lunch with Priya</div><div class="ex-when tnum">Jul 6 · 12:30 · Sona</div></span>
+              </div>
+              <p class="sub-note" style="color:var(--muted)">Applied automatically. Review &amp; tweak any event below.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- event editor -->
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Edit event</h2>
+            <span class="sub">Design review — Calink feeds</span>
+          </div>
+        </div>
+
+        <div class="block panel editor">
+          <div class="ed-title">
+            <span class="label" style="margin:0">Editing · Acme Team</span>
+            <button class="btn ghost" aria-label="Close" style="padding:6px 10px">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+          </div>
+
+          <div class="field">
+            <label>Title</label>
+            <input type="text" value="Design review — Calink feeds">
+          </div>
+
+          <div class="field">
+            <label>Date</label>
+            <input class="tnum" type="text" value="Mon Jun 29, 2026">
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label>Start</label>
+              <input class="tnum" type="text" value="14:00">
+            </div>
+            <div class="field">
+              <label>End</label>
+              <input class="tnum" type="text" value="15:00">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Location</label>
+            <input type="text" value="Room 2">
+          </div>
+
+          <div class="field">
+            <label>Repeat</label>
+            <div class="repeat-box">
+              <div class="rr-line">
+                <span class="rr-txt">Weekly on Mon</span>
+                <button class="btn" style="box-shadow:none;border-width:2px;padding:6px 10px;font-size:11px">Change</button>
+              </div>
+              <code class="tnum">RRULE:FREQ=WEEKLY;BYDAY=MO</code>
+            </div>
+
+            <div class="scope">
+              <label style="display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px">Apply changes to</label>
+              <div class="seg">
+                <button class="on">This event</button>
+                <button>This &amp; following</button>
+                <button>All events</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ed-actions">
+            <button class="btn ghost" style="color:var(--red);border-color:var(--red)">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
+              Delete
+            </button>
+            <span class="grow"></span>
+            <button class="btn ghost">Cancel</button>
+            <button class="btn primary">Save event</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer class="note">Calink — paste anything, get a live calendar link</footer>
+</div>
+</body>
+</html>

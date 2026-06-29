@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>calink — Acme Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --ink:#0A0A0A;
+    --muted-surface:#F5F5F5;
+    --hair:#E5E5E5;
+    --red:#E8341C;
+    --green:#2F8F5B;
+    --amber:#C98A1A;
+    --dim:#595959;
+    --s:8px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.45;
+    font-feature-settings:"tnum" 1,"cv05" 1;
+  }
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer;background:none;border:none;color:inherit}
+  ::selection{background:var(--red);color:#fff}
+
+  /* ---------- Shell ---------- */
+  .shell{max-width:1280px;margin:0 auto;border-left:1px solid var(--hair);border-right:1px solid var(--hair);min-height:100vh}
+
+  /* ---------- Top bar ---------- */
+  header.bar{
+    display:flex;align-items:stretch;justify-content:space-between;
+    border-bottom:1px solid var(--hair);
+  }
+  .brand{display:flex;align-items:baseline;gap:16px;padding:20px 24px;border-right:1px solid var(--hair)}
+  .wordmark{font-size:20px;font-weight:700;letter-spacing:-0.02em}
+  .wordmark span{color:var(--red)}
+  .brand .ctx{display:flex;flex-direction:column;gap:2px}
+  .brand .calname{font-size:14px;font-weight:600;line-height:1}
+  .brand .tz{font-size:12px;color:var(--dim);line-height:1}
+  .bar-right{display:flex;align-items:stretch}
+  .bar-right .item{display:flex;align-items:center;gap:8px;padding:0 20px;border-left:1px solid var(--hair);font-size:13px;color:var(--dim)}
+  .bar-right .item svg{width:16px;height:16px;display:block}
+  .bar-right .item:hover{color:var(--ink)}
+  .bar-right .agent{color:var(--ink);font-weight:500}
+  .kbd{font-size:11px;border:1px solid var(--hair);padding:1px 5px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+  /* ---------- Body grid 12-col ---------- */
+  .layout{display:grid;grid-template-columns:repeat(12,1fr)}
+  .col-sidebar{grid-column:1 / span 3;border-right:1px solid var(--hair)}
+  .col-main{grid-column:4 / span 9}
+
+  /* ---------- Sidebar ---------- */
+  .sb-sec{border-bottom:1px solid var(--hair);padding:24px}
+  .sb-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--dim);margin-bottom:16px}
+  .cal-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--hair);cursor:pointer;transition:opacity .2s}
+  .cal-row:first-of-type{border-top:none}
+  .cal-row:hover{opacity:.6}
+  .cal-row.active{cursor:default}
+  .cal-row.active:hover{opacity:1}
+  .dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%}
+  .dot.sq{border-radius:0}
+  .dot.primary{background:var(--ink)}
+  .dot.green{background:var(--green)}
+  .dot.amber{background:var(--amber)}
+  .cal-name{font-size:14px;font-weight:500;flex:1}
+  .cal-row.active .cal-name{font-weight:600}
+  .cal-meta{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .cal-row.active .marker{width:3px;align-self:stretch;background:var(--red);margin-left:-24px;margin-right:9px}
+
+  /* subscribe */
+  .sub-link{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    border:1px solid var(--hair);background:var(--muted-surface);
+    padding:10px 12px;margin-top:4px;
+  }
+  .sub-link code{font-size:12px;font-variant-numeric:tabular-nums;word-break:break-all;color:var(--ink)}
+  .copy-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--red);white-space:nowrap;transition:opacity .2s}
+  .copy-btn:hover{opacity:.65}
+  .copy-btn svg{width:14px;height:14px}
+  .sub-note{font-size:12px;color:var(--dim);margin-top:10px;line-height:1.5}
+
+  /* mcp */
+  .mcp-row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin-bottom:8px}
+  .mcp-row svg{width:16px;height:16px}
+  .mcp-key{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--hair);padding:8px 10px;margin-top:4px}
+  .mcp-key code{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .mcp-key .copy-btn{color:var(--dim)}
+  .mcp-desc{font-size:12px;color:var(--dim);line-height:1.5}
+
+  /* ---------- Main toolbar ---------- */
+  .main-tools{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--hair)}
+  .week-title{display:flex;align-items:baseline;gap:14px}
+  .week-title h1{font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1}
+  .week-title .range{font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .nav-group{display:flex;align-items:center;gap:0;border:1px solid var(--hair)}
+  .nav-group button{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--hair);transition:background .2s}
+  .nav-group button:last-child{border-right:none}
+  .nav-group button:hover{background:var(--muted-surface)}
+  .nav-group button.today{width:auto;padding:0 14px;font-size:13px;font-weight:600}
+  .nav-group svg{width:16px;height:16px}
+  .seg{display:flex;border:1px solid var(--hair);margin-left:12px}
+  .seg button{padding:0 14px;height:34px;font-size:13px;font-weight:500;border-right:1px solid var(--hair);color:var(--dim);transition:all .2s}
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:var(--ink);color:#fff}
+  .seg button:not(.on):hover{background:var(--muted-surface);color:var(--ink)}
+
+  /* ---------- Week grid ---------- */
+  .grid-wrap{border-bottom:1px solid var(--hair)}
+  .week-head{display:grid;grid-template-columns:56px repeat(7,1fr);border-bottom:1px solid var(--hair)}
+  .week-head .gutter{border-right:1px solid var(--hair)}
+  .day-h{padding:10px 10px;border-right:1px solid var(--hair);display:flex;flex-direction:column;gap:2px}
+  .day-h:last-child{border-right:none}
+  .day-h .dow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--dim)}
+  .day-h .dnum{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+  .day-h.today .dow{color:var(--red)}
+  .day-h.today .dnum{color:var(--red)}
+  .day-h.today{box-shadow:inset 0 -2px 0 var(--red)}
+
+  .allday{display:grid;grid-template-columns:56px repeat(7,1fr);border-bottom:1px solid var(--hair);min-height:30px}
+  .allday .gutter{border-right:1px solid var(--hair);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.05em;padding:6px 6px;text-align:right}
+  .allday .ad-cell{border-right:1px solid var(--hair);padding:5px 6px}
+  .allday .ad-cell:last-child{border-right:none}
+  .ad-chip{font-size:12px;font-weight:600;border-left:3px solid var(--red);padding:2px 6px;background:var(--muted-surface)}
+
+  .scroll{position:relative}
+  .grid-body{display:grid;grid-template-columns:56px repeat(7,1fr);position:relative}
+  .time-col{border-right:1px solid var(--hair)}
+  .time-slot{height:56px;border-bottom:1px solid var(--hair);position:relative}
+  .time-slot .t{position:absolute;top:-7px;right:6px;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;background:#fff;padding:0 2px}
+  .day-col{border-right:1px solid var(--hair);position:relative}
+  .day-col:last-child{border-right:none}
+  .day-col.is-today{background:linear-gradient(#fff,#fff)}
+  .slot-line{height:56px;border-bottom:1px solid var(--hair)}
+
+  /* events absolutely placed: 56px per hour, start at 08:00 = 0 */
+  .ev{
+    position:absolute;left:4px;right:4px;
+    border:1px solid var(--hair);border-left:3px solid var(--ink);
+    background:#fff;padding:5px 7px;overflow:hidden;cursor:pointer;transition:background .2s;
+  }
+  .ev:hover{background:var(--muted-surface)}
+  .ev .et{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;line-height:1.2}
+  .ev .en{font-size:12px;font-weight:600;line-height:1.25;margin-top:1px}
+  .ev .el{font-size:11px;color:var(--dim);line-height:1.2;margin-top:1px}
+  .ev .rep{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--dim);margin-top:2px}
+  .ev .rep svg{width:10px;height:10px}
+  .ev.green{border-left-color:var(--green)}
+  .ev.today-ev{border-left-color:var(--red)}
+  .ev.selected{border-color:var(--red);border-left-color:var(--red);background:#fff;box-shadow:none;outline:2px solid var(--red);outline-offset:-2px;z-index:5}
+
+  /* now line */
+  .now{position:absolute;left:0;right:0;height:0;border-top:1px solid var(--red);z-index:6}
+  .now::before{content:"";position:absolute;left:-3px;top:-3px;width:6px;height:6px;background:var(--red);border-radius:50%}
+
+  /* ---------- Lower split: paste + editor ---------- */
+  .lower{display:grid;grid-template-columns:repeat(9,1fr)}
+  .paste-pane{grid-column:1 / span 5;border-right:1px solid var(--hair);padding:24px}
+  .editor-pane{grid-column:6 / span 4;padding:24px}
+
+  .pane-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .pane-h h2{font-size:16px;font-weight:600;letter-spacing:-0.01em}
+  .pane-h .sub{font-size:12px;color:var(--dim)}
+
+  textarea.paste{
+    width:100%;border:1px solid var(--hair);background:var(--muted-surface);
+    font-family:inherit;font-size:13px;line-height:1.55;color:var(--ink);
+    padding:12px;resize:vertical;min-height:104px;border-radius:0;
+  }
+  textarea.paste:focus{outline:none;border-color:var(--ink)}
+
+  .applied{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--hair);border-left:3px solid var(--red);padding:10px 12px;margin-top:16px;background:var(--muted-surface)}
+  .applied .lbl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .applied .lbl svg{width:15px;height:15px;color:var(--red)}
+  .applied .lbl .auto{font-size:11px;font-weight:500;color:var(--dim);text-transform:uppercase;letter-spacing:0.05em;border:1px solid var(--hair);padding:1px 6px;margin-left:4px}
+  .applied .undo{font-size:13px;font-weight:600;color:var(--red);display:flex;align-items:center;gap:5px;transition:opacity .2s}
+  .applied .undo:hover{opacity:.65}
+  .applied .undo svg{width:13px;height:13px}
+
+  .extract-list{margin-top:16px;border-top:1px solid var(--hair)}
+  .ex-row{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:start;padding:11px 0;border-bottom:1px solid var(--hair)}
+  .ex-check{width:16px;height:16px;border:1px solid var(--ink);background:var(--red);border-color:var(--red);display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .ex-check svg{width:11px;height:11px;color:#fff}
+  .ex-main .ex-title{font-size:13px;font-weight:600}
+  .ex-main .ex-meta{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;margin-top:1px}
+  .ex-cal{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:2px}
+
+  /* editor */
+  .field{border-top:1px solid var(--hair);padding:12px 0;display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center}
+  .field:first-of-type{border-top:none}
+  .field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--dim)}
+  .field input,.field .sel{
+    width:100%;border:1px solid var(--hair);padding:8px 10px;font-family:inherit;font-size:14px;color:var(--ink);
+    border-radius:0;background:#fff;font-variant-numeric:tabular-nums;
+  }
+  .field input:focus{outline:none;border-color:var(--ink)}
+  .time-pair{display:flex;align-items:center;gap:8px}
+  .time-pair input{width:auto;flex:1}
+  .time-pair span{color:var(--dim);font-size:13px}
+  .sel{display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+  .sel svg{width:14px;height:14px;color:var(--dim)}
+
+  .rrule{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:var(--muted-surface);border:1px solid var(--hair)}
+  .rrule svg{width:14px;height:14px;color:var(--dim);flex:0 0 14px}
+  .rrule code{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+
+  .scope-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--dim);margin:18px 0 8px}
+  .scope{display:flex;border:1px solid var(--hair)}
+  .scope button{flex:1;padding:9px 6px;font-size:12px;font-weight:500;border-right:1px solid var(--hair);color:var(--dim);transition:all .2s;line-height:1.2}
+  .scope button:last-child{border-right:none}
+  .scope button.on{background:var(--ink);color:#fff}
+  .scope button:not(.on):hover{background:var(--muted-surface);color:var(--ink)}
+
+  .editor-actions{display:flex;gap:8px;margin-top:20px;border-top:1px solid var(--hair);padding-top:20px}
+  .btn{padding:10px 18px;font-size:13px;font-weight:600;border:1px solid var(--ink);transition:all .2s}
+  .btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+  .btn.primary:hover{opacity:.88}
+  .btn.ghost{background:#fff;color:var(--ink)}
+  .btn.ghost:hover{background:var(--muted-surface)}
+  .btn.link{border:none;color:var(--dim);padding:10px 4px;margin-left:auto}
+  .btn.link:hover{color:var(--ink)}
+
+  footer.foot{display:flex;justify-content:space-between;padding:16px 24px;font-size:12px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ======= TOP BAR ======= -->
+  <header class="bar">
+    <div class="brand">
+      <div class="wordmark">cal<span>i</span>nk</div>
+      <div class="ctx">
+        <div class="calname">Acme Team</div>
+        <div class="tz tnum">Europe/Berlin · GMT+2</div>
+      </div>
+    </div>
+    <div class="bar-right">
+      <div class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span>Search</span><span class="kbd">⌘K</span>
+      </div>
+      <div class="item agent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12"/><path d="M9 7V4h6v3M9 13h.01M15 13h.01"/></svg>
+        <span>Connect agent</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======= LAYOUT ======= -->
+  <div class="layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="col-sidebar">
+
+      <div class="sb-sec">
+        <div class="sb-label">Calendars</div>
+        <div class="cal-row active">
+          <span class="marker"></span>
+          <span class="dot sq primary"></span>
+          <span class="cal-name">Acme Team</span>
+          <span class="cal-meta tnum">Primary</span>
+        </div>
+        <div class="cal-row">
+          <span class="dot green"></span>
+          <span class="cal-name">Workouts</span>
+          <span class="cal-meta tnum">12</span>
+        </div>
+        <div class="cal-row">
+          <span class="dot amber"></span>
+          <span class="cal-name">Release dates</span>
+          <span class="cal-meta tnum">4</span>
+        </div>
+      </div>
+
+      <div class="sb-sec">
+        <div class="sb-label">Subscribe link</div>
+        <div class="sub-link">
+          <code class="tnum">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button class="copy-btn" title="Copy link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11"/><path d="M5 15V5h10"/></svg>
+            Copy
+          </button>
+        </div>
+        <p class="sub-note">Read-only. Anyone with this link can add Acme Team to Apple, Google or Outlook calendars and stay in sync.</p>
+      </div>
+
+      <div class="sb-sec">
+        <div class="sb-label">Agent access — MCP</div>
+        <div class="mcp-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/></svg>
+          calink-mcp
+        </div>
+        <p class="mcp-desc">Let agents create and edit events on this calendar.</p>
+        <div class="mcp-key">
+          <code class="tnum">Bearer · sk_live_…b7q4</code>
+          <button class="copy-btn" title="Copy key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11"/><path d="M5 15V5h10"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="col-main">
+
+      <!-- toolbar -->
+      <div class="main-tools">
+        <div class="week-title">
+          <h1>Week 27</h1>
+          <span class="range tnum">Jun 29 – Jul 5, 2026</span>
+        </div>
+        <div style="display:flex;align-items:center">
+          <div class="nav-group">
+            <button class="today">Today</button>
+            <button title="Previous week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button title="Next week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="seg">
+            <button>Day</button>
+            <button class="on">Week</button>
+            <button>Month</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- week grid -->
+      <div class="grid-wrap">
+        <!-- header row -->
+        <div class="week-head">
+          <div class="gutter"></div>
+          <div class="day-h today"><span class="dow">Mon</span><span class="dnum tnum">29</span></div>
+          <div class="day-h"><span class="dow">Tue</span><span class="dnum tnum">30</span></div>
+          <div class="day-h"><span class="dow">Wed</span><span class="dnum tnum">01</span></div>
+          <div class="day-h"><span class="dow">Thu</span><span class="dnum tnum">02</span></div>
+          <div class="day-h"><span class="dow">Fri</span><span class="dnum tnum">03</span></div>
+          <div class="day-h"><span class="dow">Sat</span><span class="dnum tnum">04</span></div>
+          <div class="day-h"><span class="dow">Sun</span><span class="dnum tnum">05</span></div>
+        </div>
+
+        <!-- all-day -->
+        <div class="allday">
+          <div class="gutter">All-day</div>
+          <div class="ad-cell"><span class="ad-chip">v0.3 cut-off</span></div>
+          <div class="ad-cell"></div>
+          <div class="ad-cell"></div>
+          <div class="ad-cell"></div>
+          <div class="ad-cell"></div>
+          <div class="ad-cell"></div>
+          <div class="ad-cell"></div>
+        </div>
+
+        <!-- timed body: 08:00 → 21:00, 56px/hr -->
+        <div class="grid-body">
+          <!-- time gutter -->
+          <div class="time-col">
+            <div class="time-slot"><span class="t tnum">08:00</span></div>
+            <div class="time-slot"><span class="t tnum">09:00</span></div>
+            <div class="time-slot"><span class="t tnum">10:00</span></div>
+            <div class="time-slot"><span class="t tnum">11:00</span></div>
+            <div class="time-slot"><span class="t tnum">12:00</span></div>
+            <div class="time-slot"><span class="t tnum">13:00</span></div>
+            <div class="time-slot"><span class="t tnum">14:00</span></div>
+            <div class="time-slot"><span class="t tnum">15:00</span></div>
+            <div class="time-slot"><span class="t tnum">16:00</span></div>
+            <div class="time-slot"><span class="t tnum">17:00</span></div>
+            <div class="time-slot"><span class="t tnum">18:00</span></div>
+            <div class="time-slot"><span class="t tnum">19:00</span></div>
+            <div class="time-slot"><span class="t tnum">20:00</span></div>
+            <div class="time-slot"><span class="t tnum">21:00</span></div>
+          </div>
+
+          <!-- MON 29 (today) -->
+          <div class="day-col is-today">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+            <!-- now line ~10:12 -->
+            <div class="now" style="top:123px"></div>
+            <!-- 09:30–09:45 Standup : top = 1.5*56=84, h=14 -> use 24 min height -->
+            <div class="ev today-ev" style="top:84px;height:22px;padding:2px 7px">
+              <div class="en" style="font-size:11px">Standup</div>
+            </div>
+            <!-- 14:00–15:00 Design review (selected) : top=6*56=336 h=56 -->
+            <div class="ev today-ev selected" style="top:336px;height:54px" onclick="void 0">
+              <div class="et tnum">14:00–15:00</div>
+              <div class="en">Design review — Calink feeds</div>
+              <div class="el">Room 2</div>
+            </div>
+          </div>
+
+          <!-- TUE 30 -->
+          <div class="day-col">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+            <!-- 08:00–08:45 Morning run (green) : top=0 h=42 -->
+            <div class="ev green" style="top:0;height:42px">
+              <div class="et tnum">08:00–08:45</div>
+              <div class="en">Morning run</div>
+              <div class="rep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 014-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 01-4 4H4"/></svg>M/W/F</div>
+            </div>
+            <!-- 16:30–17:00 1:1 with Sam : top=8.5*56=476 h=28 -->
+            <div class="ev" style="top:476px;height:26px">
+              <div class="et tnum">16:30–17:00</div>
+              <div class="en">1:1 with Sam</div>
+            </div>
+          </div>
+
+          <!-- WED 01 -->
+          <div class="day-col">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+            <!-- 09:30 Standup : top=84 -->
+            <div class="ev" style="top:84px;height:22px;padding:2px 7px">
+              <div class="en" style="font-size:11px">Standup</div>
+            </div>
+            <!-- 11:00–12:30 Roadmap planning : top=3*56=168 h=84 -->
+            <div class="ev" style="top:168px;height:82px">
+              <div class="et tnum">11:00–12:30</div>
+              <div class="en">Roadmap planning</div>
+            </div>
+          </div>
+
+          <!-- THU 02 -->
+          <div class="day-col">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+            <!-- 20:00 Book club : top=12*56=672 h=42 -->
+            <div class="ev" style="top:672px;height:42px">
+              <div class="et tnum">20:00</div>
+              <div class="en">Book club</div>
+              <div class="rep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 014-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 01-4 4H4"/></svg>Weekly</div>
+            </div>
+          </div>
+
+          <!-- FRI 03 -->
+          <div class="day-col">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+            <!-- 08:00 Morning run -->
+            <div class="ev green" style="top:0;height:42px">
+              <div class="et tnum">08:00–08:45</div>
+              <div class="en">Morning run</div>
+            </div>
+          </div>
+
+          <!-- SAT 04 -->
+          <div class="day-col">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+          </div>
+
+          <!-- SUN 05 -->
+          <div class="day-col">
+            <div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div><div class="slot-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LOWER SPLIT ===== -->
+      <div class="lower">
+
+        <!-- PASTE PANE -->
+        <section class="paste-pane">
+          <div class="pane-h">
+            <h2>Paste → events</h2>
+            <span class="sub">Acme Team</span>
+          </div>
+
+          <textarea class="paste" spellcheck="false">team offsite notes —
+mon standup 9:30 every weekday
+design review tue? no — mon 2pm, room 2, 1h
+lunch w/ priya mon jul 6 12:30 at Sona
+book club thursdays 8pm</textarea>
+
+          <div class="applied">
+            <div class="lbl">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              4 events added
+              <span class="auto">Auto-applied</span>
+            </div>
+            <button class="undo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v1"/></svg>
+              Undo
+            </button>
+          </div>
+
+          <div class="extract-list">
+            <div class="ex-row">
+              <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              <div class="ex-main">
+                <div class="ex-title">Standup</div>
+                <div class="ex-meta tnum">09:30–09:45 · repeats weekdays</div>
+              </div>
+              <div class="ex-cal"><span class="dot sq primary"></span>Acme Team</div>
+            </div>
+            <div class="ex-row">
+              <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              <div class="ex-main">
+                <div class="ex-title">Design review — Calink feeds</div>
+                <div class="ex-meta tnum">Mon Jun 29 · 14:00–15:00 · Room 2</div>
+              </div>
+              <div class="ex-cal"><span class="dot sq primary"></span>Acme Team</div>
+            </div>
+            <div class="ex-row">
+              <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              <div class="ex-main">
+                <div class="ex-title">Lunch with Priya</div>
+                <div class="ex-meta tnum">Mon Jul 6 · 12:30–13:30 · Sona</div>
+              </div>
+              <div class="ex-cal"><span class="dot sq primary"></span>Acme Team</div>
+            </div>
+            <div class="ex-row">
+              <span class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              <div class="ex-main">
+                <div class="ex-title">Book club</div>
+                <div class="ex-meta tnum">Thursdays · 20:00 · weekly</div>
+              </div>
+              <div class="ex-cal"><span class="dot sq primary"></span>Acme Team</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EDITOR PANE -->
+        <section class="editor-pane">
+          <div class="pane-h">
+            <h2>Edit event</h2>
+            <span class="sub">Mon Jun 29</span>
+          </div>
+
+          <div class="field">
+            <label>Title</label>
+            <input type="text" value="Design review — Calink feeds">
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="text" class="tnum" value="2026-06-29">
+          </div>
+          <div class="field">
+            <label>Time</label>
+            <div class="time-pair">
+              <input type="text" class="tnum" value="14:00">
+              <span>–</span>
+              <input type="text" class="tnum" value="15:00">
+            </div>
+          </div>
+          <div class="field">
+            <label>Location</label>
+            <input type="text" value="Room 2">
+          </div>
+          <div class="field">
+            <label>Repeat</label>
+            <div class="sel">
+              <span>Weekly on Mon</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+
+          <div class="rrule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 014-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 01-4 4H4"/></svg>
+            <code>RRULE:FREQ=WEEKLY;BYDAY=MO</code>
+          </div>
+
+          <div class="scope-label">Apply changes to</div>
+          <div class="scope">
+            <button class="on">This event</button>
+            <button>This &amp; following</button>
+            <button>All events</button>
+          </div>
+
+          <div class="editor-actions">
+            <button class="btn primary">Save</button>
+            <button class="btn ghost">Cancel</button>
+            <button class="btn link">Delete</button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="foot">
+        <span>Last synced 10:12 · Europe/Berlin</span>
+        <span class="tnum">5 calendars · 1 subscribe link</span>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // minimal: copy buttons reflect state, scope + view toggles
+  document.querySelectorAll('.copy-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const orig=b.innerHTML;
+      b.textContent='Copied';
+      setTimeout(()=>{b.innerHTML=orig;},1400);
+    });
+  });
+  function single(sel){
+    document.querySelectorAll(sel).forEach(group=>{});
+  }
+  document.querySelectorAll('.scope button, .seg button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const sibs=b.parentElement.querySelectorAll('button');
+      sibs.forEach(s=>s.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>

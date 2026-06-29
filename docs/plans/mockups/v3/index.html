@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Brutalism Iterations</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif}
+  body{display:flex;flex-direction:column;background:#FFFDF5}
+  .switcher{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#FFFDF5;border-bottom:3px solid #000;flex-shrink:0;flex-wrap:wrap}
+  .brand{color:#000;font-weight:700;font-size:15px;margin-right:10px;text-transform:uppercase;letter-spacing:.04em}
+  .switcher button{appearance:none;border:2px solid #000;background:#fff;color:#000;font-size:12px;padding:6px 11px;cursor:pointer;font-weight:700;white-space:nowrap;font-family:inherit}
+  .switcher button:hover{background:#FFD93D}
+  .switcher button.active{background:#000;color:#FFFDF5}
+  .hint{margin-left:auto;color:#666;font-size:11px;font-weight:500}
+  iframe{flex:1;width:100%;border:0;background:#FFFDF5}
+</style>
+</head>
+<body>
+  <nav class="switcher">
+    <div class="brand">CALINK · BRUTALISM</div>
+    <button data-src="b01.html" class="active">01</button>
+    <button data-src="b02.html">02</button>
+    <button data-src="b03.html">03</button>
+    <button data-src="b04.html">04</button>
+    <button data-src="b05.html">05</button>
+    <button data-src="b06.html">06</button>
+    <button data-src="b07.html">07</button>
+    <button data-src="b08.html">08</button>
+    <button data-src="b09.html">09</button>
+    <button data-src="b10.html">10</button>
+    <div class="hint">10 independent decluttered brutalist iterations</div>
+  </nav>
+  <iframe id="stage" src="b01.html"></iframe>
+  <script>
+    const stage=document.getElementById('stage');
+    document.querySelectorAll('.switcher button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        document.querySelectorAll('.switcher button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        stage.src=b.dataset.src;
+      });
+    });
+  </script>
+</body>
+</html>

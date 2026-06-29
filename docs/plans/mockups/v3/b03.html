@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Week</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFFDF5;
+    --ink:#000;
+    --red:#FF5A5F;
+    --line:rgba(0,0,0,.14);
+    --line-soft:rgba(0,0,0,.07);
+    --hour:56px;
+    --gutter:60px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",system-ui,sans-serif;
+    font-weight:500;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .lbl{font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+
+  .app{max-width:1240px;margin:0 auto;padding:18px 20px 28px;min-height:100%}
+
+  /* ---------- TOP COMMAND BAR ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:16px;
+    border:3px solid var(--ink);
+    background:var(--cream);
+    height:56px;padding:0 14px;
+  }
+  .wordmark{font-weight:700;font-size:20px;letter-spacing:-.02em}
+  .wordmark .dot{color:var(--red)}
+  .vr{width:2px;align-self:stretch;background:var(--ink);margin:8px 2px}
+  .switcher{
+    display:flex;align-items:center;gap:8px;
+    border:2px solid var(--ink);height:34px;padding:0 12px;font-size:12px;
+  }
+  .switcher .swatch{width:11px;height:11px;background:var(--red);border:2px solid var(--ink)}
+  .weeknav{display:flex;align-items:center;gap:10px;margin:0 auto}
+  .navbtn{width:34px;height:34px;border:2px solid var(--ink);display:grid;place-items:center}
+  .navbtn:hover{background:var(--ink);color:var(--cream)}
+  .weeklabel{font-size:13px;letter-spacing:.06em}
+  .actions{display:flex;align-items:center;gap:10px;position:relative}
+  .subscribe{
+    display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;
+    border:2px solid var(--ink);font-size:12px;
+  }
+  .subscribe:hover{background:var(--ink);color:var(--cream)}
+  .addbtn{
+    display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;
+    border:2px solid var(--ink);background:var(--red);font-size:12px;
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .addbtn:active{transform:translate(3px,3px);box-shadow:none}
+  svg{display:block}
+
+  /* ---------- POPOVER (subscribe) ---------- */
+  .pop{
+    position:absolute;top:46px;right:0;width:340px;z-index:40;
+    border:3px solid var(--ink);background:var(--cream);
+    box-shadow:6px 6px 0 var(--ink);padding:14px;display:none;
+  }
+  .pop.open{display:block}
+  .pop h3{font-size:11px;letter-spacing:.1em;margin-bottom:10px}
+  .codebox{
+    display:flex;align-items:center;gap:8px;border:2px solid var(--ink);
+    padding:9px 10px;background:#fff;
+  }
+  .codebox code{font-size:12.5px;font-weight:700;word-break:break-all;flex:1}
+  .copybtn{border:2px solid var(--ink);height:30px;padding:0 10px;font-size:11px;font-weight:700;letter-spacing:.06em}
+  .copybtn:hover{background:var(--ink);color:var(--cream)}
+  .mcp{margin-top:12px;border-top:2px solid var(--ink);padding-top:10px;font-size:11px;line-height:1.5}
+  .mcp .key{font-weight:700}
+
+  /* ---------- WEEK GRID ---------- */
+  .cal{border:3px solid var(--ink);border-top:none;background:var(--cream)}
+  .head{
+    display:grid;grid-template-columns:var(--gutter) repeat(7,1fr);
+    border-top:3px solid var(--ink);
+  }
+  .head .corner{border-right:2px solid var(--ink)}
+  .dayhead{
+    border-right:2px solid var(--ink);padding:8px 10px;text-align:left;
+  }
+  .dayhead:last-child{border-right:none}
+  .dayhead .dow{font-size:10px;letter-spacing:.1em;opacity:.75}
+  .dayhead .dnum{font-size:20px;font-weight:700;line-height:1.1}
+  .dayhead.today{background:var(--red)}
+  .dayhead.today .dow{opacity:1}
+  .dayhead .today-tag{
+    display:inline-block;font-size:9px;font-weight:700;letter-spacing:.1em;
+    border:2px solid var(--ink);padding:1px 5px;margin-top:3px;background:var(--cream)
+  }
+
+  .allday{
+    display:grid;grid-template-columns:var(--gutter) repeat(7,1fr);
+    border-top:2px solid var(--ink);background:var(--line-soft);min-height:34px;
+  }
+  .allday .ad-label{
+    border-right:2px solid var(--ink);font-size:9px;letter-spacing:.08em;
+    display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-weight:700;
+  }
+  .ad-cell{border-right:2px solid var(--ink);padding:5px}
+  .ad-cell:last-child{border-right:none}
+  .ad-chip{
+    border:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:700;
+    padding:4px 7px;display:flex;align-items:center;gap:6px;
+  }
+  .ad-chip .bar{width:4px;align-self:stretch;background:var(--red)}
+
+  .gridwrap{display:grid;grid-template-columns:var(--gutter) repeat(7,1fr);border-top:2px solid var(--ink)}
+  .timecol{position:relative}
+  .timecol .tick{
+    height:var(--hour);border-right:2px solid var(--ink);position:relative;
+  }
+  .timecol .tick span{
+    position:absolute;top:-8px;right:8px;font-size:10px;font-weight:700;opacity:.7;
+  }
+  .timecol .tick:first-child span{top:2px}
+
+  .daycol{
+    position:relative;border-right:2px solid var(--ink);
+    background:
+      repeating-linear-gradient(to bottom,
+        transparent 0, transparent calc(var(--hour) - 1px),
+        var(--line) calc(var(--hour) - 1px), var(--line) var(--hour));
+  }
+  .daycol:last-child{border-right:none}
+  .daycol.today{background-color:rgba(255,90,95,.06)}
+
+  .event{
+    position:absolute;left:5px;right:5px;
+    border:2px solid var(--ink);background:#fff;
+    padding:4px 7px;overflow:hidden;text-align:left;
+    box-shadow:2px 2px 0 var(--ink);
+  }
+  .event:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+  .event:active{transform:translate(2px,2px);box-shadow:none}
+  .event .etime{font-size:9.5px;font-weight:700;letter-spacing:.03em;opacity:.7}
+  .event .etitle{font-size:12px;font-weight:700;line-height:1.15;margin-top:1px}
+  .event .emeta{font-size:9.5px;opacity:.65;margin-top:1px}
+  .event.accent{border-left:5px solid var(--red)}
+  .event.tiny{padding:2px 7px}
+  .event.tiny .etitle{font-size:10.5px}
+
+  /* ---------- OVERLAY + MODAL ---------- */
+  .scrim{
+    position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;
+    display:none;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto;
+  }
+  .scrim.open{display:flex}
+  .modal{
+    width:440px;max-width:100%;background:var(--cream);
+    border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);
+  }
+  .modal.wide{width:520px}
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:3px solid var(--ink);padding:12px 16px;
+  }
+  .modal-head h2{font-size:13px;letter-spacing:.1em}
+  .xbtn{width:30px;height:30px;border:2px solid var(--ink);display:grid;place-items:center}
+  .xbtn:hover{background:var(--ink);color:var(--cream)}
+  .modal-body{padding:16px}
+  .field{margin-bottom:13px}
+  .field > label{display:block;font-size:10px;letter-spacing:.1em;font-weight:700;margin-bottom:5px;opacity:.8}
+  .field input,.field select{
+    width:100%;font-family:inherit;font-size:14px;font-weight:500;
+    border:2px solid var(--ink);background:#fff;padding:9px 10px;color:var(--ink);
+  }
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rrule{
+    border:2px dashed var(--ink);background:#fff;padding:8px 10px;margin-top:2px;
+    font-size:11.5px;font-weight:700;letter-spacing:.02em;display:none;
+  }
+  .rrule.show{display:block}
+  .scope{margin-top:12px;display:none}
+  .scope.show{display:block}
+  .scope .seg{display:flex;border:2px solid var(--ink)}
+  .scope .seg button{
+    flex:1;font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:8px 4px;
+    border-right:2px solid var(--ink);text-transform:uppercase;
+  }
+  .scope .seg button:last-child{border-right:none}
+  .scope .seg button.on{background:var(--ink);color:var(--cream)}
+  .modal-foot{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    border-top:3px solid var(--ink);padding:12px 16px;
+  }
+  .btn-ghost{border:2px solid var(--ink);height:36px;padding:0 14px;font-size:12px;font-weight:700;letter-spacing:.05em}
+  .btn-ghost:hover{background:var(--ink);color:var(--cream)}
+  .btn-prim{
+    border:2px solid var(--ink);background:var(--red);height:36px;padding:0 18px;
+    font-size:12px;font-weight:700;letter-spacing:.05em;box-shadow:3px 3px 0 var(--ink);
+  }
+  .btn-prim:active{transform:translate(3px,3px);box-shadow:none}
+  .del-link{font-size:11px;font-weight:700;letter-spacing:.05em;text-decoration:underline;text-underline-offset:3px}
+
+  /* ---------- PASTE PANEL ---------- */
+  .paste textarea{
+    width:100%;font-family:inherit;font-size:13px;line-height:1.5;
+    border:2px solid var(--ink);background:#fff;padding:10px;resize:vertical;min-height:96px;color:var(--ink);
+  }
+  .applied{
+    display:flex;align-items:center;gap:10px;margin-top:13px;
+    border:2px solid var(--ink);background:var(--red);padding:9px 12px;
+  }
+  .applied .a-txt{font-size:11.5px;font-weight:700;letter-spacing:.04em;flex:1}
+  .undo{border:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 11px}
+  .undo:hover{background:var(--ink);color:var(--cream)}
+  .preview{margin-top:13px;display:flex;flex-direction:column;gap:8px}
+  .pv-head{font-size:10px;letter-spacing:.1em;font-weight:700;opacity:.7}
+  .pv-row{display:flex;align-items:center;gap:10px;border:2px solid var(--ink);background:#fff;padding:8px 10px}
+  .pv-row .pv-when{font-size:10px;font-weight:700;width:108px;flex:none;letter-spacing:.02em}
+  .pv-row .pv-title{font-size:12.5px;font-weight:700}
+  .pv-row .check{width:16px;height:16px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;flex:none}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--cream);border:2px solid var(--ink);
+    font-size:11.5px;font-weight:700;letter-spacing:.08em;padding:10px 16px;
+    box-shadow:4px 4px 0 var(--red);opacity:0;pointer-events:none;transition:none;z-index:80;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== TOP COMMAND BAR ===== -->
+  <header class="topbar">
+    <span class="wordmark">CALINK<span class="dot">.</span></span>
+    <span class="vr"></span>
+    <button class="switcher lbl" title="Switch calendar">
+      <span class="swatch"></span> PERSONAL
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+
+    <div class="weeknav">
+      <button class="navbtn" aria-label="Previous week"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="weeklabel lbl tnum">JUN 29 — JUL 5, 2026</span>
+      <button class="navbtn" aria-label="Next week"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+
+    <div class="actions">
+      <button class="subscribe lbl" id="subBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/></svg>
+        SUBSCRIBE
+      </button>
+      <button class="addbtn lbl" id="addBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        ADD
+      </button>
+
+      <!-- subscribe popover -->
+      <div class="pop" id="subPop">
+        <h3 class="lbl">LIVE SUBSCRIBE LINK</h3>
+        <div class="codebox">
+          <code id="feedUrl">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button class="copybtn" id="copyFeed">COPY</button>
+        </div>
+        <div class="mcp">
+          <span class="lbl">MCP SERVER</span> — connect agents with Bearer key
+          <span class="key">cal_sk_…7f3</span>.
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== WEEK GRID (HERO) ===== -->
+  <main class="cal">
+    <div class="head">
+      <div class="corner"></div>
+      <div class="dayhead today"><div class="dow lbl">MON</div><div class="dnum tnum">29</div><span class="today-tag">TODAY</span></div>
+      <div class="dayhead"><div class="dow lbl">TUE</div><div class="dnum tnum">30</div></div>
+      <div class="dayhead"><div class="dow lbl">WED</div><div class="dnum tnum">01</div></div>
+      <div class="dayhead"><div class="dow lbl">THU</div><div class="dnum tnum">02</div></div>
+      <div class="dayhead"><div class="dow lbl">FRI</div><div class="dnum tnum">03</div></div>
+      <div class="dayhead"><div class="dow lbl">SAT</div><div class="dnum tnum">04</div></div>
+      <div class="dayhead"><div class="dow lbl">SUN</div><div class="dnum tnum">05</div></div>
+    </div>
+
+    <div class="allday">
+      <div class="ad-label">ALL-DAY</div>
+      <div class="ad-cell"><button class="ad-chip" data-event="ev-cutoff"><span class="bar"></span>v0.3 cut-off</button></div>
+      <div class="ad-cell"></div><div class="ad-cell"></div><div class="ad-cell"></div>
+      <div class="ad-cell"></div><div class="ad-cell"></div><div class="ad-cell"></div>
+    </div>
+
+    <div class="gridwrap">
+      <div class="timecol" id="timecol"></div>
+      <div class="daycol today" data-day="0"></div>
+      <div class="daycol" data-day="1"></div>
+      <div class="daycol" data-day="2"></div>
+      <div class="daycol" data-day="3"></div>
+      <div class="daycol" data-day="4"></div>
+      <div class="daycol" data-day="5"></div>
+      <div class="daycol" data-day="6"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== EVENT EDITOR MODAL ===== -->
+<div class="scrim" id="editScrim">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="lbl">EDIT EVENT</h2>
+      <button class="xbtn" data-close aria-label="Close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>TITLE</label>
+        <input id="f-title" type="text" value="Design review — Calink feeds">
+      </div>
+      <div class="field">
+        <label>DATE</label>
+        <input id="f-date" type="text" class="tnum" value="Mon, Jun 29 2026">
+      </div>
+      <div class="row2">
+        <div class="field"><label>START</label><input id="f-start" type="text" class="tnum" value="14:00"></div>
+        <div class="field"><label>END</label><input id="f-end" type="text" class="tnum" value="15:00"></div>
+      </div>
+      <div class="field">
+        <label>LOCATION</label>
+        <input id="f-loc" type="text" value="Room 2">
+      </div>
+      <div class="field">
+        <label>REPEAT</label>
+        <select id="f-repeat">
+          <option value="none">Does not repeat</option>
+          <option value="MO">Weekly on Mon</option>
+          <option value="weekday">Every weekday (Mon–Fri)</option>
+          <option value="TH">Weekly on Thu</option>
+        </select>
+        <div class="rrule" id="rrule">RRULE:FREQ=WEEKLY;BYDAY=MO</div>
+      </div>
+      <div class="scope" id="scope">
+        <label class="lbl" style="display:block;font-size:10px;letter-spacing:.1em;margin-bottom:5px;opacity:.8">APPLY CHANGES TO</label>
+        <div class="seg">
+          <button class="on" data-scope>This event</button>
+          <button data-scope>This &amp; following</button>
+          <button data-scope>All events</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="del-link" data-close>Delete</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn-ghost" data-close>CANCEL</button>
+        <button class="btn-prim" data-close id="saveBtn">SAVE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PASTE → EVENTS MODAL ===== -->
+<div class="scrim" id="pasteScrim">
+  <div class="modal wide paste">
+    <div class="modal-head">
+      <h2 class="lbl">PASTE → EVENTS</h2>
+      <button class="xbtn" data-close aria-label="Close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <textarea spellcheck="false">Standup every weekday 9:30–9:45
+Design review Mon Jun 29, 2–3pm, Room 2
+Morning run Tue 8am
+Roadmap planning Wed 11:00–12:30
+Book club Thursdays 8pm</textarea>
+
+      <div class="applied">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        <span class="a-txt lbl">AUTO-APPLIED · 5 EVENTS ADDED TO PERSONAL</span>
+        <button class="undo">UNDO</button>
+      </div>
+
+      <div class="preview">
+        <div class="pv-head">AI PARSED THESE</div>
+        <div class="pv-row"><span class="check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span><span class="pv-when tnum">MON 09:30–09:45</span><span class="pv-title">Standup · weekdays</span></div>
+        <div class="pv-row"><span class="check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span><span class="pv-when tnum">MON 14:00–15:00</span><span class="pv-title">Design review · Room 2</span></div>
+        <div class="pv-row"><span class="check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span><span class="pv-when tnum">THU 20:00–21:00</span><span class="pv-title">Book club · weekly</span></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span style="font-size:11px;opacity:.65;font-weight:500">Edits sync to your live link instantly.</span>
+      <button class="btn-prim" data-close>DONE</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">COPIED TO CLIPBOARD</div>
+
+<script>
+(function(){
+  "use strict";
+  var HOUR_H = 56, START_HOUR = 7, END_HOUR = 21;
+
+  // ---- build time gutter ----
+  var tc = document.getElementById('timecol');
+  for(var h=START_HOUR; h<=END_HOUR; h++){
+    var d = document.createElement('div');
+    d.className = 'tick';
+    var s = document.createElement('span');
+    s.className = 'tnum';
+    s.textContent = (h<10?'0':'')+h+':00';
+    d.appendChild(s);
+    tc.appendChild(d);
+  }
+
+  // ---- events data ----
+  var EVENTS = [
+    {day:0,start:"09:30",end:"09:45",title:"Standup",meta:"Weekdays",accent:true},
+    {day:0,start:"14:00",end:"15:00",title:"Design review — Calink feeds",meta:"Room 2",accent:true},
+    {day:1,start:"08:00",end:"08:45",title:"Morning run",meta:"Workouts · M/W/F"},
+    {day:1,start:"16:30",end:"17:00",title:"1:1 with Sam",meta:""},
+    {day:2,start:"09:30",end:"09:45",title:"Standup",meta:""},
+    {day:2,start:"11:00",end:"12:30",title:"Roadmap planning",meta:""},
+    {day:3,start:"20:00",end:"21:00",title:"Book club",meta:"Weekly · Thu"}
+  ];
+  function mins(t){var p=t.split(':');return (+p[0])*60+(+p[1]);}
+  function place(ev){
+    var top=(mins(ev.start)-START_HOUR*60)/60*HOUR_H;
+    var hgt=Math.max((mins(ev.end)-mins(ev.start))/60*HOUR_H,24);
+    return {top:top,height:hgt};
+  }
+  var cols = document.querySelectorAll('.daycol');
+  EVENTS.forEach(function(ev){
+    var pos=place(ev);
+    var el=document.createElement('button');
+    el.className='event'+(ev.accent?' accent':'')+(pos.height<30?' tiny':'');
+    el.style.top=pos.top+'px';
+    el.style.height=pos.height+'px';
+    var html='<div class="etime tnum">'+ev.start+(ev.end?'–'+ev.end:'')+'</div>'+
+             '<div class="etitle">'+ev.title+'</div>';
+    if(ev.meta && pos.height>=46) html+='<div class="emeta">'+ev.meta+'</div>';
+    el.innerHTML=html;
+    el.addEventListener('click',function(){openEdit(ev);});
+    cols[ev.day].appendChild(el);
+  });
+
+  // ---- overlay helpers ----
+  var editScrim=document.getElementById('editScrim');
+  var pasteScrim=document.getElementById('pasteScrim');
+  function open(s){s.classList.add('open');}
+  function close(s){s.classList.remove('open');}
+  document.querySelectorAll('[data-close]').forEach(function(b){
+    b.addEventListener('click',function(){close(editScrim);close(pasteScrim);});
+  });
+  [editScrim,pasteScrim].forEach(function(s){
+    s.addEventListener('click',function(e){if(e.target===s)close(s);});
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){close(editScrim);close(pasteScrim);subPop.classList.remove('open');}
+  });
+
+  // ---- edit modal ----
+  var repeatSel=document.getElementById('f-repeat');
+  var rrule=document.getElementById('rrule');
+  var scope=document.getElementById('scope');
+  var RR={MO:'RRULE:FREQ=WEEKLY;BYDAY=MO',TH:'RRULE:FREQ=WEEKLY;BYDAY=TH',weekday:'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'};
+  function syncRepeat(){
+    var v=repeatSel.value;
+    if(v==='none'){rrule.classList.remove('show');scope.classList.remove('show');}
+    else{rrule.textContent=RR[v];rrule.classList.add('show');scope.classList.add('show');}
+  }
+  repeatSel.addEventListener('change',syncRepeat);
+  document.querySelectorAll('#scope [data-scope]').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#scope [data-scope]').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+    });
+  });
+  function openEdit(ev){
+    document.getElementById('f-title').value=ev.title;
+    document.getElementById('f-start').value=ev.start;
+    document.getElementById('f-end').value=ev.end||'';
+    document.getElementById('f-loc').value=ev.meta && ev.meta.indexOf('Room')>-1?ev.meta:'';
+    var DOW=['Mon, Jun 29 2026','Tue, Jun 30 2026','Wed, Jul 1 2026','Thu, Jul 2 2026','Fri, Jul 3 2026','Sat, Jul 4 2026','Sun, Jul 5 2026'];
+    document.getElementById('f-date').value=DOW[ev.day];
+    // infer repeat
+    repeatSel.value = ev.title==='Standup' ? 'weekday' : (ev.title==='Book club' ? 'TH' : 'none');
+    syncRepeat();
+    open(editScrim);
+  }
+  // all-day chip opens editor too
+  document.querySelector('[data-event="ev-cutoff"]').addEventListener('click',function(){
+    openEdit({day:0,start:'All-day',end:'',title:'v0.3 cut-off',meta:''});
+    document.getElementById('f-start').value='ALL DAY';
+    document.getElementById('f-end').value='';
+  });
+
+  // ---- add / paste ----
+  document.getElementById('addBtn').addEventListener('click',function(){open(pasteScrim);});
+
+  // ---- subscribe popover + copy ----
+  var subBtn=document.getElementById('subBtn');
+  var subPop=document.getElementById('subPop');
+  subBtn.addEventListener('click',function(e){e.stopPropagation();subPop.classList.toggle('open');});
+  subPop.addEventListener('click',function(e){e.stopPropagation();});
+  document.addEventListener('click',function(){subPop.classList.remove('open');});
+
+  var toast=document.getElementById('toast');var tt;
+  function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove('show');},1600);}
+  document.getElementById('copyFeed').addEventListener('click',function(){
+    var url='webcal://calink.app/feed/x9f2a1.ics';
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).catch(function(){});}
+    showToast('LINK COPIED');
+  });
+
+  // ---- undo (paste) ----
+  document.querySelector('.undo').addEventListener('click',function(){
+    showToast('UNDONE · 5 EVENTS REMOVED');
+    close(pasteScrim);
+  });
+})();
+</script>
+</body>
+</html>

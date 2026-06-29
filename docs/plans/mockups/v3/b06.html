@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calink — Editorial List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --cream:#FFFDF5;
+    --ink:#000000;
+    --red:#FF5A5F;
+    --hair:#000000;
+    --paper:#FFFFFF;
+    --muted:#3A3A3A; /* >=4.5:1 on cream */
+    --font:"Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:var(--font);
+    font-weight:500;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  .tabular{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:0;}
+  .label{
+    font-size:12px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.14em;line-height:1;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  a{color:inherit;}
+
+  /* ---------- Shell ---------- */
+  .wrap{max-width:1280px;margin:0 auto;padding:0 40px;}
+
+  /* ---------- Top bar (slim) ---------- */
+  .topbar{
+    border-bottom:3px solid var(--ink);
+    background:var(--cream);
+    position:sticky;top:0;z-index:20;
+  }
+  .topbar .row{
+    display:flex;align-items:center;justify-content:space-between;
+    height:64px;
+  }
+  .brand{display:flex;align-items:baseline;gap:12px;}
+  .brand .name{font-weight:700;font-size:21px;letter-spacing:-.01em;}
+  .brand .tag{font-size:12px;font-weight:500;color:var(--muted);}
+  .topbar-actions{display:flex;align-items:center;gap:10px;}
+  .btn{
+    font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+    background:var(--cream);color:var(--ink);border:2px solid var(--ink);
+    border-radius:0;padding:9px 16px;display:inline-flex;align-items:center;gap:8px;
+    transition:none;
+  }
+  .btn:hover{background:var(--ink);color:var(--cream);}
+  .btn svg{display:block;}
+  .btn-solid{background:var(--ink);color:var(--cream);box-shadow:4px 4px 0 var(--red);}
+  .btn-solid:hover{background:var(--ink);color:var(--cream);box-shadow:2px 2px 0 var(--red);transform:translate(2px,2px);}
+
+  /* ---------- Editorial list ---------- */
+  main{padding:8px 0 64px;}
+  .lede{
+    max-width:62ch;margin:40px 0 8px;
+  }
+  .lede h1{
+    font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.14em;
+    margin:0 0 6px;
+  }
+  .lede p{margin:0;color:var(--muted);font-size:15px;max-width:60ch;}
+
+  .day{margin-top:48px;}
+  .day-head{
+    display:flex;align-items:baseline;gap:16px;
+    border-bottom:3px solid var(--ink);padding-bottom:6px;
+  }
+  .day-head .dow{
+    font-weight:700;line-height:.9;letter-spacing:-.02em;
+    font-size:clamp(40px,5vw,64px);
+  }
+  .day-head .meta{
+    margin-left:auto;text-align:right;color:var(--muted);
+    display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  }
+  .day.today .day-head .dow{color:var(--red);}
+  .today-flag{
+    color:var(--red);border:2px solid var(--red);
+    padding:3px 8px;align-self:flex-end;
+  }
+
+  .rows{border-top:0;}
+  .ev{
+    display:grid;
+    grid-template-columns:128px 1fr auto;
+    align-items:baseline;gap:20px;
+    width:100%;text-align:left;background:transparent;
+    border:0;border-bottom:1px solid var(--ink);
+    padding:16px 4px;transition:none;
+  }
+  .ev:hover{background:var(--paper);}
+  .ev .time{font-weight:700;font-size:14px;color:var(--ink);padding-top:1px;}
+  .ev .time .dash{color:var(--muted);}
+  .ev .allday{
+    font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    border:2px solid var(--ink);padding:3px 7px;display:inline-block;line-height:1;
+  }
+  .ev .body .title{font-weight:700;font-size:18px;letter-spacing:-.01em;line-height:1.25;}
+  .ev .body .sub{font-size:13px;color:var(--muted);margin-top:3px;}
+  .ev .chev{color:var(--muted);opacity:0;align-self:center;}
+  .ev:hover .chev{opacity:1;}
+  .ev .rep{
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--muted);padding:2px 6px;margin-left:8px;
+    display:inline-block;vertical-align:middle;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{border-top:3px solid var(--ink);padding:24px 0 56px;}
+  .feed{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .feed .label{color:var(--muted);}
+  .feed code{
+    font-family:var(--font);font-weight:700;font-size:14px;
+    background:var(--paper);border:2px solid var(--ink);padding:8px 12px;
+    word-break:break-all;
+  }
+  .copy{
+    border:2px solid var(--ink);background:var(--cream);padding:8px 12px;
+    font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.08em;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .copy:hover{background:var(--ink);color:var(--cream);}
+  .copy.ok{background:var(--ink);color:var(--cream);}
+  .mcp{margin-top:18px;font-size:13px;color:var(--muted);max-width:64ch;}
+  .mcp code{
+    font-family:var(--font);font-weight:700;background:var(--paper);
+    border:1px solid var(--ink);padding:1px 6px;color:var(--ink);
+  }
+  .mcp a{font-weight:700;color:var(--ink);text-underline-offset:3px;}
+
+  /* ---------- Overlay / sheets ---------- */
+  .scrim{
+    position:fixed;inset:0;background:rgba(0,0,0,.42);
+    display:none;z-index:40;
+  }
+  .scrim.open{display:block;}
+  .sheet{
+    position:fixed;z-index:50;top:0;right:0;height:100%;
+    width:min(480px,94vw);background:var(--cream);
+    border-left:3px solid var(--ink);
+    transform:translateX(100%);transition:transform .14s ease-out;
+    display:flex;flex-direction:column;
+  }
+  .sheet.open{transform:translateX(0);}
+  .sheet-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 24px;border-bottom:3px solid var(--ink);
+  }
+  .sheet-head .label{font-size:13px;}
+  .x{
+    border:2px solid var(--ink);background:var(--cream);
+    width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .x:hover{background:var(--ink);color:var(--cream);}
+  .sheet-body{padding:24px;overflow-y:auto;flex:1;}
+
+  /* paste */
+  .field-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;display:block;margin:0 0 7px;}
+  textarea,input[type=text],input[type=time],input[type=date],select{
+    width:100%;font-family:var(--font);font-weight:500;font-size:15px;
+    background:var(--paper);border:2px solid var(--ink);border-radius:0;
+    padding:11px 12px;color:var(--ink);
+  }
+  textarea{min-height:108px;resize:vertical;line-height:1.5;}
+  select{font-weight:700;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+
+  .applied{
+    border:2px solid var(--ink);background:var(--paper);
+    margin-top:20px;
+  }
+  .applied .ahead{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 14px;border-bottom:2px solid var(--ink);background:var(--ink);color:var(--cream);
+  }
+  .applied .ahead .label{color:var(--cream);}
+  .applied .ahead .undo{
+    border:2px solid var(--cream);background:transparent;color:var(--cream);
+    font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    padding:5px 10px;display:inline-flex;align-items:center;gap:6px;
+  }
+  .applied .ahead .undo:hover{background:var(--cream);color:var(--ink);}
+  .applied ul{list-style:none;margin:0;padding:0;}
+  .applied li{
+    display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:baseline;
+    padding:11px 14px;border-bottom:1px solid var(--ink);
+  }
+  .applied li:last-child{border-bottom:0;}
+  .applied li .time{font-weight:700;font-size:13px;}
+  .applied li .t{font-weight:700;font-size:15px;}
+  .applied li .s{font-size:12px;color:var(--muted);}
+  .applied.undone{opacity:.4;}
+  .applied.undone .undo{display:none;}
+
+  /* editor */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .stack{display:flex;flex-direction:column;gap:16px;}
+  .rrule{
+    font-family:var(--font);font-weight:700;font-size:12px;
+    background:var(--ink);color:var(--cream);padding:7px 10px;display:inline-block;
+    margin-top:8px;letter-spacing:.02em;
+  }
+  .scope{display:none;margin-top:12px;border:2px solid var(--ink);padding:12px;background:var(--paper);}
+  .scope.show{display:block;}
+  .scope .label{margin-bottom:9px;display:block;}
+  .radio{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:14px;font-weight:500;cursor:pointer;}
+  .radio input{width:18px;height:18px;accent-color:#000;margin:0;}
+  .sheet-foot{
+    border-top:3px solid var(--ink);padding:16px 24px;display:flex;gap:12px;
+  }
+  .sheet-foot .btn{flex:1;justify-content:center;}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120%);
+    background:var(--ink);color:var(--cream);border:2px solid var(--ink);
+    padding:11px 18px;font-weight:700;font-size:13px;letter-spacing:.04em;
+    z-index:60;transition:transform .16s ease-out;box-shadow:4px 4px 0 var(--red);
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+</style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="wrap row">
+      <div class="brand">
+        <span class="name">Calink</span>
+        <span class="tag">paste anything, get a live calendar link</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-solid" id="openPaste" aria-haspopup="dialog">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Paste
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- EDITORIAL LIST -->
+  <main class="wrap">
+    <div class="lede">
+      <h1>Your week</h1>
+      <p>Five days, eight events. Click any row to edit. Subscribe once and it stays live.</p>
+    </div>
+
+    <!-- MON 29 — TODAY -->
+    <section class="day today">
+      <div class="day-head">
+        <span class="dow tabular">MON 29</span>
+        <div class="meta">
+          <span class="today-flag label">Today</span>
+          <span class="label">June</span>
+        </div>
+      </div>
+      <div class="rows">
+        <button class="ev" data-edit>
+          <span class="time"><span class="allday">All-day</span></span>
+          <span class="body"><span class="title">v0.3 cut-off</span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+        <button class="ev" data-edit data-recurring>
+          <span class="time tabular">09:30<span class="dash">–</span>09:45</span>
+          <span class="body"><span class="title">Standup<span class="rep">Weekdays</span></span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+        <button class="ev" data-edit>
+          <span class="time tabular">14:00<span class="dash">–</span>15:00</span>
+          <span class="body"><span class="title">Design review — Calink feeds</span><span class="sub">Room 2</span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TUE 30 -->
+    <section class="day">
+      <div class="day-head">
+        <span class="dow tabular">TUE 30</span>
+        <div class="meta"><span class="label">June</span></div>
+      </div>
+      <div class="rows">
+        <button class="ev" data-edit data-recurring>
+          <span class="time tabular">08:00<span class="dash">–</span>08:45</span>
+          <span class="body"><span class="title">Morning run<span class="rep">M/W/F</span></span><span class="sub">Workouts</span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+        <button class="ev" data-edit>
+          <span class="time tabular">16:30<span class="dash">–</span>17:00</span>
+          <span class="body"><span class="title">1:1 with Sam</span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- WED 01 -->
+    <section class="day">
+      <div class="day-head">
+        <span class="dow tabular">WED 01</span>
+        <div class="meta"><span class="label">July</span></div>
+      </div>
+      <div class="rows">
+        <button class="ev" data-edit data-recurring>
+          <span class="time tabular">09:30</span>
+          <span class="body"><span class="title">Standup<span class="rep">Weekdays</span></span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+        <button class="ev" data-edit>
+          <span class="time tabular">11:00<span class="dash">–</span>12:30</span>
+          <span class="body"><span class="title">Roadmap planning</span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- MON 06 -->
+    <section class="day">
+      <div class="day-head">
+        <span class="dow tabular">MON 06</span>
+        <div class="meta"><span class="label">July</span></div>
+      </div>
+      <div class="rows">
+        <button class="ev" data-edit>
+          <span class="time tabular">12:30<span class="dash">–</span>13:30</span>
+          <span class="body"><span class="title">Lunch with Priya</span><span class="sub">Sona</span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- THU recurring -->
+    <section class="day">
+      <div class="day-head">
+        <span class="dow tabular">THU</span>
+        <div class="meta"><span class="label">Recurring</span></div>
+      </div>
+      <div class="rows">
+        <button class="ev" data-edit data-recurring>
+          <span class="time tabular">20:00</span>
+          <span class="body"><span class="title">Book club<span class="rep">Weekly</span></span></span>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="wrap">
+    <div class="feed">
+      <span class="label">Subscribe</span>
+      <code id="feedUrl">webcal://calink.app/feed/x9f2&hellip;a1.ics</code>
+      <button class="copy" id="copyFeed">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="9" y="9" width="13" height="13"/><path d="M5 15V4a1 1 0 0 1 1-1h11"/></svg>
+        <span class="copy-txt">Copy</span>
+      </button>
+    </div>
+    <p class="mcp">
+      Agents can build this calendar over the
+      <a href="#" onclick="return false;">MCP server</a> — authenticate with a Bearer key
+      <code>sk-cal-7b2&hellip;e4</code>.
+    </p>
+  </footer>
+
+  <!-- PASTE SHEET -->
+  <div class="scrim" id="scrimPaste"></div>
+  <aside class="sheet" id="sheetPaste" role="dialog" aria-modal="true" aria-label="Paste to events">
+    <div class="sheet-head">
+      <span class="label">Paste anything</span>
+      <button class="x" data-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <label class="field-label" for="pasteBox">Email, notes, a screenshot of a flyer&hellip;</label>
+      <textarea id="pasteBox">Roadmap planning Wed 11:00–12:30. Lunch with Priya next Mon 12:30 at Sona. Book club every Thursday 8pm.</textarea>
+
+      <div class="applied" id="appliedBox">
+        <div class="ahead">
+          <span class="label">3 events added</span>
+          <button class="undo" id="undoBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>
+            Undo
+          </button>
+        </div>
+        <ul>
+          <li><span class="time tabular">WED 11:00</span><span><span class="t">Roadmap planning</span></span></li>
+          <li><span class="time tabular">MON 12:30</span><span><span class="t">Lunch with Priya</span><div class="s">Sona</div></span></li>
+          <li><span class="time tabular">THU 20:00</span><span><span class="t">Book club</span><div class="s">Weekly · FREQ=WEEKLY;BYDAY=TH</div></span></li>
+        </ul>
+      </div>
+      <p class="mcp" style="margin-top:14px;">Auto-applied to your live feed. Subscribers see updates within minutes.</p>
+    </div>
+  </aside>
+
+  <!-- EDITOR SHEET -->
+  <div class="scrim" id="scrimEdit"></div>
+  <aside class="sheet" id="sheetEdit" role="dialog" aria-modal="true" aria-label="Edit event">
+    <div class="sheet-head">
+      <span class="label">Edit event</span>
+      <button class="x" data-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <div class="stack">
+        <div>
+          <label class="field-label" for="fTitle">Title</label>
+          <input type="text" id="fTitle" value="Standup" />
+        </div>
+        <div>
+          <label class="field-label" for="fDate">Date</label>
+          <input type="date" id="fDate" value="2026-06-29" />
+        </div>
+        <div class="grid2">
+          <div>
+            <label class="field-label" for="fStart">Start</label>
+            <input type="time" id="fStart" value="09:30" />
+          </div>
+          <div>
+            <label class="field-label" for="fEnd">End</label>
+            <input type="time" id="fEnd" value="09:45" />
+          </div>
+        </div>
+        <div>
+          <label class="field-label" for="fLoc">Location</label>
+          <input type="text" id="fLoc" value="" placeholder="Add a place" />
+        </div>
+        <div>
+          <label class="field-label" for="fRepeat">Repeat</label>
+          <select id="fRepeat">
+            <option value="none">Does not repeat</option>
+            <option value="wk" selected>Weekly on Mon</option>
+            <option value="day">Every weekday</option>
+            <option value="custom">Custom&hellip;</option>
+          </select>
+          <span class="rrule" id="rruleOut">RRULE:FREQ=WEEKLY;BYDAY=MO</span>
+
+          <div class="scope show" id="scopeBox">
+            <span class="label">Apply change to</span>
+            <label class="radio"><input type="radio" name="scope" checked /> This event</label>
+            <label class="radio"><input type="radio" name="scope" /> This &amp; following events</label>
+            <label class="radio"><input type="radio" name="scope" /> All events</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn btn-solid" id="saveEdit">Save</button>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast">Saved</div>
+
+<script>
+  // ---- helpers ----
+  function openSheet(sheet, scrim){ scrim.classList.add('open'); sheet.classList.add('open'); }
+  function closeAll(){
+    document.querySelectorAll('.sheet.open').forEach(s=>s.classList.remove('open'));
+    document.querySelectorAll('.scrim.open').forEach(s=>s.classList.remove('open'));
+  }
+  function toast(msg){
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600);
+  }
+
+  // ---- paste sheet ----
+  const sheetPaste=document.getElementById('sheetPaste');
+  const scrimPaste=document.getElementById('scrimPaste');
+  document.getElementById('openPaste').addEventListener('click',()=>{
+    document.getElementById('appliedBox').classList.remove('undone');
+    openSheet(sheetPaste,scrimPaste);
+  });
+  document.getElementById('undoBtn').addEventListener('click',()=>{
+    document.getElementById('appliedBox').classList.add('undone');
+    toast('Reverted 3 events');
+  });
+
+  // ---- editor sheet ----
+  const sheetEdit=document.getElementById('sheetEdit');
+  const scrimEdit=document.getElementById('scrimEdit');
+  const fRepeat=document.getElementById('fRepeat');
+  const rruleOut=document.getElementById('rruleOut');
+  const scopeBox=document.getElementById('scopeBox');
+  const RRULE={none:'',wk:'RRULE:FREQ=WEEKLY;BYDAY=MO',day:'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',custom:'RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO'};
+  function syncRepeat(){
+    const v=fRepeat.value;
+    if(v==='none'){ rruleOut.style.display='none'; scopeBox.classList.remove('show'); }
+    else{ rruleOut.style.display='inline-block'; rruleOut.textContent=RRULE[v]; scopeBox.classList.add('show'); }
+  }
+  fRepeat.addEventListener('change',syncRepeat);
+
+  document.querySelectorAll('[data-edit]').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const title=row.querySelector('.title')?.childNodes[0]?.textContent.trim()||'Event';
+      document.getElementById('fTitle').value=title;
+      const recurring=row.hasAttribute('data-recurring');
+      fRepeat.value=recurring?'wk':'none';
+      syncRepeat();
+      openSheet(sheetEdit,scrimEdit);
+    });
+  });
+  document.getElementById('saveEdit').addEventListener('click',()=>{ closeAll(); toast('Event saved'); });
+
+  // ---- close handlers ----
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeAll));
+  document.querySelectorAll('.scrim').forEach(s=>s.addEventListener('click',closeAll));
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
+
+  // ---- copy feed ----
+  document.getElementById('copyFeed').addEventListener('click',function(){
+    const url='webcal://calink.app/feed/x9f2a1.ics';
+    const done=()=>{ this.classList.add('ok'); this.querySelector('.copy-txt').textContent='Copied'; toast('Link copied');
+      setTimeout(()=>{ this.classList.remove('ok'); this.querySelector('.copy-txt').textContent='Copy'; },1500); };
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done).catch(done); }
+    else { done(); }
+  });
+</script>
+</body>
+</html>

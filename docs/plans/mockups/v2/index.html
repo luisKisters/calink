@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — UI Directions v2</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  body{display:flex;flex-direction:column;background:#111}
+  .switcher{display:flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;border-bottom:1px solid #e5e5e5;flex-shrink:0}
+  .brand{color:#111;font-weight:700;font-size:15px;margin-right:14px;letter-spacing:-.3px}
+  .switcher button{appearance:none;border:1px solid transparent;background:transparent;color:#666;font-size:13px;padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s;font-weight:500;white-space:nowrap}
+  .switcher button:hover{color:#111;background:#f2f2f2}
+  .switcher button.active{color:#111;background:#111;color:#fff;border-color:#111}
+  .switcher button.active{color:#fff}
+  .hint{margin-left:auto;color:#999;font-size:12px}
+  iframe{flex:1;width:100%;border:0;background:#fff}
+</style>
+</head>
+<body>
+  <nav class="switcher">
+    <div class="brand">calink · v2</div>
+    <button data-src="a-brutalism.html" class="active">1 · Neo-Brutalism</button>
+    <button data-src="b-swiss.html">2 · Swiss</button>
+    <button data-src="c-editorial.html">3 · Editorial</button>
+    <button data-src="d-warm.html">4 · Warm Calm</button>
+    <button data-src="e-dark.html">5 · Refined Dark</button>
+    <div class="hint">5 independent design directions — same product, same data</div>
+  </nav>
+  <iframe id="stage" src="a-brutalism.html"></iframe>
+  <script>
+    const stage=document.getElementById('stage');
+    document.querySelectorAll('.switcher button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        document.querySelectorAll('.switcher button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        stage.src=b.dataset.src;
+      });
+    });
+  </script>
+</body>
+</html>

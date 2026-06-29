@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calink — Playful</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Poppins",-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(160deg,#fff5fb 0%,#eef2ff 55%,#eafff6 100%);color:#2a2540;min-height:100vh}
+  .wrap{max-width:900px;margin:0 auto;padding:34px 24px 70px}
+  .nav{display:flex;align-items:center;gap:12px}
+  .logo{font-weight:800;font-size:22px;letter-spacing:-.5px}
+  .logo span{background:linear-gradient(90deg,#ff7ac3,#7c6cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .link{margin-left:auto;display:flex;align-items:center;gap:8px;background:#fff;border:2px solid #ece6ff;border-radius:999px;padding:8px 15px;font-size:13px;font-weight:600;color:#7c6cff;box-shadow:0 6px 18px rgba(124,108,255,.12);cursor:pointer}
+  .hero{margin-top:26px;background:#fff;border-radius:26px;padding:28px;box-shadow:0 16px 50px rgba(124,108,255,.14);border:1px solid #f0ecff}
+  .hero h1{font-size:26px;font-weight:800;letter-spacing:-.6px}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,#ff7ac3,#7c6cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:#7a749a;font-size:14.5px;margin-top:5px;font-weight:500}
+  .drop{margin-top:16px;background:linear-gradient(135deg,#f6f3ff,#fff0f8);border:2px dashed #c9bdff;border-radius:18px;padding:20px;font-size:13.5px;color:#6a6390;line-height:1.7}
+  .drop b{color:#2a2540}
+  .row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .btn{border:0;border-radius:14px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .b1{background:linear-gradient(90deg,#7c6cff,#9b7bff);color:#fff;box-shadow:0 10px 24px rgba(124,108,255,.35)}
+  .b2{background:#fff;color:#7c6cff;border:2px solid #ece6ff}
+  .grid{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{background:#fff;border-radius:20px;padding:18px;border:1px solid #f0ecff;box-shadow:0 8px 26px rgba(40,30,90,.06)}
+  .card .tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;margin-bottom:10px}
+  .t-pink{background:#ffe6f4;color:#d6489a}.t-purp{background:#ece6ff;color:#7c6cff}.t-green{background:#dffaee;color:#1f9d6b}.t-amber{background:#fff0d6;color:#cf8a1a}
+  .card h3{font-size:16px;font-weight:700;letter-spacing:-.2px}
+  .card .when{font-size:13px;color:#8a83a8;font-weight:600;margin-top:3px}
+  .card .det{font-size:13px;color:#9a93b5;margin-top:8px}
+  .rep{margin-top:10px;font-size:11px;font-weight:700;color:#7c6cff;background:#f3f0ff;display:inline-block;padding:4px 10px;border-radius:999px}
+  .mcp{margin-top:22px;background:#1c1830;border-radius:20px;padding:18px 22px;color:#dcd6ff;display:flex;align-items:center;gap:14px}
+  .mcp .em{font-size:26px}
+  .mcp b{color:#fff}
+  .mcp code{font-family:ui-monospace,monospace;font-size:12px;background:#2c2650;padding:3px 8px;border-radius:6px;color:#c9bdff}
+</style></head>
+<body>
+  <div class="wrap">
+    <div class="nav">
+      <div class="logo">cal<span>ink</span> 🗓️</div>
+      <div class="link">🔗 webcal://…/feed/x9f2…a1.ics &nbsp;·&nbsp; copy</div>
+    </div>
+
+    <div class="hero">
+      <h1>Drop it in. <em>Watch it become a calendar.</em></h1>
+      <p>Paste a messy email, a poster, your group chat — Calink turns it into clean events you can subscribe to anywhere. ✨</p>
+      <div class="drop">
+        <b>Welcome dinner</b> Sept 4, 7pm @ Trattoria Nile<br>
+        <b>Lake offsite</b> Sept 5–6 (all day)<br>
+        <b>Book club</b> every Thursday 8pm 📚
+      </div>
+      <div class="row">
+        <button class="btn b1">✨ Turn into events</button>
+        <button class="btn b2">💬 Or just chat</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><span class="tag t-purp">● Acme Team</span><h3>Standup</h3><div class="when">Today · 9:30–9:45 AM</div><div class="det">Zoom, with Engineering</div><span class="rep">↻ every weekday</span></div>
+      <div class="card"><span class="tag t-purp">● Acme Team</span><h3>Design review</h3><div class="when">Today · 2:00–3:00 PM</div><div class="det">Room 2 · Calink feeds</div></div>
+      <div class="card"><span class="tag t-green">● Workouts</span><h3>Morning run 🏃</h3><div class="when">Tomorrow · 8:00 AM</div><div class="det">Riverside loop</div><span class="rep">↻ Mon / Wed / Fri</span></div>
+      <div class="card"><span class="tag t-amber">● Release</span><h3>v0.3 cut-off</h3><div class="when">Today · all day</div><div class="det">Ship it 🚀</div></div>
+    </div>
+
+    <div class="mcp">
+      <div class="em">🤖</div>
+      <div>Let your AI run it. <b>Connect the MCP server</b> and Claude can create calendars and events for you — add <code>calink</code> to your <code>mcp.json</code>.</div>
+    </div>
+  </div>
+</body></html>

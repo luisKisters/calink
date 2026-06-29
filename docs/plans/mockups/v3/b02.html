@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calink — Monochrome Discipline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --cream:#FFFDF5;
+    --ink:#000;
+    --ink-soft:#2E2E2E;       /* >9:1 on cream */
+    --hair:#000;
+    --b-hair:1px solid var(--ink);
+    --b-thin:2px solid var(--ink);
+    --b-heavy:4px solid var(--ink);
+    --gap:24px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--cream);color:var(--ink);
+    font-family:"Space Grotesk",system-ui,sans-serif;font-weight:400;
+    -webkit-font-smoothing:antialiased;}
+  body{padding:0;line-height:1.4}
+  .mono-num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+  /* ---------- type helpers ---------- */
+  .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;}
+  .label-soft{color:var(--ink-soft)}
+  button{font-family:inherit;cursor:pointer;background:none;border:none}
+  a{color:inherit}
+
+  /* ---------- shell ---------- */
+  .wrap{max-width:1280px;margin:0 auto;padding:0 40px 80px}
+
+  /* ---------- header ---------- */
+  header.top{border-bottom:var(--b-heavy);padding:26px 0 22px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:32px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand .mark{width:34px;height:34px;border:var(--b-thin);
+    display:flex;align-items:center;justify-content:center}
+  .brand h1{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1}
+  .brand .tag{font-size:11px;font-weight:500;color:var(--ink-soft);
+    text-transform:uppercase;letter-spacing:.16em;margin-top:5px}
+
+  .top-actions{display:flex;align-items:center;gap:14px}
+  .btn{border:var(--b-thin);padding:11px 18px;font-size:13px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em;background:var(--cream);
+    color:var(--ink);transition:none;display:inline-flex;align-items:center;gap:9px}
+  .btn:hover{background:var(--ink);color:var(--cream)}
+  .btn:hover svg *{stroke:var(--cream)}
+  .btn-primary{background:var(--ink);color:var(--cream);
+    box-shadow:5px 5px 0 var(--ink)}
+  .btn-primary svg *{stroke:var(--cream)}
+  .btn-primary:hover{box-shadow:0 0 0 var(--ink);transform:translate(5px,5px)}
+  .btn-ghost{border:var(--b-hair);padding:11px 14px;font-size:12px}
+
+  /* ---------- subscribe bar ---------- */
+  .subscribe{margin-top:28px;border:var(--b-hair);
+    display:flex;align-items:stretch}
+  .subscribe .sub-label{padding:16px 20px;border-right:var(--b-hair);
+    display:flex;flex-direction:column;justify-content:center;min-width:190px;background:var(--cream)}
+  .subscribe .sub-label .label{margin-bottom:4px}
+  .subscribe .sub-label .sub-note{font-size:11px;color:var(--ink-soft)}
+  .subscribe .sub-link{flex:1;display:flex;align-items:center;padding:0 22px;
+    font-size:15px;font-weight:500;overflow:hidden;white-space:nowrap}
+  .subscribe .sub-link .scheme{font-weight:700}
+  .subscribe .sub-copy{border-left:var(--b-hair);padding:0 24px;
+    font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+    display:flex;align-items:center;gap:9px;background:var(--cream)}
+  .subscribe .sub-copy:hover{background:var(--ink);color:var(--cream)}
+  .subscribe .sub-copy:hover svg *{stroke:var(--cream)}
+
+  /* ---------- legend ---------- */
+  .agenda-head{display:flex;align-items:center;justify-content:space-between;
+    margin-top:48px;padding-bottom:14px;border-bottom:var(--b-thin)}
+  .agenda-head .ttl{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.16em}
+  .legend{display:flex;gap:26px;align-items:center}
+  .legend .cal{display:flex;align-items:center;gap:9px;font-size:11px;
+    font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+  .swatch{width:15px;height:15px;border:var(--b-hair);flex:none}
+  /* three calendars distinguished by FILL PATTERN, not color */
+  .sw-work{background:var(--ink)}                                   /* solid */
+  .sw-workout{background-image:repeating-linear-gradient(45deg,var(--ink) 0,var(--ink) 1.5px,transparent 1.5px,transparent 4px)} /* hatch */
+  .sw-personal{background-image:radial-gradient(var(--ink) 1.1px,transparent 1.3px);background-size:5px 5px;background-position:1px 1px} /* dots */
+
+  /* ---------- agenda ---------- */
+  .day{display:grid;grid-template-columns:150px 1fr;gap:0;border-bottom:var(--b-hair)}
+  .day:last-child{border-bottom:none}
+  .day-spine{padding:24px 24px 24px 0;border-right:var(--b-hair)}
+  .day.is-today .day-spine{border-right:var(--b-thin)}
+  .day-num{font-size:40px;font-weight:700;line-height:.9;letter-spacing:-.03em}
+  .day-dow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-top:6px}
+  .day-mo{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.14em;margin-top:2px}
+  .today-flag{display:inline-block;margin-top:12px;border:var(--b-thin);
+    padding:3px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+    background:var(--ink);color:var(--cream)}
+
+  .events{padding:18px 0 22px}
+  .ev{display:grid;grid-template-columns:96px 22px 1fr auto;align-items:baseline;
+    gap:16px;width:100%;text-align:left;padding:13px 8px 13px 22px;
+    border-top:1px solid transparent}
+  .ev+.ev{border-top:1px solid #E4E1D4}
+  .ev:hover{background:var(--ink);color:var(--cream)}
+  .ev:hover .ev-meta,.ev:hover .ev-time-end{color:var(--cream)}
+  .ev:hover .ev-swatch{outline:1px solid var(--cream)}
+  .ev:hover .sw-work{background:var(--cream)}
+  .ev:hover .sw-workout{background-image:repeating-linear-gradient(45deg,var(--cream) 0,var(--cream) 1.5px,transparent 1.5px,transparent 4px)}
+  .ev:hover .sw-personal{background-image:radial-gradient(var(--cream) 1.1px,transparent 1.3px)}
+  .ev-time{font-size:14px;font-weight:700;line-height:1.25}
+  .ev-time-end{font-size:12px;font-weight:500;color:var(--ink-soft);display:block}
+  .ev-allday{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+  .ev-swatch{width:13px;height:13px;border:1px solid currentColor;margin-top:3px;flex:none}
+  .ev-body{min-width:0}
+  .ev-title{font-size:16px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+  .ev-meta{font-size:12px;color:var(--ink-soft);margin-top:3px;font-weight:500}
+  .ev-recur{display:inline-flex;align-items:center;gap:5px;
+    border:1px solid currentColor;padding:4px 8px;font-size:10px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;align-self:center}
+
+  /* ---------- footer / MCP ---------- */
+  footer{margin-top:44px;border-top:var(--b-hair);padding-top:18px;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    font-size:12px;color:var(--ink-soft)}
+  .mcp{display:flex;align-items:center;gap:11px}
+  .mcp .label{color:var(--ink)}
+  .mcp code{font-family:"Space Grotesk",monospace;font-weight:700;color:var(--ink);
+    border:1px solid var(--ink);padding:3px 8px;letter-spacing:.04em}
+
+  /* ---------- overlay + modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:56px 24px;overflow:auto;z-index:50}
+  .overlay.open{display:flex}
+  .modal{background:var(--cream);border:var(--b-heavy);
+    box-shadow:12px 12px 0 var(--ink);width:100%;max-width:560px}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;
+    padding:20px 24px;border-bottom:var(--b-thin)}
+  .modal-head h2{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+  .x{width:34px;height:34px;border:var(--b-hair);display:flex;align-items:center;justify-content:center}
+  .x:hover{background:var(--ink)}
+  .x:hover svg *{stroke:var(--cream)}
+  .modal-body{padding:24px}
+  .modal-foot{padding:18px 24px;border-top:var(--b-hair);
+    display:flex;align-items:center;justify-content:space-between;gap:14px}
+
+  /* ---------- paste modal ---------- */
+  textarea{width:100%;min-height:104px;resize:vertical;background:var(--cream);
+    border:var(--b-thin);padding:14px;font-family:inherit;font-size:14px;
+    line-height:1.5;color:var(--ink)}
+  textarea:focus{outline:none;box-shadow:4px 4px 0 var(--ink)}
+  .applied{margin-top:20px;border:var(--b-hair);border-left:var(--b-heavy)}
+  .applied-top{display:flex;align-items:center;justify-content:space-between;
+    padding:13px 16px;border-bottom:1px solid #E4E1D4}
+  .applied-top .label{display:flex;align-items:center;gap:9px}
+  .applied .row{display:grid;grid-template-columns:84px 1fr;gap:14px;
+    padding:11px 16px;font-size:13px;align-items:baseline}
+  .applied .row+.row{border-top:1px solid #E4E1D4}
+  .applied .row .t{font-weight:700}
+  .applied .row .d{font-weight:500}
+  .applied .row .d small{display:block;color:var(--ink-soft);font-size:11px;margin-top:2px}
+  .undo{border:var(--b-thin);padding:8px 14px;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.1em}
+  .undo:hover{background:var(--ink);color:var(--cream)}
+  .undo:hover svg *{stroke:var(--cream)}
+  .ai-note{font-size:11px;color:var(--ink-soft);font-weight:500}
+
+  /* ---------- editor modal ---------- */
+  .field{margin-bottom:18px}
+  .field>.label{display:block;margin-bottom:7px}
+  .field input,.field select{width:100%;background:var(--cream);border:var(--b-hair);
+    padding:11px 13px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .field input:focus,.field select:focus{outline:none;border:var(--b-thin)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  select{appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='black' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+  .rrule{margin-top:-6px;margin-bottom:18px;border:1px solid var(--ink);border-left:var(--b-heavy);
+    padding:10px 14px;font-size:12px;font-weight:700;letter-spacing:.02em;
+    display:flex;align-items:center;gap:10px}
+  .rrule .label{color:var(--ink-soft)}
+  .scope{border:var(--b-hair);padding:14px 16px;margin-bottom:4px}
+  .scope>.label{display:block;margin-bottom:11px}
+  .scope label{display:flex;align-items:center;gap:11px;padding:8px 0;
+    font-size:14px;font-weight:500;cursor:pointer;border-top:1px solid #E4E1D4}
+  .scope label:first-of-type{border-top:none}
+  .radio{width:18px;height:18px;border:var(--b-thin);flex:none;
+    display:flex;align-items:center;justify-content:center}
+  .radio i{width:8px;height:8px;background:var(--ink);display:none}
+  input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+  input[type=radio]:checked + .radio i{display:block}
+  input[type=radio]:focus-visible + .radio{box-shadow:3px 3px 0 var(--ink)}
+  .hidden{display:none !important}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--cream);border:var(--b-thin);
+    padding:13px 22px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+    box-shadow:6px 6px 0 var(--ink);opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;z-index:80}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ======= HEADER ======= -->
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 18 18"><rect x="1" y="3" width="16" height="13" stroke="#000" stroke-width="2" fill="none"/><line x1="1" y1="7" x2="17" y2="7" stroke="#000" stroke-width="2"/><line x1="5" y1="1" x2="5" y2="5" stroke="#000" stroke-width="2"/><line x1="13" y1="1" x2="13" y2="5" stroke="#000" stroke-width="2"/></svg>
+      </span>
+      <div>
+        <h1>Calink</h1>
+        <div class="tag">Paste anything &middot; get a live calendar</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-ghost" onclick="openModal('mcpHint')">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 7l4-4M9 3h2v2M5 7l-2 2v2h2l2-2" stroke="#000" stroke-width="1.6" fill="none"/></svg>
+        MCP
+      </button>
+      <button class="btn btn-primary" onclick="openModal('paste')">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 5h8v7H3zM5 5V2h4v3M7 7v3M5.5 8.5h3" stroke="#000" stroke-width="1.4" fill="none"/></svg>
+        Paste &amp; add
+      </button>
+    </div>
+  </header>
+
+  <!-- ======= SUBSCRIBE LINK ======= -->
+  <section class="subscribe" aria-label="Calendar subscribe link">
+    <div class="sub-label">
+      <span class="label">Live feed</span>
+      <span class="sub-note">Read-only &middot; updates instantly</span>
+    </div>
+    <div class="sub-link mono-num"><span class="scheme">webcal://</span>calink.app/feed/x9f2&hellip;a1.ics</div>
+    <button class="sub-copy" id="copyBtn" onclick="copyLink()">
+      <svg width="14" height="14" viewBox="0 0 14 14"><rect x="3" y="3" width="7" height="8" stroke="#000" stroke-width="1.4" fill="none"/><path d="M5 3V1h7v8h-2" stroke="#000" stroke-width="1.4" fill="none"/></svg>
+      <span id="copyLabel">Copy</span>
+    </button>
+  </section>
+
+  <!-- ======= AGENDA HEAD + LEGEND ======= -->
+  <div class="agenda-head">
+    <div class="ttl">Upcoming</div>
+    <div class="legend">
+      <span class="cal"><span class="swatch sw-work"></span>Work</span>
+      <span class="cal"><span class="swatch sw-workout"></span>Workouts</span>
+      <span class="cal"><span class="swatch sw-personal"></span>Personal</span>
+    </div>
+  </div>
+
+  <!-- ======= AGENDA ======= -->
+  <main>
+    <!-- MON JUN 29 -->
+    <section class="day is-today">
+      <div class="day-spine">
+        <div class="day-num mono-num">29</div>
+        <div class="day-dow">Mon</div>
+        <div class="day-mo">Jun</div>
+        <span class="today-flag">Today</span>
+      </div>
+      <div class="events">
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-allday">All day</span>
+          <span class="ev-swatch sw-work"></span>
+          <span class="ev-body"><span class="ev-title">v0.3 cut-off</span></span>
+          <span></span>
+        </button>
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">09:30<span class="ev-time-end">09:45</span></span>
+          <span class="ev-swatch sw-work"></span>
+          <span class="ev-body"><span class="ev-title">Standup</span><span class="ev-meta">Work</span></span>
+          <span class="ev-recur">
+            <svg width="11" height="11" viewBox="0 0 11 11"><path d="M2 5a3.5 3.5 0 0 1 6-2.3M9 5.5A3.5 3.5 0 0 1 3 8m5-5.3V1m-5 7v2" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+            Weekdays
+          </span>
+        </button>
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">14:00<span class="ev-time-end">15:00</span></span>
+          <span class="ev-swatch sw-work"></span>
+          <span class="ev-body"><span class="ev-title">Design review &mdash; Calink feeds</span><span class="ev-meta">Work &middot; Room 2</span></span>
+          <span></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TUE JUN 30 -->
+    <section class="day">
+      <div class="day-spine">
+        <div class="day-num mono-num">30</div>
+        <div class="day-dow">Tue</div>
+        <div class="day-mo">Jun</div>
+      </div>
+      <div class="events">
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">08:00<span class="ev-time-end">08:45</span></span>
+          <span class="ev-swatch sw-workout"></span>
+          <span class="ev-body"><span class="ev-title">Morning run</span><span class="ev-meta">Workouts</span></span>
+          <span class="ev-recur">
+            <svg width="11" height="11" viewBox="0 0 11 11"><path d="M2 5a3.5 3.5 0 0 1 6-2.3M9 5.5A3.5 3.5 0 0 1 3 8m5-5.3V1m-5 7v2" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+            Mon / Wed / Fri
+          </span>
+        </button>
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">16:30<span class="ev-time-end">17:00</span></span>
+          <span class="ev-swatch sw-work"></span>
+          <span class="ev-body"><span class="ev-title">1:1 with Sam</span><span class="ev-meta">Work</span></span>
+          <span></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- WED JUL 1 -->
+    <section class="day">
+      <div class="day-spine">
+        <div class="day-num mono-num">01</div>
+        <div class="day-dow">Wed</div>
+        <div class="day-mo">Jul</div>
+      </div>
+      <div class="events">
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">09:30</span>
+          <span class="ev-swatch sw-work"></span>
+          <span class="ev-body"><span class="ev-title">Standup</span><span class="ev-meta">Work</span></span>
+          <span class="ev-recur">
+            <svg width="11" height="11" viewBox="0 0 11 11"><path d="M2 5a3.5 3.5 0 0 1 6-2.3M9 5.5A3.5 3.5 0 0 1 3 8m5-5.3V1m-5 7v2" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+            Weekdays
+          </span>
+        </button>
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">11:00<span class="ev-time-end">12:30</span></span>
+          <span class="ev-swatch sw-work"></span>
+          <span class="ev-body"><span class="ev-title">Roadmap planning</span><span class="ev-meta">Work</span></span>
+          <span></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- THU JUL 2 -->
+    <section class="day">
+      <div class="day-spine">
+        <div class="day-num mono-num">02</div>
+        <div class="day-dow">Thu</div>
+        <div class="day-mo">Jul</div>
+      </div>
+      <div class="events">
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">20:00</span>
+          <span class="ev-swatch sw-personal"></span>
+          <span class="ev-body"><span class="ev-title">Book club</span><span class="ev-meta">Personal</span></span>
+          <span class="ev-recur">
+            <svg width="11" height="11" viewBox="0 0 11 11"><path d="M2 5a3.5 3.5 0 0 1 6-2.3M9 5.5A3.5 3.5 0 0 1 3 8m5-5.3V1m-5 7v2" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+            Thursdays
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <!-- MON JUL 6 -->
+    <section class="day">
+      <div class="day-spine">
+        <div class="day-num mono-num">06</div>
+        <div class="day-dow">Mon</div>
+        <div class="day-mo">Jul</div>
+      </div>
+      <div class="events">
+        <button class="ev" onclick="openModal('editor')">
+          <span class="ev-time mono-num">12:30<span class="ev-time-end">13:30</span></span>
+          <span class="ev-swatch sw-personal"></span>
+          <span class="ev-body"><span class="ev-title">Lunch with Priya</span><span class="ev-meta">Personal &middot; Sona</span></span>
+          <span></span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======= FOOTER / MCP ======= -->
+  <footer>
+    <div class="mcp">
+      <span class="label">MCP server</span>
+      <span>Let agents read &amp; edit this calendar &mdash;</span>
+      <code>Bearer sk-clk&hellip;7d4</code>
+    </div>
+    <div>Calink &middot; one link, always current</div>
+  </footer>
+</div>
+
+<!-- ======= PASTE MODAL ======= -->
+<div class="overlay" id="paste-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="paste-title">
+    <div class="modal-head">
+      <h2 id="paste-title">Paste anything</h2>
+      <button class="x" aria-label="Close" onclick="closeModal('paste')">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="#000" stroke-width="2"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <textarea aria-label="Paste text">Sprint demo Fri 4pm in Room 2. Dentist next Tue 9:30. Gym Mon/Wed/Fri 7am.</textarea>
+
+      <div class="applied">
+        <div class="applied-top">
+          <span class="label">
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="#000" stroke-width="2" fill="none"/></svg>
+            3 events added
+          </span>
+          <button class="undo" onclick="showToast('Last paste undone')">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M4 3L1.5 5.5 4 8M1.5 5.5h6A3 3 0 0 1 8 11" stroke="#000" stroke-width="1.4" fill="none"/></svg>
+            Undo
+          </button>
+        </div>
+        <div class="row">
+          <span class="t mono-num">Fri 16:00</span>
+          <span class="d">Sprint demo<small>Work &middot; Room 2</small></span>
+        </div>
+        <div class="row">
+          <span class="t mono-num">Tue 09:30</span>
+          <span class="d">Dentist<small>Personal</small></span>
+        </div>
+        <div class="row">
+          <span class="t mono-num">07:00</span>
+          <span class="d">Gym<small>Workouts &middot; repeats Mon / Wed / Fri</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="ai-note">AI applied these automatically. Review &amp; undo above.</span>
+      <button class="btn btn-primary" onclick="closeModal('paste')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= EVENT EDITOR MODAL ======= -->
+<div class="overlay" id="editor-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+    <div class="modal-head">
+      <h2 id="editor-title">Edit event</h2>
+      <button class="x" aria-label="Close" onclick="closeModal('editor')">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="#000" stroke-width="2"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="label" for="f-title">Title</label>
+        <input id="f-title" type="text" value="Standup" />
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label class="label" for="f-date">Date</label>
+          <input id="f-date" type="text" class="mono-num" value="Mon Jun 29" />
+        </div>
+        <div class="field">
+          <label class="label" for="f-start">Start</label>
+          <input id="f-start" type="text" class="mono-num" value="09:30" />
+        </div>
+        <div class="field">
+          <label class="label" for="f-end">End</label>
+          <input id="f-end" type="text" class="mono-num" value="09:45" />
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label class="label" for="f-loc">Location</label>
+          <input id="f-loc" type="text" value="—" />
+        </div>
+        <div class="field">
+          <label class="label" for="f-repeat">Repeat</label>
+          <select id="f-repeat" onchange="onRepeatChange()">
+            <option value="none">Does not repeat</option>
+            <option value="weekly-mo" selected>Weekly on Mon</option>
+            <option value="weekdays">Every weekday</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="rrule" id="rrule-row">
+        <span class="label">RRULE</span>
+        <span class="mono-num" id="rrule-val">FREQ=WEEKLY;BYDAY=MO</span>
+      </div>
+
+      <div class="scope" id="scope-box">
+        <span class="label">Apply changes to</span>
+        <label>
+          <input type="radio" name="scope" value="this" checked /><span class="radio"><i></i></span>
+          This event
+        </label>
+        <label>
+          <input type="radio" name="scope" value="following" /><span class="radio"><i></i></span>
+          This &amp; following events
+        </label>
+        <label>
+          <input type="radio" name="scope" value="all" /><span class="radio"><i></i></span>
+          All events in the series
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('editor')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('editor');showToast('Event saved')">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MCP HINT MODAL ======= -->
+<div class="overlay" id="mcpHint-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mcp-title" style="max-width:480px">
+    <div class="modal-head">
+      <h2 id="mcp-title">MCP server</h2>
+      <button class="x" aria-label="Close" onclick="closeModal('mcpHint')">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="#000" stroke-width="2"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;line-height:1.55">Point any agent at Calink to read and manage this calendar programmatically. Authenticate with a Bearer key.</p>
+      <div class="rrule" style="margin-top:18px;margin-bottom:0">
+        <span class="label">Endpoint</span>
+        <span class="mono-num">mcp.calink.app/x9f2</span>
+      </div>
+      <div class="rrule" style="margin-top:12px;margin-bottom:0">
+        <span class="label">Key</span>
+        <span class="mono-num">Bearer sk-clk&hellip;7d4</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="ai-note">Scoped to this feed &middot; revoke anytime</span>
+      <button class="btn btn-primary" onclick="closeModal('mcpHint')">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function openModal(id){document.getElementById(id+'-overlay').classList.add('open');}
+  function closeModal(id){document.getElementById(id+'-overlay').classList.remove('open');}
+
+  // close on backdrop / Esc
+  document.querySelectorAll('.overlay').forEach(function(o){
+    o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('open');});
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(function(o){o.classList.remove('open');});
+  });
+
+  function copyLink(){
+    var link='webcal://calink.app/feed/x9f2a1.ics';
+    if(navigator.clipboard)navigator.clipboard.writeText(link).catch(function(){});
+    var lbl=document.getElementById('copyLabel');
+    lbl.textContent='Copied';
+    setTimeout(function(){lbl.textContent='Copy';},1400);
+    showToast('Subscribe link copied');
+  }
+
+  function onRepeatChange(){
+    var v=document.getElementById('f-repeat').value;
+    var rruleRow=document.getElementById('rrule-row');
+    var rruleVal=document.getElementById('rrule-val');
+    var scope=document.getElementById('scope-box');
+    if(v==='none'){
+      rruleRow.classList.add('hidden');
+      scope.classList.add('hidden');
+    }else{
+      rruleRow.classList.remove('hidden');
+      scope.classList.remove('hidden');
+      rruleVal.textContent = v==='weekdays'
+        ? 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
+        : 'FREQ=WEEKLY;BYDAY=MO';
+    }
+  }
+
+  var toastTimer;
+  function showToast(msg){
+    var t=document.getElementById('toast');
+    t.textContent=msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){t.classList.remove('show');},1800);
+  }
+</script>
+</body>
+</html>

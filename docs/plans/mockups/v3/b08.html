@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calink — Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #FFFDF5;
+    --ink: #000000;
+    --red: #FF5A5F;
+    --muted: #5A5A52;
+    --line: #000000;
+    --hairline: #E4E1D5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--cream); color: var(--ink); }
+  body {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-weight: 500;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    padding: 32px 24px 80px;
+  }
+  .wrap { max-width: 1024px; margin: 0 auto; }
+
+  /* ---- Top strip ---- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 18px;
+  }
+  .brand .mark {
+    width: 26px; height: 26px;
+    border: 3px solid var(--ink);
+    background: var(--red);
+    display: grid; place-items: center;
+  }
+  .top-right { display: flex; align-items: center; gap: 10px; }
+
+  .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* subscribe pill */
+  .sub {
+    display: flex; align-items: center; gap: 0;
+    border: 2px solid var(--ink);
+    background: var(--cream);
+    height: 38px;
+  }
+  .sub .sub-url {
+    font-size: 12px;
+    padding: 0 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sub .sub-url b { font-weight: 700; }
+  .sub button {
+    height: 100%;
+    border: none;
+    border-left: 2px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0 14px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sub button:hover { background: var(--red); color: var(--ink); }
+  .sub button.copied { background: var(--red); color: var(--ink); }
+
+  .mcp {
+    border: 2px solid var(--ink);
+    height: 38px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 12px;
+    cursor: pointer;
+    background: var(--cream);
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .mcp:hover { background: var(--ink); color: var(--cream); }
+  .mcp:hover svg { stroke: var(--cream); }
+
+  /* ---- Command bar (THE hero) ---- */
+  .command {
+    border: 3px solid var(--ink);
+    background: #fff;
+    box-shadow: 8px 8px 0 var(--ink);
+    margin-bottom: 10px;
+  }
+  .command-row { display: flex; align-items: stretch; }
+  .command .glyph {
+    display: grid; place-items: center;
+    width: 60px;
+    border-right: 3px solid var(--ink);
+    background: var(--cream);
+  }
+  .command input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 20px;
+    padding: 0 18px;
+    color: var(--ink);
+    outline: none;
+    min-width: 0;
+  }
+  .command input::placeholder { color: #9a978c; }
+  .command .run {
+    border: none;
+    border-left: 3px solid var(--ink);
+    background: var(--red);
+    color: var(--ink);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0 30px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .command .run:hover { background: var(--ink); color: var(--cream); }
+  .command .run:hover svg { stroke: var(--cream); }
+  .command-hint {
+    border-top: 2px solid var(--ink);
+    padding: 9px 18px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--cream);
+  }
+  .command-hint .dot { width: 8px; height: 8px; background: var(--red); border: 2px solid var(--ink); }
+  .command-hint b { color: var(--ink); font-weight: 700; }
+
+  /* ---- Agenda ---- */
+  .agenda-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 34px 0 14px;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 8px;
+  }
+  .agenda-head h2 { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+
+  .day {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .day-label {
+    padding: 18px 16px 18px 0;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-right: 2px solid var(--ink);
+  }
+  .day-label .num {
+    display: block;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--ink);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .day.today .day-label .num { color: var(--red); }
+  .day.today .day-label .tag {
+    display: inline-block;
+    margin-top: 8px;
+    background: var(--red);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+  }
+  .events { padding: 8px 0; }
+
+  .ev {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 11px 8px 11px 18px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+  }
+  .ev:hover { background: #fff; border-left-color: var(--ink); }
+  .ev .time {
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    width: 108px;
+    flex-shrink: 0;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .ev .time b { color: var(--ink); font-weight: 700; }
+  .ev .body { flex: 1; min-width: 0; }
+  .ev .ttl { font-weight: 700; font-size: 15px; }
+  .ev .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ev .meta .rr { text-transform: uppercase; letter-spacing: .5px; }
+  .ev.allday .time { color: var(--ink); }
+  .pill-allday {
+    border: 2px solid var(--ink);
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 6px;
+    background: var(--cream);
+  }
+
+  /* recently applied row */
+  .ev.applied {
+    background: #fff;
+    border-left-color: var(--red);
+  }
+  .applied-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--red); border: 2px solid var(--ink);
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 7px;
+  }
+  .undo {
+    margin-left: auto;
+    flex-shrink: 0;
+    border: 2px solid var(--ink);
+    background: var(--cream);
+    font-family: inherit; font-weight: 700; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 12px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .undo:hover { background: var(--ink); color: var(--cream); }
+  .undo:hover svg { stroke: var(--cream); }
+
+  /* ---- Editor modal ---- */
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: flex-start; justify-content: center;
+    padding: 56px 24px;
+    z-index: 50;
+    overflow: auto;
+  }
+  .scrim.open { display: flex; }
+  .editor {
+    width: 100%; max-width: 480px;
+    background: var(--cream);
+    border: 3px solid var(--ink);
+    box-shadow: 8px 8px 0 var(--ink);
+  }
+  .editor-head {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px solid var(--ink);
+    padding: 14px 16px;
+  }
+  .editor-head h3 { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .x {
+    border: 2px solid var(--ink); background: var(--cream);
+    width: 30px; height: 30px; cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .x:hover { background: var(--red); }
+  .editor-body { padding: 16px; }
+  .field { margin-bottom: 14px; }
+  .field > .label { display: block; margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%;
+    border: 2px solid var(--ink);
+    background: #fff;
+    font-family: inherit; font-weight: 500; font-size: 14px;
+    padding: 9px 11px;
+    color: var(--ink);
+    outline: none;
+  }
+  .field input:focus, .field select:focus { box-shadow: 3px 3px 0 var(--red); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field input[type="time"] { font-variant-numeric: tabular-nums; }
+
+  .rrule {
+    border: 2px solid var(--ink);
+    background: var(--cream);
+    padding: 8px 11px;
+    margin-top: 8px;
+    font-size: 12px;
+    display: none;
+    align-items: center; gap: 8px;
+  }
+  .rrule.show { display: flex; }
+  .rrule code {
+    font-family: "Space Grotesk", monospace;
+    font-weight: 700;
+    letter-spacing: .5px;
+    background: var(--ink); color: var(--cream);
+    padding: 2px 6px;
+  }
+
+  .scope { margin-top: 10px; display: none; }
+  .scope.show { display: block; }
+  .scope-opts { display: flex; gap: 0; border: 2px solid var(--ink); }
+  .scope-opts button {
+    flex: 1;
+    border: none;
+    border-right: 2px solid var(--ink);
+    background: var(--cream);
+    font-family: inherit; font-weight: 700; font-size: 11px;
+    letter-spacing: .5px; text-transform: uppercase;
+    padding: 9px 6px; cursor: pointer; color: var(--ink);
+  }
+  .scope-opts button:last-child { border-right: none; }
+  .scope-opts button.sel { background: var(--red); }
+  .scope-opts button:hover:not(.sel) { background: #fff; }
+
+  .editor-foot {
+    display: flex; gap: 12px;
+    border-top: 3px solid var(--ink);
+    padding: 14px 16px;
+  }
+  .editor-foot button {
+    flex: 1;
+    border: 2px solid var(--ink);
+    font-family: inherit; font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 11px; cursor: pointer;
+  }
+  .btn-save { background: var(--red); color: var(--ink); }
+  .btn-save:hover { background: var(--ink); color: var(--cream); }
+  .btn-cancel { background: var(--cream); color: var(--ink); }
+  .btn-cancel:hover { background: var(--ink); color: var(--cream); }
+
+  .mcp-note {
+    border-top: 2px solid var(--hairline);
+    margin-top: 10px; padding-top: 10px;
+    font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mcp-note code {
+    font-weight: 700; color: var(--ink);
+    background: var(--cream); border: 2px solid var(--ink);
+    padding: 1px 6px;
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- TOP STRIP -->
+    <div class="topbar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M4 11h16M9 4v4M15 4v4M5 8h14v12H5z"/></svg>
+        </span>
+        CALINK
+      </div>
+      <div class="top-right">
+        <div class="mcp" id="mcpBtn" title="MCP server endpoint for agents">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><rect x="4" y="4" width="16" height="16"/><path d="M8 9h8M8 13h5"/></svg>
+          MCP
+        </div>
+        <div class="sub" role="group" aria-label="Subscribe link">
+          <span class="sub-url">webcal://calink.app/feed/<b>x9f2…a1</b>.ics</span>
+          <button id="copyBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></svg>
+            <span id="copyTxt">Copy</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMMAND BAR -->
+    <label class="sr-only" for="cmd">Type, paste, or chat to add an event</label>
+    <div class="command">
+      <div class="command-row">
+        <span class="glyph" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+        <input id="cmd" type="text" placeholder="Type, paste, or chat — e.g. “Lunch with Priya Mon 12:30 at Sona”" autocomplete="off" />
+        <button class="run" id="runBtn">
+          Run
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3l14 9-14 9z"/></svg>
+        </button>
+      </div>
+      <div class="command-hint">
+        <span class="dot" aria-hidden="true"></span>
+        <span><b>Auto-apply on.</b> Calink reads it, drops it on your calendar, and shows an Undo. Paste a flight, an email, or just chat.</span>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="agenda-head">
+      <h2>Agenda</h2>
+      <span class="label">Mon Jun 29 — Thu Jul 9</span>
+    </div>
+
+    <!-- Mon Jun 29 (today) -->
+    <div class="day today">
+      <div class="day-label">
+        Mon
+        <span class="num">29</span>
+        <span class="tag">Today</span>
+      </div>
+      <div class="events">
+        <div class="ev applied" data-title="Coffee with Dana" data-start="10:30" data-end="11:00" data-loc="Blue Bottle" data-repeat="none">
+          <span class="time"><b>10:30</b>–11:00</span>
+          <span class="body">
+            <span class="ttl">Coffee with Dana</span>
+            <span class="meta">Blue Bottle · <span class="applied-tag">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Just added</span></span>
+          </span>
+          <button class="undo" id="undoBtn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>
+            Undo
+          </button>
+        </div>
+        <div class="ev" data-title="Standup" data-start="09:30" data-end="09:45" data-loc="" data-repeat="weekdays">
+          <span class="time"><b>09:30</b>–09:45</span>
+          <span class="body">
+            <span class="ttl">Standup</span>
+            <span class="meta"><span class="rr">Weekdays</span></span>
+          </span>
+        </div>
+        <div class="ev" data-title="Design review — Calink feeds" data-start="14:00" data-end="15:00" data-loc="Room 2" data-repeat="none">
+          <span class="time"><b>14:00</b>–15:00</span>
+          <span class="body">
+            <span class="ttl">Design review — Calink feeds</span>
+            <span class="meta">Room 2</span>
+          </span>
+        </div>
+        <div class="ev allday" data-title="v0.3 cut-off" data-start="" data-end="" data-loc="" data-repeat="none">
+          <span class="time"><span class="pill-allday">All day</span></span>
+          <span class="body">
+            <span class="ttl">v0.3 cut-off</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tue Jun 30 -->
+    <div class="day">
+      <div class="day-label">
+        Tue
+        <span class="num">30</span>
+      </div>
+      <div class="events">
+        <div class="ev" data-title="Morning run" data-start="08:00" data-end="08:45" data-loc="" data-repeat="mwf">
+          <span class="time"><b>08:00</b>–08:45</span>
+          <span class="body">
+            <span class="ttl">Morning run</span>
+            <span class="meta">Workouts · <span class="rr">Mon / Wed / Fri</span></span>
+          </span>
+        </div>
+        <div class="ev" data-title="1:1 with Sam" data-start="16:30" data-end="17:00" data-loc="" data-repeat="none">
+          <span class="time"><b>16:30</b>–17:00</span>
+          <span class="body">
+            <span class="ttl">1:1 with Sam</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wed Jul 1 -->
+    <div class="day">
+      <div class="day-label">
+        Wed
+        <span class="num">01</span>
+        <span class="label" style="display:block;margin-top:4px;">Jul</span>
+      </div>
+      <div class="events">
+        <div class="ev" data-title="Standup" data-start="09:30" data-end="09:45" data-loc="" data-repeat="weekdays">
+          <span class="time"><b>09:30</b>–09:45</span>
+          <span class="body">
+            <span class="ttl">Standup</span>
+            <span class="meta"><span class="rr">Weekdays</span></span>
+          </span>
+        </div>
+        <div class="ev" data-title="Roadmap planning" data-start="11:00" data-end="12:30" data-loc="" data-repeat="none">
+          <span class="time"><b>11:00</b>–12:30</span>
+          <span class="body">
+            <span class="ttl">Roadmap planning</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mon Jul 6 -->
+    <div class="day">
+      <div class="day-label">
+        Mon
+        <span class="num">06</span>
+      </div>
+      <div class="events">
+        <div class="ev" data-title="Lunch with Priya" data-start="12:30" data-end="13:30" data-loc="Sona" data-repeat="none">
+          <span class="time"><b>12:30</b>–13:30</span>
+          <span class="body">
+            <span class="ttl">Lunch with Priya</span>
+            <span class="meta">Sona</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recurring -->
+    <div class="day">
+      <div class="day-label">
+        Thu
+        <span class="num">09</span>
+      </div>
+      <div class="events">
+        <div class="ev" data-title="Book club" data-start="20:00" data-end="21:30" data-loc="" data-repeat="thursdays">
+          <span class="time"><b>20:00</b>–21:30</span>
+          <span class="body">
+            <span class="ttl">Book club</span>
+            <span class="meta"><span class="rr">Weekly on Thursday</span></span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EDITOR MODAL -->
+  <div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="edTitle">
+    <div class="editor">
+      <div class="editor-head">
+        <h3 id="edTitle">Edit event</h3>
+        <button class="x" id="closeBtn" aria-label="Close editor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="editor-body">
+        <div class="field">
+          <label class="label" for="fTitle">Title</label>
+          <input id="fTitle" type="text" />
+        </div>
+        <div class="field">
+          <label class="label" for="fDate">Date</label>
+          <input id="fDate" type="date" value="2026-06-29" />
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label class="label" for="fStart">Start</label>
+            <input id="fStart" type="time" />
+          </div>
+          <div class="field">
+            <label class="label" for="fEnd">End</label>
+            <input id="fEnd" type="time" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="fLoc">Location</label>
+          <input id="fLoc" type="text" placeholder="Add a place" />
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label class="label" for="fRepeat">Repeat</label>
+          <select id="fRepeat">
+            <option value="none">Does not repeat</option>
+            <option value="weekdays">Every weekday (Mon–Fri)</option>
+            <option value="mwf">Mon / Wed / Fri</option>
+            <option value="weekly">Weekly on Mon</option>
+            <option value="thursdays">Weekly on Thursday</option>
+          </select>
+          <div class="rrule" id="rrule">
+            <span class="label" style="color:var(--muted)">RRULE</span>
+            <code id="rruleCode">FREQ=WEEKLY;BYDAY=MO</code>
+          </div>
+          <div class="scope" id="scope">
+            <span class="label" style="display:block;margin-bottom:5px;">Apply changes to</span>
+            <div class="scope-opts">
+              <button class="sel" data-scope="this">This event</button>
+              <button data-scope="following">This &amp; following</button>
+              <button data-scope="all">All events</button>
+            </div>
+          </div>
+        </div>
+        <div class="mcp-note">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><rect x="4" y="4" width="16" height="16"/><path d="M8 9h8M8 13h5"/></svg>
+          Agents can edit via MCP with <code>Bearer ck_live_•••</code>
+        </div>
+      </div>
+      <div class="editor-foot">
+        <button class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn-save" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  // ---- Copy subscribe link ----
+  var copyBtn = document.getElementById("copyBtn");
+  var copyTxt = document.getElementById("copyTxt");
+  copyBtn.addEventListener("click", function () {
+    var url = "webcal://calink.app/feed/x9f2…a1.ics";
+    if (navigator.clipboard) { navigator.clipboard.writeText(url).catch(function(){}); }
+    copyBtn.classList.add("copied");
+    copyTxt.textContent = "Copied";
+    setTimeout(function () {
+      copyBtn.classList.remove("copied");
+      copyTxt.textContent = "Copy";
+    }, 1600);
+  });
+
+  // ---- Undo recently applied ----
+  var undoBtn = document.getElementById("undoBtn");
+  if (undoBtn) {
+    undoBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var row = undoBtn.closest(".ev");
+      row.style.transition = "opacity .15s";
+      row.style.opacity = "0";
+      setTimeout(function () { row.remove(); }, 160);
+    });
+  }
+
+  // ---- Command bar ----
+  var runBtn = document.getElementById("runBtn");
+  var cmd = document.getElementById("cmd");
+  function runCmd() {
+    if (!cmd.value.trim()) { cmd.focus(); return; }
+    cmd.value = "";
+    cmd.placeholder = "Applied. Type the next one…";
+  }
+  runBtn.addEventListener("click", runCmd);
+  cmd.addEventListener("keydown", function (e) { if (e.key === "Enter") runCmd(); });
+
+  // ---- Editor modal ----
+  var scrim = document.getElementById("scrim");
+  var repeatMap = {
+    none:       { rrule: null,                                 label: null },
+    weekdays:   { rrule: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",    label: "weekdays" },
+    mwf:        { rrule: "FREQ=WEEKLY;BYDAY=MO,WE,FR",          label: "mwf" },
+    weekly:     { rrule: "FREQ=WEEKLY;BYDAY=MO",                label: "weekly" },
+    thursdays:  { rrule: "FREQ=WEEKLY;BYDAY=TH",                label: "thursdays" }
+  };
+  var fRepeat = document.getElementById("fRepeat");
+  var rruleBox = document.getElementById("rrule");
+  var rruleCode = document.getElementById("rruleCode");
+  var scopeBox = document.getElementById("scope");
+
+  function syncRepeat() {
+    var info = repeatMap[fRepeat.value] || repeatMap.none;
+    if (info.rrule) {
+      rruleCode.textContent = info.rrule;
+      rruleBox.classList.add("show");
+      scopeBox.classList.add("show");
+    } else {
+      rruleBox.classList.remove("show");
+      scopeBox.classList.remove("show");
+    }
+  }
+  fRepeat.addEventListener("change", syncRepeat);
+
+  // scope toggle
+  document.querySelectorAll(".scope-opts button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".scope-opts button").forEach(function (x) { x.classList.remove("sel"); });
+      b.classList.add("sel");
+    });
+  });
+
+  function openEditor(ev) {
+    document.getElementById("fTitle").value = ev.getAttribute("data-title") || "";
+    document.getElementById("fStart").value = ev.getAttribute("data-start") || "";
+    document.getElementById("fEnd").value = ev.getAttribute("data-end") || "";
+    document.getElementById("fLoc").value = ev.getAttribute("data-loc") || "";
+    fRepeat.value = ev.getAttribute("data-repeat") || "none";
+    syncRepeat();
+    scrim.classList.add("open");
+  }
+  function closeEditor() { scrim.classList.remove("open"); }
+
+  document.querySelectorAll(".ev").forEach(function (ev) {
+    ev.addEventListener("click", function () { openEditor(ev); });
+  });
+  document.getElementById("closeBtn").addEventListener("click", closeEditor);
+  document.getElementById("cancelBtn").addEventListener("click", closeEditor);
+  document.getElementById("saveBtn").addEventListener("click", closeEditor);
+  scrim.addEventListener("click", function (e) { if (e.target === scrim) closeEditor(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeEditor(); });
+
+  // MCP button just focuses the note area conceptually — open editor scope demo
+  document.getElementById("mcpBtn").addEventListener("click", function () {
+    alert("MCP endpoint: https://calink.app/mcp\nAuth: Bearer ck_live_•••\nTools: create_event, edit_event, get_feed");
+  });
+})();
+</script>
+</body>
+</html>

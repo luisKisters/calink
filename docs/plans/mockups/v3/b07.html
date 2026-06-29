@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Flat Brutalism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFFDF5;
+    --ink:#000000;
+    --red:#FF5A5F;
+    --bw:3px;            /* heavy border */
+    --bw2:2px;           /* light border */
+    --t:90ms;            /* invert speed */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--cream);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;font-weight:500}
+  body{padding:28px 24px;-webkit-font-smoothing:antialiased}
+  /* ---- typography helpers ---- */
+  .label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+  h1,h2,h3{font-weight:700;letter-spacing:-.01em}
+  ::selection{background:var(--ink);color:var(--cream)}
+  /* ---- shell ---- */
+  .wrap{max-width:1280px;margin:0 auto}
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    border:var(--bw) solid var(--ink);padding:14px 18px;margin-bottom:18px;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mark{width:34px;height:34px;border:var(--bw) solid var(--ink);display:grid;place-items:center}
+  .brand h1{font-size:21px;letter-spacing:-.02em}
+  .tag{font-size:12px;font-weight:500;border-left:var(--bw2) solid var(--ink);padding-left:12px;margin-left:2px}
+  .top-right{display:flex;align-items:center;gap:10px}
+
+  .grid{display:grid;grid-template-columns:392px 1fr;gap:18px;align-items:start}
+
+  /* ---- generic panel ---- */
+  .panel{border:var(--bw) solid var(--ink);background:var(--cream)}
+  .panel + .panel{margin-top:18px}
+  .phead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:var(--bw) solid var(--ink)}
+  .pbody{padding:16px}
+
+  /* ---- buttons / chips : FLAT, invert on hover ---- */
+  .btn{
+    font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--cream);color:var(--ink);border:var(--bw2) solid var(--ink);
+    padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    transition:background var(--t) ease,color var(--t) ease;border-radius:0
+  }
+  .btn:hover{background:var(--ink);color:var(--cream)}
+  .btn:hover svg *{stroke:var(--cream)}
+  .btn:focus-visible{outline:var(--bw) solid var(--red);outline-offset:2px}
+  .btn.primary{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+  .btn.primary svg *{stroke:var(--cream)}
+  .btn.primary:hover{background:var(--red);color:var(--ink);border-color:var(--ink)}
+  .btn.primary:hover svg *{stroke:var(--ink)}
+  .btn.sm{padding:6px 10px;font-size:11px}
+  .btn.icon{padding:8px}
+  svg{display:block}
+  svg *{transition:stroke var(--t) ease,fill var(--t) ease}
+
+  /* ---- subscribe link ---- */
+  .linkrow{display:flex;border:var(--bw) solid var(--ink)}
+  .linkrow .scheme{padding:11px 12px;border-right:var(--bw) solid var(--ink);font-weight:700;font-size:12px;letter-spacing:.05em;background:var(--ink);color:var(--cream);display:flex;align-items:center}
+  .linkrow code{flex:1;padding:11px 12px;font-family:inherit;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center}
+  .copybtn{border:none;border-left:var(--bw) solid var(--ink);background:var(--cream);cursor:pointer;padding:0 14px;
+    font-family:inherit;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    transition:background var(--t) ease,color var(--t) ease}
+  .copybtn:hover{background:var(--ink);color:var(--cream)}
+  .copybtn:hover svg *{stroke:var(--cream)}
+  .copybtn:focus-visible{outline:var(--bw) solid var(--red);outline-offset:-3px}
+  .hint{font-size:12px;margin-top:10px;line-height:1.45;opacity:.85}
+
+  /* ---- paste box ---- */
+  textarea#paste{
+    width:100%;min-height:96px;resize:vertical;font-family:inherit;font-size:14px;font-weight:500;
+    padding:12px;border:var(--bw2) solid var(--ink);background:var(--cream);color:var(--ink);border-radius:0;line-height:1.5
+  }
+  textarea#paste:focus{outline:var(--bw) solid var(--red);outline-offset:2px}
+  textarea#paste::placeholder{color:var(--ink);opacity:.45}
+  .paste-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+
+  /* ---- applied banner (confident auto-apply + undo) ---- */
+  .applied{display:none;margin-top:14px;border:var(--bw2) solid var(--ink)}
+  .applied.show{display:block;animation:pop var(--t) ease}
+  @keyframes pop{from{opacity:0}to{opacity:1}}
+  .applied .ahead{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--ink);color:var(--cream)}
+  .applied .ahead .label{color:var(--cream)}
+  .applied .arow{display:flex;align-items:baseline;gap:10px;padding:9px 12px}
+  .applied .arow + .arow{border-top:var(--bw2) solid var(--ink)}
+  .applied .arow time{font-size:12px;min-width:104px}
+  .applied .arow span{font-size:13px;font-weight:500}
+  .undo{background:var(--cream);color:var(--ink);border:var(--bw2) solid var(--cream);
+    font-family:inherit;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;cursor:pointer;
+    transition:background var(--t) ease,color var(--t) ease}
+  .undo:hover{background:var(--red);color:var(--ink)}
+  .undo:focus-visible{outline:var(--bw2) solid var(--cream);outline-offset:2px}
+
+  /* ---- MCP ---- */
+  .mcp .pbody{font-size:12.5px;line-height:1.5}
+  .keyrow{display:flex;border:var(--bw2) solid var(--ink);margin-top:10px}
+  .keyrow code{flex:1;padding:9px 11px;font-family:inherit;font-size:12.5px;letter-spacing:.03em;display:flex;align-items:center}
+  .keyrow .copybtn{border-left:var(--bw2) solid var(--ink)}
+
+  /* ---- agenda ---- */
+  .viewtabs{display:flex;gap:0;border:var(--bw2) solid var(--ink)}
+  .viewtabs button{font-family:inherit;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--cream);color:var(--ink);border:none;padding:7px 13px;cursor:pointer;
+    transition:background var(--t) ease,color var(--t) ease}
+  .viewtabs button + button{border-left:var(--bw2) solid var(--ink)}
+  .viewtabs button[aria-pressed="true"]{background:var(--ink);color:var(--cream)}
+  .viewtabs button:focus-visible{outline:var(--bw2) solid var(--red);outline-offset:-3px}
+
+  .day{border-top:var(--bw) solid var(--ink)}
+  .day:first-of-type{border-top:none}
+  .dhead{display:flex;align-items:baseline;gap:12px;padding:11px 16px 9px}
+  .dhead.today{background:var(--ink);color:var(--cream)}
+  .dhead .dnum{font-size:22px;font-weight:700;line-height:1}
+  .dhead .dwk{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .dhead .dmo{font-size:12px;opacity:.7;letter-spacing:.06em;text-transform:uppercase}
+  .todaypill{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.12em;border:var(--bw2) solid var(--cream);padding:2px 7px}
+
+  .evt{display:flex;align-items:stretch;gap:0;border-top:var(--bw2) solid var(--ink);cursor:pointer;
+    transition:background var(--t) ease,color var(--t) ease}
+  .dhead.today + .evt{border-top:none}
+  .evt:hover{background:var(--ink);color:var(--cream)}
+  .evt:hover .meta{color:var(--cream);opacity:.85}
+  .evt:hover .rail{background:var(--cream)}
+  .evt:hover .rail.accent{background:var(--red)}
+  .evt:focus-visible{outline:var(--bw) solid var(--red);outline-offset:-3px}
+  .evt .rail{width:6px;background:var(--ink);flex:none}
+  .evt .rail.accent{background:var(--red)}
+  .evt .etime{width:120px;flex:none;padding:11px 0 11px 14px;font-size:13px;font-weight:700}
+  .evt .etime .allday{font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+  .evt .ebody{padding:11px 14px 11px 8px;flex:1;min-width:0}
+  .evt .etitle{font-size:14.5px;font-weight:700;line-height:1.2}
+  .evt .meta{font-size:11.5px;margin-top:3px;opacity:.7;letter-spacing:.02em;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .rrule{display:inline-flex;align-items:center;gap:5px}
+  .chev{flex:none;align-self:center;padding-right:14px;opacity:.45}
+  .evt:hover .chev{opacity:1}
+
+  /* ---- editor (disclosure overlay) ---- */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.32);display:none;z-index:40}
+  .scrim.show{display:block}
+  .editor{position:fixed;top:0;right:0;height:100vh;width:440px;max-width:92vw;background:var(--cream);
+    border-left:var(--bw) solid var(--ink);z-index:50;transform:translateX(100%);transition:transform 140ms ease;
+    display:flex;flex-direction:column}
+  .editor.show{transform:translateX(0)}
+  .editor .ehd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:var(--bw) solid var(--ink)}
+  .editor .ehd h2{font-size:16px;letter-spacing:.01em}
+  .editor .escroll{overflow-y:auto;padding:18px;flex:1}
+  .field{margin-bottom:16px}
+  .field > .label{display:block;margin-bottom:7px}
+  .field input[type=text],.field input[type=time],.field input[type=date]{
+    width:100%;font-family:inherit;font-size:14px;font-weight:500;padding:10px 11px;
+    border:var(--bw2) solid var(--ink);background:var(--cream);color:var(--ink);border-radius:0
+  }
+  .field input:focus{outline:var(--bw) solid var(--red);outline-offset:2px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field.inline-toggle{display:flex;align-items:center;justify-content:space-between;border:var(--bw2) solid var(--ink);padding:10px 12px}
+  .field.inline-toggle .label{margin:0}
+  .switch{width:46px;height:24px;border:var(--bw2) solid var(--ink);background:var(--cream);position:relative;cursor:pointer;flex:none;border-radius:0;
+    transition:background var(--t) ease}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--ink);transition:left var(--t) ease,background var(--t) ease}
+  .switch[aria-checked="true"]{background:var(--ink)}
+  .switch[aria-checked="true"]::after{left:24px;background:var(--cream)}
+  .switch:focus-visible{outline:var(--bw2) solid var(--red);outline-offset:2px}
+
+  .recur{border:var(--bw2) solid var(--ink);padding:13px;display:none}
+  .recur.show{display:block}
+  .rrule-out{display:flex;align-items:center;gap:8px;border:var(--bw2) solid var(--ink);background:var(--ink);color:var(--cream);
+    padding:8px 10px;font-size:12px;margin-top:12px}
+  .rrule-out code{font-family:inherit;letter-spacing:.02em}
+  .daypick{display:flex;gap:6px;margin-top:10px}
+  .daypick button{width:34px;height:34px;font-family:inherit;font-weight:700;font-size:11px;border:var(--bw2) solid var(--ink);
+    background:var(--cream);color:var(--ink);cursor:pointer;transition:background var(--t) ease,color var(--t) ease}
+  .daypick button[aria-pressed="true"]{background:var(--ink);color:var(--cream)}
+  .daypick button:hover{background:var(--ink);color:var(--cream)}
+  .daypick button:focus-visible{outline:var(--bw2) solid var(--red);outline-offset:2px}
+
+  .scope{margin-top:6px}
+  .scope .label{display:block;margin-bottom:9px}
+  .scope label{display:flex;align-items:center;gap:10px;border:var(--bw2) solid var(--ink);padding:10px 12px;cursor:pointer;font-size:13px;font-weight:500;
+    transition:background var(--t) ease,color var(--t) ease}
+  .scope label + label{margin-top:8px}
+  .scope label:hover{background:var(--ink);color:var(--cream)}
+  .scope input{position:absolute;opacity:0;width:0;height:0}
+  .radio{width:16px;height:16px;border:var(--bw2) solid var(--ink);flex:none;position:relative;transition:background var(--t) ease}
+  .scope label:hover .radio{border-color:var(--cream)}
+  .scope input:checked + .radio{background:var(--ink)}
+  .scope input:checked + .radio::after{content:"";position:absolute;inset:3px;background:var(--cream)}
+  .scope label:hover .radio::after{background:var(--cream)}
+  .scope input:checked + .radio{box-shadow:inset 0 0 0 2px var(--cream)}
+  .scope input:focus-visible + .radio{outline:var(--bw2) solid var(--red);outline-offset:2px}
+
+  .efoot{display:flex;gap:10px;padding:16px 18px;border-top:var(--bw) solid var(--ink)}
+  .efoot .btn{flex:1;justify-content:center}
+
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+    background:var(--ink);color:var(--cream);border:var(--bw2) solid var(--ink);padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    transition:opacity var(--t) ease,transform var(--t) ease;z-index:60}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" stroke="#000" stroke-width="2.5"/><line x1="3" y1="9" x2="21" y2="9" stroke="#000" stroke-width="2.5"/><line x1="8" y1="2" x2="8" y2="6" stroke="#000" stroke-width="2.5"/><line x1="16" y1="2" x2="16" y2="6" stroke="#000" stroke-width="2.5"/></svg>
+      </div>
+      <h1>CALINK</h1>
+      <span class="tag">Paste anything &rarr; a live calendar link.</span>
+    </div>
+    <div class="top-right">
+      <button class="btn icon" aria-label="Account">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#000" stroke-width="2.2"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" stroke="#000" stroke-width="2.2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ===== LEFT: INPUT RAIL ===== -->
+    <div class="col-left">
+
+      <!-- Subscribe link -->
+      <section class="panel" aria-labelledby="sub-h">
+        <div class="phead"><span class="label" id="sub-h">Subscribe link</span>
+          <span class="label" style="opacity:.55">webcal &middot; .ics</span>
+        </div>
+        <div class="pbody">
+          <div class="linkrow">
+            <span class="scheme">WEBCAL</span>
+            <code class="num" id="feedurl">//calink.app/feed/x9f2&hellip;a1.ics</code>
+            <button class="copybtn" data-copy="webcal://calink.app/feed/x9f2c7b4e1d8a1.ics" aria-label="Copy subscribe link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" stroke="#000" stroke-width="2.2"/><path d="M5 15V5h10" stroke="#000" stroke-width="2.2"/></svg>
+            </button>
+          </div>
+          <p class="hint">Add this once in Apple Calendar, Google or Outlook. Every edit you make here pushes to all your devices automatically.</p>
+        </div>
+      </section>
+
+      <!-- Paste -> events -->
+      <section class="panel" aria-labelledby="paste-h">
+        <div class="phead"><span class="label" id="paste-h">Paste to events</span>
+          <span class="label" style="opacity:.55">AI</span>
+        </div>
+        <div class="pbody">
+          <textarea id="paste" placeholder="Paste an email, a flight confirmation, a message&hellip; e.g. &quot;Lunch with Priya, Mon Jul 6, 12:30 at Sona&quot;"></textarea>
+          <div class="paste-actions">
+            <span class="hint" style="margin:0">Reads dates, times &amp; places.</span>
+            <button class="btn primary" id="parseBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke="#000" stroke-width="2.6"/></svg>
+              Add to calendar
+            </button>
+          </div>
+
+          <!-- confident: framed as ALREADY applied -->
+          <div class="applied" id="applied" role="status" aria-live="polite">
+            <div class="ahead">
+              <span class="label">Added &middot; 1 event</span>
+              <button class="undo" id="undoBtn">Undo</button>
+            </div>
+            <div class="arow">
+              <time class="num">Mon Jul 6 &middot; 12:30</time>
+              <span>Lunch with Priya &middot; Sona</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MCP -->
+      <section class="panel mcp" aria-labelledby="mcp-h">
+        <div class="phead"><span class="label" id="mcp-h">MCP server</span>
+          <span class="label" style="opacity:.55">For agents</span>
+        </div>
+        <div class="pbody">
+          <p>Let an AI agent read &amp; write this calendar. Point it at <strong>mcp.calink.app</strong> with a Bearer key.</p>
+          <div class="keyrow">
+            <code class="num">Bearer&nbsp;sk_live_3f9&hellip;e2</code>
+            <button class="copybtn" data-copy="sk_live_3f9c1ab74e2" aria-label="Copy Bearer key">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" stroke="#000" stroke-width="2.2"/><path d="M5 15V5h10" stroke="#000" stroke-width="2.2"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===== RIGHT: AGENDA ===== -->
+    <section class="panel" aria-labelledby="ag-h">
+      <div class="phead">
+        <div style="display:flex;align-items:baseline;gap:14px">
+          <h2 id="ag-h" style="font-size:16px;letter-spacing:.01em">AGENDA</h2>
+          <span class="label num" style="opacity:.6">Jun 29 &ndash; Jul 9</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="viewtabs" role="group" aria-label="View">
+            <button aria-pressed="true">Agenda</button>
+            <button aria-pressed="false">Week</button>
+          </div>
+          <button class="btn sm" id="newBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19" stroke="#000" stroke-width="2.6"/><line x1="5" y1="12" x2="19" y2="12" stroke="#000" stroke-width="2.6"/></svg>
+            New
+          </button>
+        </div>
+      </div>
+
+      <!-- MON JUN 29 (today) -->
+      <div class="day">
+        <div class="dhead today">
+          <span class="dnum num">29</span>
+          <span><span class="dwk">Mon</span> <span class="dmo">Jun</span></span>
+          <span class="todaypill">TODAY</span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-recurring="1" data-title="Standup">
+          <span class="rail"></span>
+          <div class="etime num">09:30&ndash;09:45</div>
+          <div class="ebody">
+            <div class="etitle">Standup</div>
+            <div class="meta"><span class="rrule"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0114-5l2 2M20 15a8 8 0 01-14 5l-2-2" stroke="currentColor" stroke-width="2.2"/></svg>Weekdays</span></div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-title="Design review — Calink feeds">
+          <span class="rail accent"></span>
+          <div class="etime num">14:00&ndash;15:00</div>
+          <div class="ebody">
+            <div class="etitle">Design review &mdash; Calink feeds</div>
+            <div class="meta"><span>Room 2</span></div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-title="v0.3 cut-off">
+          <span class="rail"></span>
+          <div class="etime"><span class="allday">All day</span></div>
+          <div class="ebody">
+            <div class="etitle">v0.3 cut-off</div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+      </div>
+
+      <!-- TUE JUN 30 -->
+      <div class="day">
+        <div class="dhead">
+          <span class="dnum num">30</span>
+          <span><span class="dwk">Tue</span> <span class="dmo">Jun</span></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-recurring="1" data-title="Morning run">
+          <span class="rail"></span>
+          <div class="etime num">08:00&ndash;08:45</div>
+          <div class="ebody">
+            <div class="etitle">Morning run</div>
+            <div class="meta"><span>Workouts</span><span class="rrule"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0114-5l2 2M20 15a8 8 0 01-14 5l-2-2" stroke="currentColor" stroke-width="2.2"/></svg>Mon / Wed / Fri</span></div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-title="1:1 with Sam">
+          <span class="rail"></span>
+          <div class="etime num">16:30&ndash;17:00</div>
+          <div class="ebody">
+            <div class="etitle">1:1 with Sam</div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+      </div>
+
+      <!-- WED JUL 1 -->
+      <div class="day">
+        <div class="dhead">
+          <span class="dnum num">1</span>
+          <span><span class="dwk">Wed</span> <span class="dmo">Jul</span></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-recurring="1" data-title="Standup">
+          <span class="rail"></span>
+          <div class="etime num">09:30</div>
+          <div class="ebody">
+            <div class="etitle">Standup</div>
+            <div class="meta"><span class="rrule"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0114-5l2 2M20 15a8 8 0 01-14 5l-2-2" stroke="currentColor" stroke-width="2.2"/></svg>Weekdays</span></div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-title="Roadmap planning">
+          <span class="rail"></span>
+          <div class="etime num">11:00&ndash;12:30</div>
+          <div class="ebody">
+            <div class="etitle">Roadmap planning</div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+      </div>
+
+      <!-- MON JUL 6 -->
+      <div class="day">
+        <div class="dhead">
+          <span class="dnum num">6</span>
+          <span><span class="dwk">Mon</span> <span class="dmo">Jul</span></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-title="Lunch with Priya">
+          <span class="rail accent"></span>
+          <div class="etime num">12:30&ndash;13:30</div>
+          <div class="ebody">
+            <div class="etitle">Lunch with Priya</div>
+            <div class="meta"><span>Sona</span></div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+      </div>
+
+      <!-- THU JUL 9 -->
+      <div class="day">
+        <div class="dhead">
+          <span class="dnum num">9</span>
+          <span><span class="dwk">Thu</span> <span class="dmo">Jul</span></span>
+        </div>
+        <div class="evt" tabindex="0" role="button" data-recurring="1" data-title="Book club">
+          <span class="rail"></span>
+          <div class="etime num">20:00</div>
+          <div class="ebody">
+            <div class="etitle">Book club</div>
+            <div class="meta"><span class="rrule"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0114-5l2 2M20 15a8 8 0 01-14 5l-2-2" stroke="currentColor" stroke-width="2.2"/></svg>Weekly on Thu</span></div>
+          </div>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4"/></svg></span>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- ===== EDITOR (disclosure) ===== -->
+<div class="scrim" id="scrim"></div>
+<aside class="editor" id="editor" role="dialog" aria-modal="true" aria-labelledby="ed-h" aria-hidden="true">
+  <div class="ehd">
+    <h2 id="ed-h">EDIT EVENT</h2>
+    <button class="btn icon" id="closeBtn" aria-label="Close editor">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="6" y1="6" x2="18" y2="18" stroke="#000" stroke-width="2.6"/><line x1="18" y1="6" x2="6" y2="18" stroke="#000" stroke-width="2.6"/></svg>
+    </button>
+  </div>
+  <div class="escroll">
+    <div class="field">
+      <label class="label" for="f-title">Title</label>
+      <input type="text" id="f-title" value="Standup">
+    </div>
+    <div class="field">
+      <label class="label" for="f-date">Date</label>
+      <input type="date" id="f-date" value="2026-06-29">
+    </div>
+    <div class="two">
+      <div class="field"><label class="label" for="f-start">Start</label><input type="time" id="f-start" value="09:30"></div>
+      <div class="field"><label class="label" for="f-end">End</label><input type="time" id="f-end" value="09:45"></div>
+    </div>
+    <div class="field">
+      <label class="label" for="f-loc">Location</label>
+      <input type="text" id="f-loc" placeholder="Add a place">
+    </div>
+
+    <div class="field inline-toggle">
+      <span class="label">Repeat</span>
+      <button class="switch" id="repeatSw" role="switch" aria-checked="true" aria-label="Repeat"></button>
+    </div>
+
+    <div class="recur show" id="recur">
+      <span class="label">Weekly on</span>
+      <div class="daypick" role="group" aria-label="Repeat days">
+        <button aria-pressed="true">M</button>
+        <button aria-pressed="false">T</button>
+        <button aria-pressed="false">W</button>
+        <button aria-pressed="false">T</button>
+        <button aria-pressed="false">F</button>
+        <button aria-pressed="false">S</button>
+        <button aria-pressed="false">S</button>
+      </div>
+      <div class="rrule-out">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0114-5l2 2M20 15a8 8 0 01-14 5l-2-2" stroke="#FFFDF5" stroke-width="2.2"/></svg>
+        <code class="num" id="rruleText">RRULE:FREQ=WEEKLY;BYDAY=MO</code>
+      </div>
+
+      <div class="scope">
+        <span class="label" style="margin-top:14px">Apply changes to</span>
+        <label><input type="radio" name="scope" checked><span class="radio"></span>This event</label>
+        <label><input type="radio" name="scope"><span class="radio"></span>This &amp; following events</label>
+        <label><input type="radio" name="scope"><span class="radio"></span>All events</label>
+      </div>
+    </div>
+  </div>
+  <div class="efoot">
+    <button class="btn" id="cancelBtn">Cancel</button>
+    <button class="btn primary" id="saveBtn">Save</button>
+  </div>
+</aside>
+
+<div id="toast" role="status" aria-live="polite">Copied</div>
+
+<script>
+(function(){
+  var toast = document.getElementById('toast'), tTimer;
+  function showToast(msg){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(tTimer); tTimer = setTimeout(function(){toast.classList.remove('show');},1300); }
+
+  // copy buttons
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var txt = b.getAttribute('data-copy');
+      if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); }
+      showToast('Copied');
+    });
+  });
+
+  // paste -> applied (confident auto-apply)
+  var applied = document.getElementById('applied');
+  document.getElementById('parseBtn').addEventListener('click', function(){
+    applied.classList.add('show'); showToast('Added 1 event');
+  });
+  document.getElementById('undoBtn').addEventListener('click', function(){
+    applied.classList.remove('show'); document.getElementById('paste').focus(); showToast('Undone');
+  });
+
+  // view tabs
+  document.querySelectorAll('.viewtabs button').forEach(function(t){
+    t.addEventListener('click', function(){
+      this.parentNode.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      this.setAttribute('aria-pressed','true');
+    });
+  });
+
+  // editor open/close
+  var scrim=document.getElementById('scrim'), editor=document.getElementById('editor'),
+      title=document.getElementById('f-title'), recur=document.getElementById('recur'),
+      repeatSw=document.getElementById('repeatSw'), scope=document.querySelector('.scope'),
+      edHead=document.getElementById('ed-h'), lastFocus=null;
+
+  function openEditor(opts){
+    opts=opts||{};
+    edHead.textContent = opts.isNew ? 'NEW EVENT' : 'EDIT EVENT';
+    title.value = opts.title || '';
+    var recurring = !!opts.recurring;
+    repeatSw.setAttribute('aria-checked', recurring?'true':'false');
+    recur.classList.toggle('show', recurring);
+    scope.style.display = recurring ? 'block':'none';
+    scrim.classList.add('show'); editor.classList.add('show'); editor.setAttribute('aria-hidden','false');
+    lastFocus=document.activeElement; title.focus();
+  }
+  function closeEditor(){
+    scrim.classList.remove('show'); editor.classList.remove('show'); editor.setAttribute('aria-hidden','true');
+    if(lastFocus) lastFocus.focus();
+  }
+  document.querySelectorAll('.evt').forEach(function(e){
+    function go(){ openEditor({title:e.getAttribute('data-title'), recurring:e.getAttribute('data-recurring')==='1'}); }
+    e.addEventListener('click', go);
+    e.addEventListener('keydown', function(ev){ if(ev.key==='Enter'||ev.key===' '){ev.preventDefault(); go();} });
+  });
+  document.getElementById('newBtn').addEventListener('click', function(){ openEditor({isNew:true}); });
+  document.getElementById('closeBtn').addEventListener('click', closeEditor);
+  document.getElementById('cancelBtn').addEventListener('click', closeEditor);
+  document.getElementById('scrim').addEventListener('click', closeEditor);
+  document.getElementById('saveBtn').addEventListener('click', function(){ closeEditor(); showToast('Saved'); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && editor.classList.contains('show')) closeEditor(); });
+
+  // repeat toggle
+  repeatSw.addEventListener('click', function(){
+    var on = this.getAttribute('aria-checked')!=='true';
+    this.setAttribute('aria-checked', on?'true':'false');
+    recur.classList.toggle('show', on);
+    scope.style.display = on ? 'block':'none';
+  });
+
+  // day picker -> RRULE
+  var DAYMAP=['MO','TU','WE','TH','FR','SA','SU'];
+  var picks=document.querySelectorAll('.daypick button'), rruleText=document.getElementById('rruleText');
+  function buildRRule(){
+    var on=[]; picks.forEach(function(b,i){ if(b.getAttribute('aria-pressed')==='true') on.push(DAYMAP[i]); });
+    rruleText.textContent = on.length ? 'RRULE:FREQ=WEEKLY;BYDAY='+on.join(',') : 'RRULE:FREQ=WEEKLY';
+  }
+  picks.forEach(function(b){ b.addEventListener('click', function(){
+    this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true'?'false':'true'); buildRRule();
+  });});
+})();
+</script>
+</body>
+</html>

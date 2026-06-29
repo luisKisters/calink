@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calink — Editorial</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;background:#f6f1e7;color:#2b2620;min-height:100vh}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 28px 80px}
+  .top{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid #2b2620;padding-bottom:14px}
+  .mast{font-size:30px;font-weight:700;letter-spacing:-.5px}
+  .mast .i{font-style:italic;color:#9a5b2e}
+  .top .meta{font-size:13px;color:#7a7065;font-style:italic}
+  .sub{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8a7f70}
+  .link{font-family:ui-monospace,monospace;text-transform:none;letter-spacing:0;background:#efe7d6;border:1px solid #d8ccb4;padding:5px 10px;border-radius:4px;cursor:pointer}
+  .link b{color:#9a5b2e}
+  .paste{margin:34px 0;background:#fffdf8;border:1px solid #e2d8c4;border-radius:8px;padding:20px 22px;box-shadow:0 1px 0 #e2d8c4}
+  .paste h3{font-size:15px;font-weight:700;margin-bottom:4px}
+  .paste p{font-size:13.5px;color:#7a7065;font-style:italic;line-height:1.5}
+  .paste .box{margin-top:12px;border:1px dashed #cdbf a3;border:1px dashed #cdbfa3;border-radius:6px;padding:13px;font-family:ui-monospace,monospace;font-size:12.5px;color:#6a6155;background:#faf6ec;line-height:1.6}
+  .paste .go{margin-top:12px;display:inline-block;background:#2b2620;color:#f6f1e7;font-family:-apple-system,sans-serif;font-size:13px;padding:9px 18px;border-radius:6px;cursor:pointer}
+  .agenda h2{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:#9a5b2e;border-bottom:1px solid #d8ccb4;padding-bottom:6px;margin:30px 0 4px}
+  .item{display:flex;gap:20px;padding:16px 2px;border-bottom:1px solid #e7ddca}
+  .item .when{width:120px;flex-shrink:0;font-size:13px;color:#7a7065;font-style:italic;line-height:1.5}
+  .item .ttl{font-size:18px;font-weight:600;letter-spacing:-.2px}
+  .item .det{font-size:13.5px;color:#7a7065;margin-top:3px;line-height:1.5}
+  .item .rec{font-size:11px;color:#9a5b2e;font-style:italic;margin-top:5px}
+  .foot{margin-top:40px;font-size:12px;color:#9a8f80;font-style:italic;text-align:center;line-height:1.7}
+</style></head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="mast">cal<span class="i">ink</span></div>
+      <div class="meta">Acme Team · Europe/Berlin</div>
+    </div>
+    <div class="sub">
+      <span>Your living calendar, set in print</span>
+      <span class="link">webcal://calink.app/feed/<b>x9f2…a1</b>.ics &nbsp;⧉</span>
+    </div>
+
+    <div class="paste">
+      <h3>Paste anything.</h3>
+      <p>An email, an itinerary, a syllabus, a screenshot of a poster. We'll read it and set the type for you — you approve before it's bound in.</p>
+      <div class="box">Sept 4 — Welcome dinner, 7pm, Trattoria Nile<br>Sept 5–6 — Offsite at the lake house<br>Every Thu — Book club, 8pm</div>
+      <div class="go">Read &amp; turn into events →</div>
+    </div>
+
+    <div class="agenda">
+      <h2>Today · Monday, 29 June</h2>
+      <div class="item"><div class="when">9:30 – 9:45 AM</div><div><div class="ttl">Standup</div><div class="det">Zoom, with Engineering</div><div class="rec">↻ repeats every weekday</div></div></div>
+      <div class="item"><div class="when">2:00 – 3:00 PM</div><div><div class="ttl">Design review — Calink feeds</div><div class="det">Room 2, third floor</div></div></div>
+      <div class="item"><div class="when">All day</div><div><div class="ttl">v0.3 cut-off</div><div class="det">Release dates</div></div></div>
+
+      <h2>Tuesday, 30 June</h2>
+      <div class="item"><div class="when">8:00 – 8:45 AM</div><div><div class="ttl">Morning run</div><div class="det">Workouts</div><div class="rec">↻ Mon / Wed / Fri</div></div></div>
+      <div class="item"><div class="when">4:30 – 5:00 PM</div><div><div class="ttl">1:1 with Sam</div></div></div>
+    </div>
+
+    <div class="foot">Subscribers' calendars refresh on their own quietly, about once an hour.<br>Edit here, ask in chat, or let an agent do it over MCP — the printed page stays current.</div>
+  </div>
+</body></html>

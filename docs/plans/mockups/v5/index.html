@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — List + Detail + Chat</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif}
+  body{display:flex;flex-direction:column;background:#FBF7EC}
+  .switcher{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#FBF7EC;border-bottom:2px solid #15130D;flex-shrink:0}
+  .brand{color:#15130D;font-weight:700;font-size:15px;margin-right:10px;text-transform:uppercase;letter-spacing:.04em}
+  .switcher button{appearance:none;border:2px solid #15130D;background:#FFFDF5;color:#15130D;font-size:12px;padding:6px 12px;cursor:pointer;font-weight:600;white-space:nowrap;font-family:inherit}
+  .switcher button:hover{background:#FF5A4D;color:#fff}
+  .switcher button.active{background:#15130D;color:#FFFDF5}
+  .hint{margin-left:auto;color:#5A564B;font-size:11px}
+  iframe{flex:1;width:100%;border:0;background:#FFFDF5}
+</style>
+</head>
+<body>
+  <nav class="switcher">
+    <div class="brand">Calink</div>
+    <button data-src="a-inline.html" class="active">A · Inline 3-pane</button>
+    <button data-src="b-fullscreen.html">B · Full-screen editor</button>
+    <button data-src="c-modal.html">C · Centered modal</button>
+    <div class="hint">event list → detail + chat (equal width)</div>
+  </nav>
+  <iframe id="stage" src="a-inline.html"></iframe>
+  <script>
+    const stage=document.getElementById('stage');
+    document.querySelectorAll('.switcher button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        document.querySelectorAll('.switcher button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');stage.src=b.dataset.src;
+      });
+    });
+  </script>
+</body>
+</html>

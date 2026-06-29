@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calink — paste anything, get a live calendar link</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --cream:#FFFDF5;
+    --ink:#000000;
+    --accent:#FF5A5F;
+    --muted:#444444;
+    --line:3px solid var(--ink);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--cream);color:var(--ink);}
+  body{
+    font-family:"Space Grotesk",system-ui,sans-serif;
+    font-weight:500;
+    line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+    font-feature-settings:"tnum" 1;
+  }
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+  .wrap{max-width:1280px;margin:0 auto;padding:48px 40px 64px;}
+  .label{
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    font-weight:700;
+    font-size:12px;
+  }
+  button{font-family:inherit;cursor:pointer;border-radius:0;transition:none;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:24px;margin-bottom:48px;
+  }
+  .brand{display:flex;align-items:baseline;gap:14px;}
+  .logo{
+    font-weight:700;font-size:34px;letter-spacing:-0.02em;
+  }
+  .logo .dot{color:var(--accent);}
+  .tagline{font-size:15px;color:var(--muted);font-weight:500;}
+  .tagline b{color:var(--ink);font-weight:700;}
+
+  /* ---------- SUBSCRIBE BAR ---------- */
+  .subscribe{
+    display:flex;align-items:center;gap:0;
+    border:var(--line);background:#fff;
+    margin-bottom:56px;
+  }
+  .subscribe .meta{
+    padding:18px 20px;border-right:var(--line);
+    display:flex;flex-direction:column;gap:4px;white-space:nowrap;
+  }
+  .subscribe .meta span{font-size:11px;color:var(--muted);}
+  .subscribe .url{
+    flex:1;padding:18px 20px;font-size:16px;font-weight:700;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .copy-btn{
+    border:none;border-left:var(--line);background:var(--ink);color:var(--cream);
+    padding:0 28px;align-self:stretch;font-weight:700;font-size:13px;
+    text-transform:uppercase;letter-spacing:0.08em;min-width:128px;
+  }
+  .copy-btn.copied{background:var(--accent);color:var(--ink);}
+
+  /* ---------- DAY CARDS GRID ---------- */
+  .section-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin-bottom:24px;
+  }
+  .section-head h2{font-size:13px;}
+  .section-head .hint{font-size:12px;color:var(--muted);}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:28px;
+    margin-bottom:64px;
+  }
+  .card{
+    border:var(--line);background:#fff;
+    box-shadow:8px 8px 0 var(--ink);
+    padding:20px;display:flex;flex-direction:column;min-height:280px;
+  }
+  .card.today{background:var(--accent);box-shadow:8px 8px 0 var(--ink);}
+  .card-top{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding-bottom:14px;margin-bottom:16px;border-bottom:var(--line);
+  }
+  .card-day{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+  .card-num{font-size:30px;font-weight:700;line-height:1;}
+  .today-tag{
+    font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;
+    border:2px solid var(--ink);padding:3px 6px;background:var(--ink);color:var(--accent);
+  }
+  .events{display:flex;flex-direction:column;gap:10px;}
+  .event{
+    border:2px solid var(--ink);background:var(--cream);
+    padding:9px 10px;cursor:pointer;text-align:left;width:100%;display:block;
+  }
+  .today .event{background:#fff;}
+  .event:hover{box-shadow:3px 3px 0 var(--ink);}
+  .event .time{font-size:12px;font-weight:700;letter-spacing:0.02em;}
+  .event .title{font-size:14px;font-weight:700;line-height:1.25;margin-top:1px;}
+  .event .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .event.allday .time{color:var(--accent);}
+  .today .event.allday .time{color:var(--ink);}
+  .empty{font-size:12px;color:var(--muted);padding:9px 2px;}
+
+  /* ---------- PASTE PANEL ---------- */
+  .paste{
+    display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:stretch;
+  }
+  .panel{border:var(--line);background:#fff;padding:24px;display:flex;flex-direction:column;}
+  .panel h3{font-size:13px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;}
+  textarea{
+    flex:1;border:2px solid var(--ink);border-radius:0;background:var(--cream);
+    padding:14px;font-family:inherit;font-size:14px;font-weight:500;resize:none;
+    min-height:160px;line-height:1.5;color:var(--ink);
+  }
+  textarea:focus{outline:3px solid var(--accent);outline-offset:-1px;}
+  .applied-banner{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border:2px solid var(--ink);background:var(--accent);
+    padding:10px 14px;margin-bottom:16px;
+  }
+  .applied-banner .txt{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+  .undo-btn{
+    border:2px solid var(--ink);background:var(--ink);color:var(--cream);
+    padding:6px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+  }
+  .undo-btn.undone{background:#fff;color:var(--ink);}
+  .preview-list{display:flex;flex-direction:column;gap:10px;}
+  .preview-item{border:2px solid var(--ink);padding:10px 12px;background:var(--cream);}
+  .preview-item .t{font-size:13px;font-weight:700;}
+  .preview-item .d{font-size:12px;color:var(--muted);margin-top:2px;}
+  .preview-list.undone{opacity:0.4;}
+
+  /* ---------- MCP FOOTER ---------- */
+  footer{
+    margin-top:56px;border-top:var(--line);padding-top:20px;
+    display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  }
+  .mcp{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);}
+  .mcp b{color:var(--ink);font-weight:700;}
+  .mcp code{
+    font-family:inherit;font-weight:700;color:var(--ink);
+    border:2px solid var(--ink);padding:2px 8px;background:#fff;font-size:11px;
+  }
+  .foot-note{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+
+  /* ---------- EDITOR MODAL ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.4);
+    display:none;align-items:center;justify-content:center;padding:24px;z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    width:480px;max-width:100%;max-height:90vh;overflow:auto;
+    background:var(--cream);border:var(--line);box-shadow:12px 12px 0 var(--ink);
+  }
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 22px;border-bottom:var(--line);background:var(--ink);color:var(--cream);
+  }
+  .modal-head h3{font-size:13px;text-transform:uppercase;letter-spacing:0.1em;}
+  .close-x{background:none;border:none;color:var(--cream);font-size:20px;line-height:1;font-weight:700;}
+  .modal-body{padding:22px;display:flex;flex-direction:column;gap:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+  .field input,.field select{
+    border:2px solid var(--ink);border-radius:0;background:#fff;
+    padding:10px 12px;font-family:inherit;font-size:14px;font-weight:500;color:var(--ink);
+  }
+  .field input:focus,.field select:focus{outline:3px solid var(--accent);outline-offset:-1px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .rrule{
+    border:2px solid var(--ink);background:#fff;padding:8px 12px;font-size:11px;font-weight:700;
+    letter-spacing:0.02em;display:none;
+  }
+  .rrule.show{display:block;}
+  .scope{display:none;flex-direction:column;gap:8px;border:2px solid var(--ink);padding:12px;background:#fff;}
+  .scope.show{display:flex;}
+  .scope .scope-title{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+  .scope-opts{display:flex;gap:8px;flex-wrap:wrap;}
+  .scope-opt{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;
+    border:2px solid var(--ink);padding:6px 10px;}
+  .scope-opt input{accent-color:var(--accent);}
+  .scope-opt.sel{background:var(--accent);}
+  .modal-foot{
+    display:flex;justify-content:flex-end;gap:12px;padding:18px 22px;border-top:var(--line);
+  }
+  .btn{
+    border:2px solid var(--ink);padding:10px 20px;font-size:12px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.08em;
+  }
+  .btn.ghost{background:#fff;color:var(--ink);}
+  .btn.solid{background:var(--ink);color:var(--cream);}
+  svg{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="logo">Calink<span class="dot">.</span></div>
+      <div class="tagline">Paste anything — get a <b>live calendar link</b>.</div>
+    </div>
+    <div class="label" style="color:var(--muted)">JUNE 2026</div>
+  </header>
+
+  <!-- SUBSCRIBE LINK -->
+  <div class="subscribe">
+    <div class="meta">
+      <span class="label">Subscribe</span>
+      <span>Auto-updates in any calendar app</span>
+    </div>
+    <div class="url tnum" id="feedUrl">webcal://calink.app/feed/x9f2&hellip;a1.ics</div>
+    <button class="copy-btn" id="copyBtn">Copy link</button>
+  </div>
+
+  <!-- DAY CARDS -->
+  <div class="section-head">
+    <h2 class="label">Next 5 days</h2>
+    <span class="hint">Click any event to edit</span>
+  </div>
+
+  <div class="grid">
+    <!-- TODAY -->
+    <div class="card today">
+      <div class="card-top">
+        <div>
+          <div class="card-day">Mon</div>
+          <div class="card-num tnum">29</div>
+        </div>
+        <span class="today-tag">Today</span>
+      </div>
+      <div class="events">
+        <button class="event allday" data-title="v0.3 cut-off" data-date="2026-06-29" data-start="" data-end="" data-allday="1" data-loc="" data-repeat="none">
+          <div class="time">ALL DAY</div>
+          <div class="title">v0.3 cut-off</div>
+        </button>
+        <button class="event" data-title="Standup" data-date="2026-06-29" data-start="09:30" data-end="09:45" data-loc="" data-repeat="weekday">
+          <div class="time tnum">09:30&ndash;09:45</div>
+          <div class="title">Standup</div>
+          <div class="sub">Every weekday</div>
+        </button>
+        <button class="event" data-title="Design review — Calink feeds" data-date="2026-06-29" data-start="14:00" data-end="15:00" data-loc="Room 2" data-repeat="mon">
+          <div class="time tnum">14:00&ndash;15:00</div>
+          <div class="title">Design review &mdash; Calink feeds</div>
+          <div class="sub">Room 2 &middot; Weekly on Mon</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- TUE -->
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-day">Tue</div>
+          <div class="card-num tnum">30</div>
+        </div>
+      </div>
+      <div class="events">
+        <button class="event" data-title="Morning run" data-date="2026-06-30" data-start="08:00" data-end="08:45" data-loc="" data-repeat="mwf">
+          <div class="time tnum">08:00&ndash;08:45</div>
+          <div class="title">Morning run</div>
+          <div class="sub">Workouts &middot; Mon/Wed/Fri</div>
+        </button>
+        <button class="event" data-title="1:1 with Sam" data-date="2026-06-30" data-start="16:30" data-end="17:00" data-loc="" data-repeat="none">
+          <div class="time tnum">16:30&ndash;17:00</div>
+          <div class="title">1:1 with Sam</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- WED -->
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-day">Wed</div>
+          <div class="card-num tnum">01</div>
+        </div>
+      </div>
+      <div class="events">
+        <button class="event" data-title="Standup" data-date="2026-07-01" data-start="09:30" data-end="09:45" data-loc="" data-repeat="weekday">
+          <div class="time tnum">09:30</div>
+          <div class="title">Standup</div>
+          <div class="sub">Every weekday</div>
+        </button>
+        <button class="event" data-title="Roadmap planning" data-date="2026-07-01" data-start="11:00" data-end="12:30" data-loc="" data-repeat="none">
+          <div class="time tnum">11:00&ndash;12:30</div>
+          <div class="title">Roadmap planning</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- THU -->
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-day">Thu</div>
+          <div class="card-num tnum">02</div>
+        </div>
+      </div>
+      <div class="events">
+        <button class="event" data-title="Book club" data-date="2026-07-02" data-start="20:00" data-end="21:00" data-loc="" data-repeat="thu">
+          <div class="time tnum">20:00</div>
+          <div class="title">Book club</div>
+          <div class="sub">Weekly on Thu</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- MON JUL 6 -->
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-day">Mon</div>
+          <div class="card-num tnum">06</div>
+        </div>
+      </div>
+      <div class="events">
+        <button class="event" data-title="Lunch with Priya" data-date="2026-07-06" data-start="12:30" data-end="13:30" data-loc="Sona" data-repeat="none">
+          <div class="time tnum">12:30&ndash;13:30</div>
+          <div class="title">Lunch with Priya</div>
+          <div class="sub">Sona</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASTE -> EVENTS -->
+  <div class="paste">
+    <div class="panel">
+      <h3>Paste anything</h3>
+      <textarea spellcheck="false">Design review Mon 2pm in Room 2 (weekly)
+Lunch w/ Priya next Mon 12:30 at Sona
+Book club every Thursday 8pm</textarea>
+    </div>
+
+    <div class="panel">
+      <h3>Added to your calendar</h3>
+      <div class="applied-banner">
+        <span class="txt" id="applyTxt">3 events parsed &amp; applied</span>
+        <button class="undo-btn" id="undoBtn">Undo</button>
+      </div>
+      <div class="preview-list" id="previewList">
+        <div class="preview-item">
+          <div class="t">Design review — Calink feeds</div>
+          <div class="d tnum">Mon 14:00 · Room 2 · repeats weekly</div>
+        </div>
+        <div class="preview-item">
+          <div class="t">Lunch with Priya</div>
+          <div class="d tnum">Mon Jul 6, 12:30 · Sona</div>
+        </div>
+        <div class="preview-item">
+          <div class="t">Book club</div>
+          <div class="d tnum">Thu 20:00 · repeats weekly</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MCP FOOTER -->
+  <footer>
+    <div class="mcp">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.4">
+        <rect x="3" y="3" width="18" height="18"/><path d="M8 12h8M12 8v8"/>
+      </svg>
+      <span><b>MCP server</b> — let agents add events. Authenticate with a <code>Bearer key</code>.</span>
+    </div>
+    <div class="foot-note">Calink &middot; one link, always live</div>
+  </footer>
+
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Edit event">
+    <div class="modal-head">
+      <h3>Edit event</h3>
+      <button class="close-x" id="closeX" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="fTitle">Title</label>
+        <input id="fTitle" type="text" value="" />
+      </div>
+      <div class="field">
+        <label for="fDate">Date</label>
+        <input id="fDate" type="date" class="tnum" value="" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fStart">Start</label>
+          <input id="fStart" type="time" class="tnum" value="" />
+        </div>
+        <div class="field">
+          <label for="fEnd">End</label>
+          <input id="fEnd" type="time" class="tnum" value="" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="fLoc">Location</label>
+        <input id="fLoc" type="text" value="" placeholder="—" />
+      </div>
+      <div class="field">
+        <label for="fRepeat">Repeat</label>
+        <select id="fRepeat">
+          <option value="none">Does not repeat</option>
+          <option value="mon">Weekly on Mon</option>
+          <option value="thu">Weekly on Thu</option>
+          <option value="mwf">Weekly on Mon/Wed/Fri</option>
+          <option value="weekday">Every weekday</option>
+        </select>
+      </div>
+      <div class="rrule tnum" id="rrule">RRULE:FREQ=WEEKLY;BYDAY=MO</div>
+      <div class="scope" id="scope">
+        <div class="scope-title">Apply changes to</div>
+        <div class="scope-opts">
+          <label class="scope-opt sel"><input type="radio" name="scope" value="this" checked> This event</label>
+          <label class="scope-opt"><input type="radio" name="scope" value="following"> This &amp; following</label>
+          <label class="scope-opt"><input type="radio" name="scope" value="all"> All</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="cancelBtn">Cancel</button>
+      <button class="btn solid" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- COPY SUBSCRIBE LINK ----
+  const copyBtn = document.getElementById('copyBtn');
+  copyBtn.addEventListener('click', () => {
+    const text = 'webcal://calink.app/feed/x9f2a1.ics';
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
+    copyBtn.textContent = 'Copied';
+    copyBtn.classList.add('copied');
+    setTimeout(() => { copyBtn.textContent = 'Copy link'; copyBtn.classList.remove('copied'); }, 1600);
+  });
+
+  // ---- UNDO (auto-applied paste) ----
+  const undoBtn = document.getElementById('undoBtn');
+  const previewList = document.getElementById('previewList');
+  const applyTxt = document.getElementById('applyTxt');
+  let undone = false;
+  undoBtn.addEventListener('click', () => {
+    undone = !undone;
+    if (undone) {
+      previewList.classList.add('undone');
+      undoBtn.classList.add('undone');
+      undoBtn.textContent = 'Redo';
+      applyTxt.textContent = 'Changes reverted';
+    } else {
+      previewList.classList.remove('undone');
+      undoBtn.classList.remove('undone');
+      undoBtn.textContent = 'Undo';
+      applyTxt.textContent = '3 events parsed & applied';
+    }
+  });
+
+  // ---- EVENT EDITOR ----
+  const overlay = document.getElementById('overlay');
+  const RRULES = {
+    none:    null,
+    mon:     'RRULE:FREQ=WEEKLY;BYDAY=MO',
+    thu:     'RRULE:FREQ=WEEKLY;BYDAY=TH',
+    mwf:     'RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR',
+    weekday: 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
+  };
+  const fTitle = document.getElementById('fTitle');
+  const fDate = document.getElementById('fDate');
+  const fStart = document.getElementById('fStart');
+  const fEnd = document.getElementById('fEnd');
+  const fLoc = document.getElementById('fLoc');
+  const fRepeat = document.getElementById('fRepeat');
+  const rrule = document.getElementById('rrule');
+  const scope = document.getElementById('scope');
+
+  function syncRepeat() {
+    const v = fRepeat.value;
+    const r = RRULES[v];
+    if (r) {
+      rrule.textContent = r;
+      rrule.classList.add('show');
+      scope.classList.add('show');
+    } else {
+      rrule.classList.remove('show');
+      scope.classList.remove('show');
+    }
+  }
+  fRepeat.addEventListener('change', syncRepeat);
+
+  // scope radio highlight
+  scope.querySelectorAll('.scope-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      scope.querySelectorAll('.scope-opt').forEach(o => o.classList.remove('sel'));
+      opt.classList.add('sel');
+    });
+  });
+
+  function openEditor(el) {
+    fTitle.value = el.dataset.title || '';
+    fDate.value = el.dataset.date || '';
+    fStart.value = el.dataset.start || '';
+    fEnd.value = el.dataset.end || '';
+    fLoc.value = el.dataset.loc || '';
+    fRepeat.value = el.dataset.repeat || 'none';
+    syncRepeat();
+    overlay.classList.add('open');
+  }
+  function closeEditor() { overlay.classList.remove('open'); }
+
+  document.querySelectorAll('.event').forEach(ev => {
+    ev.addEventListener('click', () => openEditor(ev));
+  });
+  document.getElementById('closeX').addEventListener('click', closeEditor);
+  document.getElementById('cancelBtn').addEventListener('click', closeEditor);
+  document.getElementById('saveBtn').addEventListener('click', closeEditor);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeEditor(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEditor(); });
+</script>
+</body>
+</html>

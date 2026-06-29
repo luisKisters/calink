@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calink — Dashboard</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f4f6;color:#1f2430;height:100vh;display:flex;font-size:13px}
+  .side{width:200px;background:#fff;border-right:1px solid #e4e7ec;padding:14px 10px;flex-shrink:0}
+  .logo{font-weight:700;font-size:14px;padding:4px 8px 14px}.logo span{color:#2563eb}
+  .grp{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9aa2b1;padding:10px 8px 4px}
+  .it{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;color:#42495a;cursor:pointer}
+  .it:hover{background:#f3f4f6}.it.on{background:#eef3ff;color:#2563eb;font-weight:600}
+  .sw{width:9px;height:9px;border-radius:2px}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .top{height:48px;background:#fff;border-bottom:1px solid #e4e7ec;display:flex;align-items:center;padding:0 16px;gap:12px}
+  .top h1{font-size:14px;font-weight:600}
+  .seg{display:flex;border:1px solid #e4e7ec;border-radius:7px;overflow:hidden}
+  .seg span{padding:5px 11px;color:#6b7280;cursor:pointer}.seg span.on{background:#2563eb;color:#fff}
+  .lk{margin-left:auto;font-family:ui-monospace,monospace;font-size:11px;background:#f3f4f6;border:1px solid #e4e7ec;border-radius:6px;padding:5px 9px;cursor:pointer}.lk b{color:#2563eb}
+  .content{flex:1;display:flex;min-height:0}
+  .cal{flex:1;padding:14px;overflow:auto}
+  .gridhdr,.gridrow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .gridhdr div{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#9aa2b1;text-align:center;padding-bottom:6px;font-weight:600}
+  .cell{background:#fff;border:1px solid #e9ebf0;border-radius:8px;min-height:92px;padding:6px}
+  .cell .n{font-size:11px;color:#9aa2b1;font-weight:600}
+  .cell.today{border-color:#2563eb;box-shadow:inset 0 0 0 1px #2563eb}
+  .cell.today .n{color:#2563eb}
+  .chip{font-size:10.5px;border-radius:4px;padding:2px 5px;margin-top:3px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .c-blue{background:#dbe7ff;color:#1d4ed8}.c-green{background:#d6f5e3;color:#11865a}.c-amber{background:#fdeccd;color:#aa6c0a}
+  .panel{width:300px;border-left:1px solid #e4e7ec;background:#fff;padding:14px;overflow:auto;flex-shrink:0}
+  .panel h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9aa2b1;margin:4px 0 10px}
+  .fld{margin-bottom:11px}.fld label{font-size:11px;color:#6b7280;display:block;margin-bottom:4px}
+  .fld input,.fld select{width:100%;border:1px solid #d8dce4;border-radius:6px;padding:7px 9px;font-size:12.5px;color:#1f2430;background:#fff;font-family:inherit}
+  .two{display:flex;gap:8px}
+  .rrule{background:#f7f9fc;border:1px solid #e4e7ec;border-radius:7px;padding:9px;font-size:11.5px;color:#42495a;margin-bottom:11px}
+  .rrule code{font-family:ui-monospace,monospace;color:#2563eb}
+  .save{width:100%;background:#2563eb;color:#fff;border:0;border-radius:7px;padding:9px;font-size:13px;font-weight:600;cursor:pointer}
+  .keys{margin-top:18px}
+  .key{display:flex;align-items:center;gap:8px;font-family:ui-monospace,monospace;font-size:11px;color:#42495a;border:1px solid #e9ebf0;border-radius:6px;padding:6px 8px;margin-bottom:6px}
+  .key .b{margin-left:auto;color:#9aa2b1}
+</style></head>
+<body>
+  <aside class="side">
+    <div class="logo">cal<span>ink</span></div>
+    <div class="grp">Calendars</div>
+    <div class="it on"><span class="sw" style="background:#2563eb"></span>Acme Team</div>
+    <div class="it"><span class="sw" style="background:#11865a"></span>Workouts</div>
+    <div class="it"><span class="sw" style="background:#aa6c0a"></span>Release dates</div>
+    <div class="grp">Tools</div>
+    <div class="it">＋ Paste → events</div>
+    <div class="it">💬 Chat editor</div>
+    <div class="it">🔌 MCP &amp; keys</div>
+  </aside>
+  <main class="main">
+    <div class="top">
+      <h1>Acme Team</h1>
+      <div class="seg"><span>Day</span><span>Week</span><span class="on">Month</span><span>Agenda</span></div>
+      <div class="lk">webcal://calink.app/feed/<b>x9f2…a1</b>.ics ⧉</div>
+    </div>
+    <div class="content">
+      <div class="cal">
+        <div class="gridhdr"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+        <div class="gridrow" style="margin-top:6px">
+          <div class="cell today"><div class="n">29</div><div class="chip c-blue">9:30 Standup</div><div class="chip c-blue">14:00 Design</div><div class="chip c-amber">v0.3 cut-off</div></div>
+          <div class="cell"><div class="n">30</div><div class="chip c-green">8:00 Run</div><div class="chip c-blue">16:30 1:1 Sam</div></div>
+          <div class="cell"><div class="n">1</div><div class="chip c-blue">9:30 Standup</div><div class="chip c-blue">11:00 Roadmap</div></div>
+          <div class="cell"><div class="n">2</div><div class="chip c-green">8:00 Run</div><div class="chip c-blue">9:30 Standup</div></div>
+          <div class="cell"><div class="n">3</div><div class="chip c-blue">9:30 Standup</div></div>
+          <div class="cell"><div class="n">4</div></div>
+          <div class="cell"><div class="n">5</div><div class="chip c-amber">Offsite</div></div>
+        </div>
+        <div class="gridrow" style="margin-top:6px">
+          <div class="cell"><div class="n">6</div><div class="chip c-blue">12:30 Lunch Priya</div></div>
+          <div class="cell"><div class="n">7</div><div class="chip c-green">8:00 Run</div></div>
+          <div class="cell"><div class="n">8</div><div class="chip c-blue">9:30 Standup</div></div>
+          <div class="cell"><div class="n">9</div></div>
+          <div class="cell"><div class="n">10</div><div class="chip c-blue">Book club</div></div>
+          <div class="cell"><div class="n">11</div></div>
+          <div class="cell"><div class="n">12</div></div>
+        </div>
+      </div>
+      <aside class="panel">
+        <h3>Edit event</h3>
+        <div class="fld"><label>Title</label><input value="Design review — Calink feeds"></div>
+        <div class="two"><div class="fld" style="flex:1"><label>Date</label><input value="2026-06-29"></div><div class="fld" style="width:90px"><label>Start</label><input value="14:00"></div><div class="fld" style="width:90px"><label>End</label><input value="15:00"></div></div>
+        <div class="fld"><label>Location</label><input value="Room 2"></div>
+        <div class="fld"><label>Repeat</label><select><option>Does not repeat</option><option selected>Weekly on Mon</option><option>Custom…</option></select></div>
+        <div class="rrule">Generated: <code>RRULE:FREQ=WEEKLY;BYDAY=MO</code><br>Editing scope: <b>This event only · This &amp; following · All</b></div>
+        <button class="save">Save event</button>
+        <div class="keys">
+          <h3>MCP keys</h3>
+          <div class="key">claude-desktop · ck_live_8f…<span class="b">used 2m ago</span></div>
+          <div class="key">codex-cli · ck_live_a1…<span class="b">revoke</span></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</body></html>

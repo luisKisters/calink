@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calink — Command</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0a0a0d;color:#e7e7ee;height:100vh;display:flex;overflow:hidden}
+  ::selection{background:#3a2fa0}
+  .side{width:230px;border-right:1px solid #1c1c24;padding:18px 14px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+  .logo{font-weight:700;font-size:15px;letter-spacing:-.3px;margin-bottom:18px;padding:0 8px}
+  .logo b{color:#8a7bff}
+  .nav{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;color:#8c8c98;font-size:13px;cursor:pointer}
+  .nav:hover{background:#15151c;color:#fff}
+  .nav.on{background:#16161f;color:#fff}
+  .dot{width:8px;height:8px;border-radius:3px}
+  .lbl{margin:16px 8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#4a4a55}
+  .side .kbd{margin-top:auto;font-size:11px;color:#55555f;padding:8px;border:1px solid #1c1c24;border-radius:7px;text-align:center}
+  .kbd b{color:#9a9aab;font-family:ui-monospace,monospace}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .top{height:52px;border-bottom:1px solid #1c1c24;display:flex;align-items:center;padding:0 22px;gap:14px}
+  .title{font-size:14px;font-weight:600}
+  .sub{font-size:12px;color:#6a6a76}
+  .pill{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:ui-monospace,monospace;font-size:12px;background:#121219;border:1px solid #232330;padding:6px 11px;border-radius:8px;color:#9a9aab;cursor:pointer}
+  .pill:hover{border-color:#3a3a4a}
+  .pill b{color:#8a7bff}
+  .copy{color:#5a5a66;font-size:11px}
+  .body{flex:1;overflow:auto;padding:22px 26px}
+  .day{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#5a5a66;margin:20px 0 8px}
+  .day:first-child{margin-top:0}
+  .ev{display:flex;align-items:center;gap:14px;padding:11px 12px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+  .ev:hover{background:#101017;border-color:#1f1f29}
+  .time{font-family:ui-monospace,monospace;font-size:12px;color:#7a7a88;width:96px;flex-shrink:0}
+  .bar{width:3px;align-self:stretch;border-radius:2px}
+  .ev .nm{font-size:13.5px;font-weight:500}
+  .ev .meta{font-size:12px;color:#6a6a76;margin-top:2px}
+  .rec{margin-left:auto;font-size:10px;color:#6a6a76;border:1px solid #232330;padding:2px 7px;border-radius:20px;font-family:ui-monospace,monospace}
+  /* command palette */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:14vh}
+  .cmd{width:560px;background:#101016;border:1px solid #2a2a38;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+  .cmd .in{display:flex;align-items:center;gap:11px;padding:15px 18px;border-bottom:1px solid #1e1e28}
+  .cmd .in input{flex:1;background:none;border:0;outline:none;color:#fff;font-size:15px}
+  .cmd .in .ico{color:#8a7bff}
+  .crow{padding:11px 18px;font-size:13px;color:#b7b7c2;display:flex;align-items:center;gap:11px;cursor:pointer}
+  .crow.sel{background:#17172180}
+  .crow .k{margin-left:auto;font-family:ui-monospace,monospace;font-size:11px;color:#5a5a66}
+  .ai{margin:6px 14px 14px;background:#0c0c12;border:1px solid #1e1e28;border-radius:10px;padding:12px}
+  .ai .h{font-size:11px;color:#8a7bff;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .ai .line{font-size:12.5px;color:#9a9aab;padding:4px 0;display:flex;gap:8px}
+  .ai .ok{color:#54d18a}
+</style></head>
+<body>
+  <aside class="side">
+    <div class="logo">cal<b>ink</b></div>
+    <div class="nav on"><span class="dot" style="background:#8a7bff"></span>Acme Team</div>
+    <div class="nav"><span class="dot" style="background:#54d18a"></span>Workouts</div>
+    <div class="nav"><span class="dot" style="background:#f0a13a"></span>Release dates</div>
+    <div class="lbl">Tools</div>
+    <div class="nav">＋ Paste → events</div>
+    <div class="nav">⌘ Chat with calendar</div>
+    <div class="nav">⚙ MCP &amp; keys</div>
+    <div class="kbd">Press <b>⌘K</b> for anything</div>
+  </aside>
+  <main class="main">
+    <div class="top">
+      <div><div class="title">Acme Team</div></div>
+      <div class="sub">Europe/Berlin · 12 events</div>
+      <div class="pill">webcal://calink.app/feed/<b>x9f2…a1</b>.ics <span class="copy">⧉ copy</span></div>
+    </div>
+    <div class="body">
+      <div class="day">Today · Mon Jun 29</div>
+      <div class="ev"><div class="time">09:30–09:45</div><div class="bar" style="background:#8a7bff"></div><div><div class="nm">Standup</div><div class="meta">Zoom · with Eng</div></div><div class="rec">RRULE · weekdays</div></div>
+      <div class="ev"><div class="time">14:00–15:00</div><div class="bar" style="background:#8a7bff"></div><div><div class="nm">Design review — Calink feeds</div><div class="meta">Room 2</div></div></div>
+      <div class="ev"><div class="time">all-day</div><div class="bar" style="background:#f0a13a"></div><div><div class="nm">v0.3 cut-off</div><div class="meta">Release dates</div></div></div>
+      <div class="day">Tue Jun 30</div>
+      <div class="ev"><div class="time">08:00–08:45</div><div class="bar" style="background:#54d18a"></div><div><div class="nm">Run</div><div class="meta">Workouts</div></div><div class="rec">RRULE · M/W/F</div></div>
+      <div class="ev"><div class="time">16:30–17:00</div><div class="bar" style="background:#8a7bff"></div><div><div class="nm">1:1 with Sam</div></div></div>
+      <div class="day">Wed Jul 1</div>
+      <div class="ev"><div class="time">11:00–12:30</div><div class="bar" style="background:#8a7bff"></div><div><div class="nm">Roadmap planning</div><div class="meta">moved from Tue</div></div><div class="rec">edited · this only</div></div>
+    </div>
+  </main>
+  <div class="scrim">
+    <div class="cmd">
+      <div class="in"><span class="ico">✦</span><input value="next mon, lunch with Priya 12:30 at Sona, repeat weekly" autofocus></div>
+      <div class="ai">
+        <div class="h">AI · proposed change</div>
+        <div class="line"><span class="ok">＋</span> <b style="color:#fff">Lunch with Priya</b> — Mon Jul 6, 12:30–13:30 · Sona</div>
+        <div class="line"><span class="ok">↻</span> Repeats weekly on Mondays (RRULE:FREQ=WEEKLY;BYDAY=MO)</div>
+        <div class="line" style="color:#6a6a76">Enter to apply · Esc to discard</div>
+      </div>
+      <div class="crow sel">✦ Apply AI change<span class="k">↵</span></div>
+      <div class="crow">＋ New event<span class="k">N</span></div>
+      <div class="crow">⧉ Copy subscribe link<span class="k">⌘L</span></div>
+      <div class="crow">⚙ Manage MCP keys<span class="k">⌘M</span></div>
+    </div>
+  </div>
+</body></html>

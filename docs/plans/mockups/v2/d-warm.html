@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calink — Acme Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #FAF6EE;
+    --panel: #F3ECE0;
+    --ink: #2B2620;
+    --muted: #8A8276;
+    --clay: #C67B5C;
+    --clay-soft: #EBD4C7;
+    --olive: #6B7B3C;
+    --olive-soft: #DDE2CB;
+    --amber: #C98A1A;
+    --amber-soft: #EEE0C2;
+    --line: #E7DECF;
+    --radius: 12px;
+    --shadow: 0 8px 24px rgba(43, 38, 32, .06);
+    --ease: 200ms ease-out;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+
+  /* subtle grain */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: .03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection { background: var(--clay-soft); }
+
+  h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+
+  .icon { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .icon-sm { width: 14px; height: 14px; }
+
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--line);
+    background: var(--cream);
+  }
+  .wordmark {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .wordmark .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--clay); display: inline-block; }
+  .topbar .divider { width: 1px; height: 26px; background: var(--line); }
+  .cal-title { display: flex; flex-direction: column; gap: 1px; }
+  .cal-title .name { font-family: "Fraunces", serif; font-weight: 500; font-size: 16px; }
+  .cal-title .tz { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .topbar-spacer { flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 36px; padding: 0 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 13px; font-weight: 500;
+    transition: background var(--ease), border-color var(--ease), transform var(--ease);
+  }
+  .btn:hover { background: var(--panel); }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--clay); border-color: var(--clay); color: #fff; }
+  .btn-primary:hover { background: #b96f50; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--clay-soft); color: #8a5037;
+    display: grid; place-items: center;
+    font-weight: 600; font-size: 12px;
+    border: 1px solid var(--line);
+  }
+
+  /* ---------- Layout ---------- */
+  .shell {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 248px 1fr 332px;
+    gap: 28px;
+    padding: 28px 32px 64px;
+    align-items: start;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar { display: flex; flex-direction: column; gap: 22px; position: sticky; top: 28px; }
+  .side-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 10px; padding-left: 4px;
+  }
+  .cal-list { display: flex; flex-direction: column; gap: 2px; }
+  .cal-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 11px; border-radius: 10px;
+    transition: background var(--ease);
+    cursor: pointer;
+  }
+  .cal-item:hover { background: var(--panel); }
+  .cal-item.active { background: var(--panel); }
+  .swatch { width: 11px; height: 11px; border-radius: 4px; flex: none; }
+  .swatch.clay { background: var(--clay); }
+  .swatch.olive { background: var(--olive); }
+  .swatch.amber { background: var(--amber); }
+  .cal-item .cname { font-size: 13.5px; font-weight: 500; flex: 1; }
+  .cal-item .badge { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .cal-item.active .cname { color: var(--ink); }
+
+  .add-cal {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 11px; color: var(--muted); font-size: 13px;
+    background: none; border: none; width: 100%; text-align: left;
+    border-radius: 10px; transition: color var(--ease), background var(--ease);
+  }
+  .add-cal:hover { color: var(--ink); background: var(--panel); }
+
+  /* subscribe card */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .card-head h3 { font-size: 14px; font-weight: 600; }
+  .card-head .icon { color: var(--clay); }
+  .sub-desc { font-size: 12px; color: var(--muted); margin: 0 0 12px; line-height: 1.45; }
+
+  .copyfield {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 8px 8px 11px;
+  }
+  .copyfield code {
+    font-family: "Inter", monospace; font-size: 11.5px;
+    color: var(--ink); flex: 1; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    letter-spacing: -.01em;
+  }
+  .copy-btn {
+    height: 28px; padding: 0 10px; border-radius: 7px;
+    border: 1px solid var(--line); background: var(--cream);
+    color: var(--ink); font-size: 12px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: background var(--ease), color var(--ease);
+  }
+  .copy-btn:hover { background: var(--clay); border-color: var(--clay); color: #fff; }
+
+  /* MCP card */
+  .mcp .card-head .icon { color: var(--olive); }
+  .key-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--cream); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 11px; margin-top: 10px;
+  }
+  .key-row code { font-family: "Inter", monospace; font-size: 11.5px; color: var(--muted); flex: 1; letter-spacing: -.01em; }
+  .key-row .icon { color: var(--muted); }
+
+  /* ---------- Center: agenda ---------- */
+  .main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+
+  .agenda-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 2px; }
+  .agenda-head h2 { font-size: 20px; }
+  .agenda-head .sub { font-size: 13px; color: var(--muted); }
+  .view-toggle { margin-left: auto; display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
+  .view-toggle button { border: none; background: none; padding: 5px 12px; border-radius: 7px; font-size: 12.5px; font-weight: 500; color: var(--muted); transition: all var(--ease); }
+  .view-toggle button.on { background: var(--cream); color: var(--ink); box-shadow: 0 1px 2px rgba(43,38,32,.05); }
+
+  .agenda-card { background: var(--cream); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+
+  .day-group { border-bottom: 1px solid var(--line); }
+  .day-group:last-child { border-bottom: none; }
+  .day-head {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 14px 20px 8px;
+  }
+  .day-head .dnum { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; }
+  .day-head .dname { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .day-head .today-pill {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    background: var(--clay-soft); color: #8a5037;
+    padding: 2px 8px; border-radius: 999px; margin-left: 2px;
+  }
+
+  .event {
+    display: grid;
+    grid-template-columns: 96px 4px 1fr auto;
+    gap: 14px; align-items: center;
+    padding: 10px 20px;
+    transition: background var(--ease);
+    cursor: pointer;
+  }
+  .event:hover { background: var(--panel); }
+  .event.selected { background: var(--panel); }
+  .event .etime { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  .event .ebar { width: 3px; height: 32px; border-radius: 3px; }
+  .ebar.clay { background: var(--clay); }
+  .ebar.olive { background: var(--olive); }
+  .ebar.amber { background: var(--amber); }
+  .event .ebody { min-width: 0; }
+  .event .etitle { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+  .event .emeta { font-size: 12px; color: var(--muted); margin-top: 1px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .event .erepeat { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+  .event .eloc { display: inline-flex; align-items: center; gap: 4px; }
+  .event .dotsep { width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
+
+  .allday {
+    display: grid; grid-template-columns: 96px 4px 1fr; gap: 14px; align-items: center;
+    padding: 8px 20px;
+  }
+  .allday .etime { font-size: 11px; color: var(--muted); text-align: right; text-transform: uppercase; letter-spacing: .05em; }
+  .allday .pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--amber-soft); border: 1px solid #e6d3ab;
+    color: #8a5e0e; font-size: 12.5px; font-weight: 500;
+    padding: 4px 10px; border-radius: 8px;
+  }
+
+  /* paste area */
+  .paste-card { background: var(--cream); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+  .paste-head { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+  .paste-head h3 { font-size: 15px; }
+  .paste-head .icon { color: var(--clay); }
+  .paste-sub { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+
+  .textarea {
+    width: 100%; resize: vertical; min-height: 88px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; font-family: inherit; font-size: 13px; color: var(--ink);
+    line-height: 1.55; transition: border-color var(--ease), box-shadow var(--ease);
+  }
+  .textarea:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px var(--clay-soft); }
+
+  .applied-banner {
+    display: flex; align-items: center; gap: 10px;
+    margin: 14px 0 4px;
+    background: var(--olive-soft); border: 1px solid #cdd5b3;
+    border-radius: 10px; padding: 9px 12px;
+  }
+  .applied-banner .icon { color: var(--olive); }
+  .applied-banner .txt { font-size: 12.5px; color: #4d591f; font-weight: 500; flex: 1; }
+  .applied-banner .undo {
+    background: none; border: none; color: #4d591f; font-size: 12.5px;
+    font-weight: 600; text-decoration: underline; text-underline-offset: 2px;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .applied-banner .undo:hover { color: var(--olive); }
+
+  .preview-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .preview-row {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--cream);
+  }
+  .preview-row .ebar { width: 3px; height: 26px; border-radius: 3px; }
+  .preview-row .pv-when { font-size: 12px; color: var(--muted); width: 130px; font-variant-numeric: tabular-nums; flex: none; }
+  .preview-row .pv-title { font-size: 13px; font-weight: 500; flex: 1; }
+  .preview-row .check { color: var(--olive); }
+
+  /* ---------- Right: event editor ---------- */
+  .editor { position: sticky; top: 28px; display: flex; flex-direction: column; gap: 18px; }
+  .editor-card {
+    background: var(--cream); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .editor-top {
+    display: flex; align-items: center; gap: 10px;
+    padding: 15px 18px; border-bottom: 1px solid var(--line);
+  }
+  .editor-top .ebar { width: 3px; height: 24px; border-radius: 3px; background: var(--clay); }
+  .editor-top h3 { font-size: 14px; flex: 1; }
+  .icon-btn {
+    width: 30px; height: 30px; display: grid; place-items: center;
+    border-radius: 8px; border: 1px solid transparent; background: none; color: var(--muted);
+    transition: background var(--ease), color var(--ease);
+  }
+  .icon-btn:hover { background: var(--panel); color: var(--ink); }
+
+  .editor-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  .input {
+    height: 38px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel); padding: 0 12px; font-family: inherit; font-size: 13.5px; color: var(--ink);
+    transition: border-color var(--ease), box-shadow var(--ease);
+  }
+  .input:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px var(--clay-soft); background: var(--cream); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .select-wrap { position: relative; display: flex; }
+  .select-wrap .input { flex: 1; -webkit-appearance: none; appearance: none; padding-right: 34px; cursor: pointer; }
+  .select-wrap .chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+  .rrule {
+    font-family: "Inter", monospace; font-size: 11.5px; color: var(--olive);
+    background: var(--olive-soft); border: 1px solid #cdd5b3;
+    border-radius: 8px; padding: 7px 10px; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .rrule .icon { color: var(--olive); }
+
+  .scope { display: flex; flex-direction: column; gap: 7px; }
+  .scope .seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+  .scope .seg button {
+    flex: 1; border: none; background: none; padding: 7px 6px;
+    border-radius: 7px; font-size: 11.5px; font-weight: 500; color: var(--muted);
+    transition: all var(--ease); line-height: 1.2;
+  }
+  .scope .seg button.on { background: var(--cream); color: var(--ink); box-shadow: 0 1px 2px rgba(43,38,32,.05); }
+
+  .editor-foot {
+    display: flex; gap: 10px; padding: 14px 18px;
+    border-top: 1px solid var(--line); background: var(--panel);
+  }
+  .editor-foot .btn { flex: 1; justify-content: center; }
+</style>
+</head>
+<body>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <div class="wordmark"><span class="dot"></span>calink</div>
+    <div class="divider"></div>
+    <div class="cal-title">
+      <span class="name">Acme Team</span>
+      <span class="tz">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Europe/Berlin
+      </span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="btn">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Export
+      </button>
+      <button class="btn btn-primary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New event
+      </button>
+      <div class="avatar">LK</div>
+    </div>
+  </header>
+
+  <!-- ===== Shell ===== -->
+  <div class="shell">
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+      <div>
+        <div class="side-label">Calendars</div>
+        <div class="cal-list">
+          <div class="cal-item active">
+            <span class="swatch clay"></span>
+            <span class="cname">Acme Team</span>
+            <span class="badge">Primary</span>
+          </div>
+          <div class="cal-item">
+            <span class="swatch olive"></span>
+            <span class="cname">Workouts</span>
+          </div>
+          <div class="cal-item">
+            <span class="swatch amber"></span>
+            <span class="cname">Release dates</span>
+          </div>
+        </div>
+        <button class="add-cal">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          New calendar
+        </button>
+      </div>
+
+      <!-- Subscribe -->
+      <div class="card">
+        <div class="card-head">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg>
+          <h3>Subscribe link</h3>
+        </div>
+        <p class="sub-desc">A live feed. Anyone who adds it stays in sync automatically.</p>
+        <div class="copyfield">
+          <code>webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button class="copy-btn">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- MCP -->
+      <div class="card mcp">
+        <div class="card-head">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><circle cx="5" cy="12" r="2.4"/><circle cx="19" cy="12" r="2.4"/><path d="M9 7l6 10M15 7L9 17"/></svg>
+          <h3>Connect an agent</h3>
+        </div>
+        <p class="sub-desc">Let AI agents manage this calendar over MCP.</p>
+        <div class="key-row">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 7a4 4 0 1 0-3.5 6.9L4 20.4V22h2.6l.7-.7v-2h2v-2h2l1.2-1.2A4 4 0 0 0 14 7z"/></svg>
+          <code>Bearer sk_live_••••••4af2</code>
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== Center: agenda ===== -->
+    <main class="main">
+      <div class="agenda-head">
+        <h2>This week</h2>
+        <span class="sub">Jun 29 – Jul 6</span>
+        <div class="view-toggle">
+          <button>Day</button>
+          <button>Week</button>
+          <button class="on">Agenda</button>
+        </div>
+      </div>
+
+      <div class="agenda-card">
+
+        <!-- Today -->
+        <div class="day-group">
+          <div class="day-head">
+            <span class="dnum">29</span>
+            <span class="dname">Monday, June</span>
+            <span class="today-pill">Today</span>
+          </div>
+
+          <div class="allday">
+            <span class="etime">All-day</span>
+            <span></span>
+            <span><span class="pill"><span class="swatch amber" style="border-radius:3px"></span>v0.3 cut-off</span></span>
+          </div>
+
+          <div class="event">
+            <span class="etime">09:30 – 09:45</span>
+            <span class="ebar clay"></span>
+            <span class="ebody">
+              <div class="etitle">Standup</div>
+              <div class="emeta">
+                <span class="erepeat">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M3 11V9a4 4 0 0 1 4-4h13"/><path d="M7 22l-3-3 3-3"/><path d="M21 13v2a4 4 0 0 1-4 4H4"/></svg>
+                  Repeats weekdays
+                </span>
+              </div>
+            </span>
+          </div>
+
+          <div class="event selected">
+            <span class="etime">14:00 – 15:00</span>
+            <span class="ebar clay"></span>
+            <span class="ebody">
+              <div class="etitle">Design review — Calink feeds</div>
+              <div class="emeta">
+                <span class="eloc">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                  Room 2
+                </span>
+              </div>
+            </span>
+          </div>
+        </div>
+
+        <!-- Tue -->
+        <div class="day-group">
+          <div class="day-head">
+            <span class="dnum">30</span>
+            <span class="dname">Tuesday, June</span>
+          </div>
+          <div class="event">
+            <span class="etime">08:00 – 08:45</span>
+            <span class="ebar olive"></span>
+            <span class="ebody">
+              <div class="etitle">Morning run</div>
+              <div class="emeta">
+                <span>Workouts</span>
+                <span class="dotsep"></span>
+                <span class="erepeat">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M3 11V9a4 4 0 0 1 4-4h13"/><path d="M7 22l-3-3 3-3"/><path d="M21 13v2a4 4 0 0 1-4 4H4"/></svg>
+                  Mon · Wed · Fri
+                </span>
+              </div>
+            </span>
+          </div>
+          <div class="event">
+            <span class="etime">16:30 – 17:00</span>
+            <span class="ebar clay"></span>
+            <span class="ebody">
+              <div class="etitle">1:1 with Sam</div>
+            </span>
+          </div>
+        </div>
+
+        <!-- Wed -->
+        <div class="day-group">
+          <div class="day-head">
+            <span class="dnum">1</span>
+            <span class="dname">Wednesday, July</span>
+          </div>
+          <div class="event">
+            <span class="etime">09:30</span>
+            <span class="ebar clay"></span>
+            <span class="ebody"><div class="etitle">Standup</div></span>
+          </div>
+          <div class="event">
+            <span class="etime">11:00 – 12:30</span>
+            <span class="ebar clay"></span>
+            <span class="ebody"><div class="etitle">Roadmap planning</div></span>
+          </div>
+        </div>
+
+        <!-- Thu recurring -->
+        <div class="day-group">
+          <div class="day-head">
+            <span class="dnum">2</span>
+            <span class="dname">Thursday, July</span>
+          </div>
+          <div class="event">
+            <span class="etime">20:00</span>
+            <span class="ebar olive"></span>
+            <span class="ebody">
+              <div class="etitle">Book club</div>
+              <div class="emeta">
+                <span class="erepeat">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M3 11V9a4 4 0 0 1 4-4h13"/><path d="M7 22l-3-3 3-3"/><path d="M21 13v2a4 4 0 0 1-4 4H4"/></svg>
+                  Every Thursday
+                </span>
+              </div>
+            </span>
+          </div>
+        </div>
+
+        <!-- Mon Jul 6 -->
+        <div class="day-group">
+          <div class="day-head">
+            <span class="dnum">6</span>
+            <span class="dname">Monday, July</span>
+          </div>
+          <div class="event">
+            <span class="etime">12:30 – 13:30</span>
+            <span class="ebar clay"></span>
+            <span class="ebody">
+              <div class="etitle">Lunch with Priya</div>
+              <div class="emeta">
+                <span class="eloc">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                  Sona
+                </span>
+              </div>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== Paste → events ===== -->
+      <div class="paste-card">
+        <div class="paste-head">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 12h6M9 15h4"/></svg>
+          <h3>Paste anything</h3>
+        </div>
+        <p class="paste-sub">Drop in messy text or an email — Calink reads it and adds the events for you.</p>
+
+        <textarea class="textarea" spellcheck="false">Team sync next Tue 4:30pm for half an hour, 1:1 with Sam.
+Also book club is back — Thursdays at 8pm.
+Roadmap planning Wed 11–12:30.</textarea>
+
+        <div class="applied-banner">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          <span class="txt">3 events extracted and added to Acme Team.</span>
+          <button class="undo">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 7"/></svg>
+            Undo
+          </button>
+        </div>
+
+        <div class="preview-list">
+          <div class="preview-row">
+            <span class="ebar clay"></span>
+            <span class="pv-when">Tue Jun 30 · 16:30</span>
+            <span class="pv-title">1:1 with Sam</span>
+            <svg class="icon icon-sm check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="preview-row">
+            <span class="ebar olive"></span>
+            <span class="pv-when">Thu · 20:00 · weekly</span>
+            <span class="pv-title">Book club</span>
+            <svg class="icon icon-sm check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="preview-row">
+            <span class="ebar clay"></span>
+            <span class="pv-when">Wed Jul 1 · 11:00</span>
+            <span class="pv-title">Roadmap planning</span>
+            <svg class="icon icon-sm check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===== Right: event editor ===== -->
+    <aside class="editor">
+      <div class="editor-card">
+        <div class="editor-top">
+          <span class="ebar"></span>
+          <h3>Edit event</h3>
+          <button class="icon-btn" aria-label="Delete">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Close">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+
+        <div class="editor-body">
+          <div class="field">
+            <label>Title</label>
+            <input class="input" value="Standup" />
+          </div>
+
+          <div class="field">
+            <label>Date</label>
+            <input class="input" value="Mon, Jun 29 2026" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Start</label>
+              <input class="input" value="09:30" />
+            </div>
+            <div class="field">
+              <label>End</label>
+              <input class="input" value="09:45" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Location</label>
+            <input class="input" placeholder="Add a place" value="" />
+          </div>
+
+          <div class="field">
+            <label>Repeat</label>
+            <div class="select-wrap">
+              <select class="input">
+                <option selected>Weekly on Mon</option>
+                <option>Every weekday</option>
+                <option>Does not repeat</option>
+                <option>Custom…</option>
+              </select>
+              <svg class="icon chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            <div class="rrule">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M3 11V9a4 4 0 0 1 4-4h13"/><path d="M7 22l-3-3 3-3"/><path d="M21 13v2a4 4 0 0 1-4 4H4"/></svg>
+              RRULE:FREQ=WEEKLY;BYDAY=MO
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Apply changes to</label>
+            <div class="scope">
+              <div class="seg">
+                <button class="on">This event</button>
+                <button>This &amp; following</button>
+                <button>All events</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-foot">
+          <button class="btn">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    // tiny: copy buttons + view toggle + scope segments
+    document.querySelectorAll('.copy-btn, .key-row .icon:last-child').forEach(el => {
+      el.addEventListener('click', () => {
+        const b = el.closest('.copy-btn');
+        if (b) { const t = b.lastChild; }
+      });
+    });
+    const seg = (group) => group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+        btn.classList.add('on');
+      });
+    });
+    document.querySelectorAll('.view-toggle, .scope .seg').forEach(seg);
+
+    document.querySelectorAll('.event').forEach(ev => {
+      ev.addEventListener('click', () => {
+        document.querySelectorAll('.event').forEach(e => e.classList.remove('selected'));
+        ev.classList.add('selected');
+      });
+    });
+
+    document.querySelectorAll('.copy-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const code = b.parentElement.querySelector('code');
+        if (code && navigator.clipboard) navigator.clipboard.writeText(code.textContent.replace('…','')).catch(()=>{});
+        const label = b.childNodes[b.childNodes.length-1];
+        const old = label.textContent;
+        label.textContent = ' Copied';
+        setTimeout(() => label.textContent = old, 1400);
+      });
+    });
+  </script>
+</body>
+</html>

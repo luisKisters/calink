@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calink — Inline 3-Pane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EC;
+    --paper:#FFFDF5;
+    --ink:#15130D;
+    --muted:#5A564B;
+    --line:#15130D;
+    --accent:#FF5A4D;
+    --acme:#FF5A4D;
+    --work:#4E8C6A;
+    --personal:#15130D;
+    --hairline:#E3DCC8;
+    --shadow:5px 5px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer}
+  ::selection{background:var(--accent);color:#fff}
+
+  /* ===== shell: list | detail | agent  (detail + agent EQUAL width) ===== */
+  .app{
+    display:grid;
+    grid-template-columns:300px minmax(0,1fr) minmax(0,1fr);
+    height:100vh;max-width:1440px;margin:0 auto;
+    background:var(--paper);
+    border-left:2px solid var(--line);border-right:2px solid var(--line);
+  }
+
+  /* ===== LEFT: event list ===== */
+  .list{border-right:2px solid var(--line);display:flex;flex-direction:column;background:var(--cream);min-width:0}
+  .brand{display:flex;align-items:center;gap:9px;padding:16px 16px 14px;border-bottom:2px solid var(--line)}
+  .brand .mark{width:24px;height:24px;border:2px solid var(--ink);background:var(--accent);display:grid;place-items:center;flex-shrink:0}
+  .brand .mark span{width:8px;height:8px;background:#fff;border-radius:50%}
+  .brand b{font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .newbtn{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);font-size:11.5px;font-weight:600;padding:6px 9px}
+  .newbtn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .newbtn:active{transform:translate(3px,3px);box-shadow:none}
+
+  .list .scroll{flex:1;overflow:auto;padding:14px 12px 18px}
+  .grouplabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 6px 8px}
+  .grouplabel:not(:first-child){margin-top:14px}
+
+  .row{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border:2px solid transparent;cursor:pointer;margin-bottom:3px}
+  .row:hover{background:var(--paper);border-color:var(--hairline)}
+  .row.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .row .sw{width:12px;height:12px;border:2px solid var(--ink);flex-shrink:0;margin-top:3px}
+  .row.on .sw{border-color:var(--paper)}
+  .row .rbody{flex:1;min-width:0}
+  .row .rti{font-size:13.5px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .rsched{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row.on .rsched{color:var(--paper);opacity:.72}
+
+  .list .foot{border-top:2px solid var(--line);padding:13px 13px 15px}
+  .foot .flabel{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px}
+  .sublink{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);padding:7px 9px;box-shadow:var(--shadow-sm)}
+  .sublink code{font-size:11px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .sublink button{background:var(--ink);color:var(--paper);border:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:4px 8px;flex-shrink:0}
+  .sublink button:hover{background:var(--accent)}
+  .foot .mcp{display:flex;align-items:center;gap:7px;margin-top:9px;border:2px solid var(--hairline);padding:6px 9px;font-size:11.5px;font-weight:500;color:var(--muted);text-decoration:none}
+  .foot .mcp:hover{border-color:var(--ink);color:var(--ink)}
+  .foot .mcp .tag{font-size:9.5px;font-weight:700;letter-spacing:.06em;border:2px solid currentColor;padding:1px 5px}
+
+  /* ===== CENTER: event detail / edit ===== */
+  .detail{display:flex;flex-direction:column;min-width:0;border-right:2px solid var(--line)}
+  .dhead{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:2px solid var(--line)}
+  .dhead .cdot{width:12px;height:12px;border:2px solid var(--ink);flex-shrink:0}
+  .dhead h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .dhead .rec{margin-left:auto;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border:2px solid var(--ink);padding:3px 8px}
+
+  .dbody{flex:1;overflow:auto;padding:22px 22px 28px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;border:2px solid var(--ink);background:var(--paper);padding:10px 11px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .field input:focus,.field select:focus{outline:3px solid var(--accent);outline-offset:0}
+  .field.title input{font-size:18px;font-weight:600}
+  .field.time input{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:12px}
+  select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2315130D' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px!important}
+
+  .rrule{border:2px solid var(--ink);background:var(--cream);padding:12px 13px;margin-top:2px;margin-bottom:18px}
+  .rrule .rlbl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+  .rrule .rr{font-size:12.5px}
+  .scope{display:flex;border:2px solid var(--ink);margin-top:12px;background:var(--paper)}
+  .scope button{flex:1;border:0;background:var(--paper);font-size:11.5px;font-weight:600;padding:9px 6px;color:var(--muted)}
+  .scope button+button{border-left:2px solid var(--ink)}
+  .scope button.on{background:var(--ink);color:var(--paper)}
+
+  .dfoot{display:flex;align-items:center;gap:10px;padding:14px 22px;border-top:2px solid var(--line)}
+  .dfoot .del{background:none;border:2px solid var(--ink);padding:9px 14px;font-size:13px;font-weight:600;color:var(--ink)}
+  .dfoot .del:hover{background:var(--ink);color:var(--paper)}
+  .dfoot .spacer{flex:1}
+  .dfoot .save{background:var(--accent);color:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);padding:9px 22px;font-size:13px;font-weight:700}
+  .dfoot .save:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .dfoot .save:active{transform:translate(3px,3px);box-shadow:none}
+
+  /* ===== RIGHT: agent chat ===== */
+  .agent{background:var(--cream);display:flex;flex-direction:column;min-width:0}
+  .agenthead{display:flex;align-items:center;gap:9px;padding:16px 18px;border-bottom:2px solid var(--line)}
+  .agenthead .ico{width:22px;height:22px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper);flex-shrink:0}
+  .agenthead b{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .agenthead .status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .agenthead .status::before{content:"";width:7px;height:7px;background:var(--work);border-radius:50%;flex-shrink:0}
+  .agenthead .status b{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px;color:var(--ink)}
+
+  .thread{flex:1;overflow:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+  .m{font-size:13px;line-height:1.5}
+  .m.user{align-self:flex-end;max-width:84%;background:var(--ink);color:var(--paper);padding:9px 12px;border:2px solid var(--ink)}
+  .m.bot{align-self:flex-start;max-width:92%}
+  .m.bot .who{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+  .change{margin-top:9px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm)}
+  .change .crow{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:12.5px}
+  .change .crow+.crow{border-top:1.5px solid var(--hairline)}
+  .change .tag{font-size:10px;font-weight:700;padding:2px 6px;border:2px solid var(--ink);flex-shrink:0}
+  .change .tag.add{background:var(--work);color:#fff}
+  .change .tag.mv{background:#E7B23A;color:var(--ink)}
+  .change .applied{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-top:2px solid var(--ink);background:var(--cream);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .change .applied button{background:none;border:0;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .change .applied button:hover{color:var(--accent)}
+
+  .composer{border-top:2px solid var(--line);padding:12px}
+  .composer .box{border:2px solid var(--ink);background:var(--paper);box-shadow:var(--shadow-sm);display:flex;align-items:flex-end;gap:8px;padding:9px 10px}
+  .composer textarea{flex:1;border:0;outline:0;resize:none;font-family:inherit;font-size:13px;background:none;color:var(--ink);line-height:1.4;max-height:90px}
+  .composer textarea::placeholder{color:var(--muted)}
+  .composer .send{width:30px;height:30px;flex-shrink:0;background:var(--accent);border:2px solid var(--ink);display:grid;place-items:center;color:#fff}
+  .composer .send:hover{transform:translate(1px,1px)}
+  .composer .hint{font-size:10.5px;color:var(--muted);margin-top:8px;padding:0 2px;line-height:1.45}
+
+  svg{display:block}
+  .icon{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:13px;z-index:60;opacity:0;transition:.18s;max-width:90vw}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast button{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px;font-size:13px;flex-shrink:0}
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============ LEFT: EVENT LIST ============ -->
+    <aside class="list">
+      <div class="brand">
+        <span class="mark"><span></span></span>
+        <b>Calink</b>
+        <button class="newbtn" onclick="newEvent()">
+          <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg>
+          New event
+        </button>
+      </div>
+
+      <div class="scroll" id="rowscroll">
+        <div class="grouplabel">Recurring</div>
+        <!-- rows injected -->
+        <div class="grouplabel">Upcoming</div>
+        <!-- rows injected -->
+      </div>
+
+      <div class="foot">
+        <div class="flabel">Subscribe link</div>
+        <div class="sublink">
+          <code class="mono">webcal://calink.app/feed/x9f2…a1.ics</code>
+          <button onclick="copyFeed(this)">Copy</button>
+        </div>
+        <a class="mcp" href="#" onclick="return false">
+          <span class="tag">MCP</span>
+          Connect your AI — same tools, over MCP
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============ CENTER: EVENT DETAIL ============ -->
+    <main class="detail">
+      <div class="dhead">
+        <span class="cdot" id="d-dot" style="background:var(--acme)"></span>
+        <h2 id="d-kicker">Acme</h2>
+        <span class="rec" id="d-rec">Recurring</span>
+      </div>
+
+      <div class="dbody">
+        <div class="field title"><label>Title</label><input id="f-title" value="Standup"></div>
+
+        <div class="grid2">
+          <div class="field"><label>Calendar</label>
+            <select id="f-cal">
+              <option value="acme">Acme</option>
+              <option value="work">Workouts</option>
+              <option value="personal">Personal</option>
+              <option value="release">Release</option>
+              <option value="feeds">Calink feeds</option>
+            </select>
+          </div>
+          <div class="field"><label>Location</label><input id="f-loc" value="Zoom"></div>
+        </div>
+
+        <div class="grid3">
+          <div class="field"><label>Date</label><input id="f-date" value="2026-06-29"></div>
+          <div class="field time"><label>Start</label><input id="f-start" value="09:30"></div>
+          <div class="field time"><label>End</label><input id="f-end" value="09:45"></div>
+        </div>
+
+        <div class="field"><label>Repeat</label>
+          <select id="f-repeat" onchange="onRepeat()">
+            <option value="none">Does not repeat</option>
+            <option value="WEEKDAYS">Every weekday (Mon–Fri)</option>
+            <option value="MWF">Mon · Wed · Fri</option>
+            <option value="TH">Weekly on Thursday</option>
+            <option value="WEEKLY">Weekly</option>
+          </select>
+        </div>
+
+        <div class="rrule" id="d-rrule">
+          <div class="rlbl">Recurrence rule</div>
+          <div class="rr mono" id="d-rrtext">RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR</div>
+          <div class="scope" id="d-scope">
+            <button class="on">This event</button>
+            <button>This &amp; following</button>
+            <button>All events</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dfoot">
+        <button class="del" onclick="deleteEvent()">Delete</button>
+        <span class="spacer"></span>
+        <button class="save" onclick="saveEvent()">Save</button>
+      </div>
+    </main>
+
+    <!-- ============ RIGHT: AGENT CHAT ============ -->
+    <aside class="agent">
+      <div class="agenthead">
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 3l2.5 6L21 11l-6.5 2L12 19l-2.5-6L3 11l6.5-2z"/></svg></span>
+        <b>Agent</b>
+        <span class="status">editing <b id="a-editing">Standup</b></span>
+      </div>
+
+      <div class="thread" id="thread">
+        <div class="m user">Push standup 15 min later and add a 15-min prep block before it.</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Done — updated Standup and added a prep block:
+          <div class="change">
+            <div class="crow"><span class="tag mv">MOVE</span><span class="mono" style="font-size:12px">Standup → 09:45–10:00, weekdays</span></div>
+            <div class="crow"><span class="tag add">NEW</span><span class="mono" style="font-size:12px">Standup prep · 09:30–09:45, weekdays</span></div>
+            <div class="applied"><span>Auto-applied · subscribers update ~1h</span><button onclick="undoToast()">Undo</button></div>
+          </div>
+        </div>
+        <div class="m user">Actually keep standup at 09:30 for now.</div>
+        <div class="m bot">
+          <div class="who">Calink Agent</div>
+          Reverted — Standup is back at <span class="mono" style="font-size:12px">09:30–09:45</span>. The prep block is still on.
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="box">
+          <textarea rows="1" placeholder="Tell the agent to change this event…"></textarea>
+          <button class="send" title="Send" onclick="sendMsg()"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="hint">The agent edits this event directly (just-do-it) — every change has an Undo. Same tools your own AI gets over MCP.</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><span id="toast-msg"></span><button onclick="hideToast()">Dismiss</button></div>
+
+<script>
+  const CAL = {
+    acme:{label:"Acme", color:"var(--acme)"},
+    work:{label:"Workouts", color:"var(--work)"},
+    personal:{label:"Personal", color:"var(--personal)"},
+    release:{label:"Release", color:"var(--personal)"},
+    feeds:{label:"Calink feeds", color:"var(--acme)"},
+  };
+  const RR = {
+    "none":     null,
+    "WEEKDAYS": "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+    "MWF":      "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR",
+    "TH":       "RRULE:FREQ=WEEKLY;BYDAY=TH",
+    "WEEKLY":   "RRULE:FREQ=WEEKLY",
+  };
+
+  const EVENTS = [
+    {id:"standup", group:"recurring", cal:"acme",     title:"Standup",                   loc:"Zoom",   date:"2026-06-29", start:"09:30", end:"09:45", repeat:"WEEKDAYS", sched:"Weekdays · 09:30–09:45"},
+    {id:"run",     group:"recurring", cal:"work",     title:"Morning run",               loc:"",       date:"2026-06-29", start:"08:00", end:"08:45", repeat:"MWF",      sched:"Mon·Wed·Fri · 08:00–08:45"},
+    {id:"book",    group:"recurring", cal:"personal", title:"Book club",                 loc:"",       date:"2026-07-02", start:"20:00", end:"21:00", repeat:"TH",       sched:"Thursdays · 20:00–21:00"},
+    {id:"design",  group:"upcoming",  cal:"feeds",    title:"Design review — Calink feeds", loc:"Room 2", date:"2026-06-29", start:"14:00", end:"15:00", repeat:"none",  sched:"Mon Jun 29 · 14:00–15:00"},
+    {id:"cutoff",  group:"upcoming",  cal:"release",  title:"v0.3 cut-off",              loc:"",       date:"2026-06-29", start:"", end:"", repeat:"none", allday:true, sched:"Mon Jun 29 · All-day"},
+    {id:"sam",     group:"upcoming",  cal:"acme",     title:"1:1 with Sam",              loc:"",       date:"2026-06-30", start:"16:30", end:"17:00", repeat:"none",  sched:"Tue Jun 30 · 16:30–17:00"},
+    {id:"lunch",   group:"upcoming",  cal:"personal", title:"Lunch with Priya",          loc:"Sona",   date:"2026-07-06", start:"12:30", end:"13:30", repeat:"none",  sched:"Mon Jul 6 · 12:30–13:30"},
+  ];
+
+  // ---- build the left list ----
+  function buildList(){
+    const scroll = document.getElementById('rowscroll');
+    const labels = scroll.querySelectorAll('.grouplabel');
+    function rowsFor(group){
+      return EVENTS.filter(e=>e.group===group).map(e=>{
+        return `<div class="row" data-id="${e.id}" onclick="select('${e.id}')">
+          <span class="sw" style="background:${CAL[e.cal].color}"></span>
+          <span class="rbody">
+            <span class="rti">${e.title}</span>
+            <span class="rsched mono">${e.sched}</span>
+          </span>
+        </div>`;
+      }).join('');
+    }
+    labels[0].insertAdjacentHTML('afterend', rowsFor('recurring'));
+    labels[1].insertAdjacentHTML('afterend', rowsFor('upcoming'));
+  }
+  buildList();
+
+  let current = null;
+  function select(id){
+    const e = EVENTS.find(x=>x.id===id);
+    if(!e) return;
+    current = id;
+    document.querySelectorAll('.row').forEach(r=>r.classList.toggle('on', r.dataset.id===id));
+    document.getElementById('d-dot').style.background = CAL[e.cal].color;
+    document.getElementById('d-kicker').textContent = CAL[e.cal].label;
+    document.getElementById('d-rec').style.display = (e.repeat!=="none") ? "" : "none";
+    document.getElementById('f-title').value = e.title;
+    document.getElementById('f-cal').value = e.cal;
+    document.getElementById('f-loc').value = e.loc;
+    document.getElementById('f-date').value = e.date;
+    document.getElementById('f-start').value = e.start;
+    document.getElementById('f-end').value = e.end;
+    document.getElementById('f-repeat').value = e.repeat;
+    document.getElementById('a-editing').textContent = e.title;
+    onRepeat();
+  }
+
+  function onRepeat(){
+    const v = document.getElementById('f-repeat').value;
+    const box = document.getElementById('d-rrule');
+    const rec = document.getElementById('d-rec');
+    if(v==="none"){ box.style.display="none"; rec.style.display="none"; return; }
+    box.style.display="block";
+    rec.style.display="";
+    document.getElementById('d-rrtext').textContent = RR[v];
+  }
+
+  function newEvent(){
+    current = null;
+    document.querySelectorAll('.row').forEach(r=>r.classList.remove('on'));
+    document.getElementById('d-dot').style.background = "var(--acme)";
+    document.getElementById('d-kicker').textContent = "New event";
+    document.getElementById('f-title').value = "";
+    document.getElementById('f-cal').value = "acme";
+    document.getElementById('f-loc').value = "";
+    document.getElementById('f-date').value = "2026-06-29";
+    document.getElementById('f-start').value = "10:00";
+    document.getElementById('f-end').value = "10:30";
+    document.getElementById('f-repeat').value = "none";
+    document.getElementById('a-editing').textContent = "new event";
+    onRepeat();
+    document.getElementById('f-title').focus();
+  }
+
+  // scope segmented control
+  document.querySelectorAll('.scope button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.scope button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  });
+
+  // ---- actions ----
+  function saveEvent(){ showToast("Event saved · subscribers update within ~1h"); }
+  function deleteEvent(){ showToast("Event deleted · subscribers update within ~1h"); }
+  function sendMsg(){
+    const ta = document.querySelector('.composer textarea');
+    if(ta.value.trim()) showToast("Sent to agent — it will apply changes directly");
+    ta.value=""; ta.style.height='auto';
+  }
+
+  let toastT;
+  function showToast(msg){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(hideToast,3500); }
+  function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+  function undoToast(){ showToast("Change undone — Standup back to 09:30, prep block removed"); }
+  function copyFeed(btn){ const o=btn.textContent; btn.textContent="Copied"; showToast("Feed link copied to clipboard"); setTimeout(()=>btn.textContent=o,1200); }
+
+  document.addEventListener('keydown',e=>{ if(e.key==="Escape") document.activeElement.blur(); });
+  const ta=document.querySelector('.composer textarea');
+  ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,90)+'px'; });
+  ta.addEventListener('keydown',e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }});
+
+  // default-select Standup
+  select('standup');
+</script>
+</body>
+</html>
