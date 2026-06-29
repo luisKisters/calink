@@ -5,8 +5,11 @@
 node_modules/
 dist/
 .next/
+tsconfig.tsbuildinfo
 
 # Local agent / skill tooling (not part of the product)
 .claude/
 .agents/
 skills-lock.json
+
+.env.local
