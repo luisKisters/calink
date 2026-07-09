@@ -7,6 +7,11 @@ dist/
 .next/
 tsconfig.tsbuildinfo
 
+# This is an npm project; the executr runtime warms deps with pnpm.
+# Ignore the pnpm artifacts it generates so they don't dirty the tree.
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
 # Local agent / skill tooling (not part of the product)
 .claude/
 .agents/
