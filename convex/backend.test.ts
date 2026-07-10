@@ -521,6 +521,75 @@ describe("Convex backend", () => {
     }
   });
 
+  test("maintenance prune deletes old cancelled events and trims changeLog", async () => {
+    const t = createHarness();
+    const userId = await createUser(t, "alice");
+    const calendarId = await createCalendar(t, userId);
+
+    // Create and soft-delete two events
+    const oldEventId = await createEvent(t, userId, calendarId);
+    const recentEventId = await asUser(t, userId).mutation(api.events.create, {
+      calendarId,
+      event: {
+        title: "Recent event",
+        start: Date.UTC(2026, 5, 2, 9),
+        end: Date.UTC(2026, 5, 2, 10),
+        allDay: false,
+        timezone: "UTC",
+        exdates: [],
+      },
+    });
+    await asUser(t, userId).mutation(api.events.remove, { eventId: oldEventId });
+    await asUser(t, userId).mutation(api.events.remove, { eventId: recentEventId });
+
+    // Back-date the old event's lastModified past the retention window
+    await t.run(async (ctx) => {
+      await ctx.db.patch(oldEventId, { lastModified: Date.now() - 31 * 24 * 60 * 60 * 1000 });
+    });
+
+    await t.mutation(internal.maintenance.prune, { cancelledRetentionDays: 30 });
+
+    // Old cancelled event pruned; recent cancelled event kept
+    const events = await asUser(t, userId).query(api.events.listByCalendar, {
+      calendarId,
+      includeCancelled: true,
+    });
+    expect(events.some((e) => e._id === oldEventId)).toBe(false);
+    expect(events.some((e) => e._id === recentEventId)).toBe(true);
+  });
+
+  test("maintenance prune trims changeLog to maxChangeLogPerCalendar", async () => {
+    const t = createHarness();
+    const userId = await createUser(t, "alice");
+    const calendarId = await createCalendar(t, userId);
+
+    // Create 5 events to get 5 changeLog entries
+    for (let i = 0; i < 5; i += 1) {
+      await asUser(t, userId).mutation(api.events.create, {
+        calendarId,
+        event: {
+          title: `Event ${i}`,
+          start: Date.UTC(2026, 5, i + 1, 9),
+          allDay: false,
+          timezone: "UTC",
+          exdates: [],
+        },
+      });
+    }
+
+    // Prune with a max of 3 entries per calendar
+    await t.mutation(internal.maintenance.prune, { maxChangeLogPerCalendar: 3 });
+
+    // Only 3 most recent changeLog entries should remain
+    const remaining = await t.run(async (ctx) => {
+      return await ctx.db
+        .query("changeLog")
+        .withIndex("by_calendar", (q) => q.eq("calendarId", calendarId))
+        .collect();
+    });
+    expect(remaining.length).toBeLessThanOrEqual(3);
+  });
+
   test("rate limiter trips within a window", async () => {
     const t = createHarness();
     const userId = await createUser(t, "alice");

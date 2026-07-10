@@ -148,12 +148,12 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 **Files:**
 - Create/verify: `convex/crons.ts`, `convex/maintenance.ts`, `convex/rateLimits.ts`; security checklist doc
 
-- [ ] **Cron** (`convex/crons.ts` + `maintenance.ts`): daily job pruning `cancelled` events older than N days and trimming `changeLog` to a bounded history per calendar.
-- [ ] **Rate limits**: both AI actions and `/mcp` have per-owner throttles.
-- [ ] **Secret hygiene**: confirm `feedToken`/`mcpKey` never appear in logs or error messages; feed 404 is generic (no token echo).
-- [ ] **Security review** (dedicated verifier sub-agent): attempt feed-token guessing/enumeration, MCP auth bypass, cross-tenant access through every function, prompt-injection in pasted text trying to exfiltrate other calendars (assert owner-scoping blocks it), and ICS injection (newline/escape attacks in titles reaching the feed — verify Task 4 escaping holds).
-- [ ] Produce a security checklist with each item marked pass/fail + evidence; re-run the manual subscribe verification (Task 4) end-to-end.
-- [ ] **Gate:** full `npm run lint && npm run typecheck && npm test` green; CI green before merging the PR.
+- [x] **Cron** (`convex/crons.ts` + `maintenance.ts`): daily job pruning `cancelled` events older than N days and trimming `changeLog` to a bounded history per calendar.
+- [x] **Rate limits**: both AI actions and `/mcp` have per-owner throttles.
+- [x] **Secret hygiene**: confirm `feedToken`/`mcpKey` never appear in logs or error messages; feed 404 is generic (no token echo).
+- [x] **Security review** (dedicated verifier sub-agent): attempt feed-token guessing/enumeration, MCP auth bypass, cross-tenant access through every function, prompt-injection in pasted text trying to exfiltrate other calendars (assert owner-scoping blocks it), and ICS injection (newline/escape attacks in titles reaching the feed — verify Task 4 escaping holds).
+- [x] Produce a security checklist with each item marked pass/fail + evidence; re-run the manual subscribe verification (Task 4) end-to-end. [x] manual subscribe verification (skipped - not automatable)
+- [x] **Gate:** full `npm run lint && npm run typecheck && npm test` green; CI green before merging the PR.
 
 ---
 

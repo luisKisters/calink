@@ -81,6 +81,33 @@ describe("ics verification", () => {
     expect(folded.join("\r\n").replace(/\r\n /gu, "")).toBe(long);
   });
 
+  test("strips CRLF from timezone to prevent ICS property injection", () => {
+    // "UTC\r\nINJECTED:evil" sanitizes to "UTCINJECTED:evil" — no new ICS property line
+    const maliciousTimezone = "UTC\r\nINJECTED:evil";
+    const ics = serializeCalendar(
+      { name: "Work", timezone: maliciousTimezone },
+      [event({ timezone: maliciousTimezone })],
+    );
+    expect(ics).not.toMatch(/^INJECTED:/m);
+    expect(ics).not.toContain("\r\nINJECTED:");
+  });
+
+  test("strips CRLF from rrule to prevent ICS property injection", () => {
+    const ics = serializeCalendar(
+      { name: "Work", timezone: "UTC" },
+      [
+        event({
+          timezone: "UTC",
+          rrule: "FREQ=WEEKLY;COUNT=4\r\nEND:VEVENT\r\nINJECTED:evil",
+        }),
+      ],
+    );
+    // After stripping CR/LF the injected text is folded into the RRULE value,
+    // not emitted as a standalone ICS property line.
+    expect(ics).not.toMatch(/^INJECTED:/m);
+    expect(ics).not.toContain("\r\nINJECTED:");
+  });
+
   test("emits all-day, cancelled, and recurrence override fields", () => {
     const ics = serializeCalendar({ name: "Personal", timezone: "UTC" }, [
       event({

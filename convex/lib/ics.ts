@@ -87,10 +87,16 @@ function zonedParts(ms: number, timezone: string) {
 }
 
 function formatZoned(ms: number, timezone: string): string {
-  const parts = zonedParts(ms, timezone);
-  return `${pad(parts.year, 4)}${pad(parts.month)}${pad(parts.day)}T${pad(parts.hour)}${pad(
-    parts.minute,
-  )}${pad(parts.second)}`;
+  try {
+    const parts = zonedParts(ms, timezone);
+    return `${pad(parts.year, 4)}${pad(parts.month)}${pad(parts.day)}T${pad(parts.hour)}${pad(
+      parts.minute,
+    )}${pad(parts.second)}`;
+  } catch {
+    // Fall back to UTC wall-clock if the timezone is invalid
+    const d = new Date(ms);
+    return `${pad(d.getUTCFullYear(), 4)}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
+  }
 }
 
 function offsetMs(ms: number, timezone: string): number {
@@ -126,11 +132,12 @@ function addDays(ms: number, days: number): number {
 }
 
 function vtimezone(timezone: string): string[] {
-  if (timezone === "UTC" || timezone === "Etc/UTC") {
+  const tz = sanitizeIcsParam(timezone);
+  if (tz === "UTC" || tz === "Etc/UTC") {
     return [
       "BEGIN:VTIMEZONE",
-      `TZID:${timezone}`,
-      `X-LIC-LOCATION:${timezone}`,
+      `TZID:${tz}`,
+      `X-LIC-LOCATION:${tz}`,
       "BEGIN:STANDARD",
       "DTSTART:19700101T000000",
       "TZOFFSETFROM:+0000",
@@ -140,7 +147,7 @@ function vtimezone(timezone: string): string[] {
       "END:VTIMEZONE",
     ];
   }
-  if (timezone === "Europe/Berlin") {
+  if (tz === "Europe/Berlin") {
     return [
       "BEGIN:VTIMEZONE",
       "TZID:Europe/Berlin",
@@ -162,18 +169,36 @@ function vtimezone(timezone: string): string[] {
       "END:VTIMEZONE",
     ];
   }
-  const january = offsetMs(Date.UTC(2026, 0, 1), timezone);
-  const july = offsetMs(Date.UTC(2026, 6, 1), timezone);
+  let january: number;
+  let july: number;
+  try {
+    january = offsetMs(Date.UTC(2026, 0, 1), tz);
+    july = offsetMs(Date.UTC(2026, 6, 1), tz);
+  } catch {
+    // Unknown or invalid timezone after sanitization: emit a minimal UTC-offset
+    // stub so the feed stays valid rather than crashing.
+    return [
+      "BEGIN:VTIMEZONE",
+      `TZID:${tz}`,
+      "BEGIN:STANDARD",
+      "DTSTART:19700101T000000",
+      "TZOFFSETFROM:+0000",
+      "TZOFFSETTO:+0000",
+      `TZNAME:${tz}`,
+      "END:STANDARD",
+      "END:VTIMEZONE",
+    ];
+  }
   if (january === july) {
     return [
       "BEGIN:VTIMEZONE",
-      `TZID:${timezone}`,
-      `X-LIC-LOCATION:${timezone}`,
+      `TZID:${tz}`,
+      `X-LIC-LOCATION:${tz}`,
       "BEGIN:STANDARD",
       "DTSTART:19700101T000000",
       `TZOFFSETFROM:${formatOffset(january)}`,
       `TZOFFSETTO:${formatOffset(january)}`,
-      `TZNAME:${timezone}`,
+      `TZNAME:${tz}`,
       "END:STANDARD",
       "END:VTIMEZONE",
     ];
@@ -182,19 +207,19 @@ function vtimezone(timezone: string): string[] {
   const daylight = Math.max(january, july);
   return [
     "BEGIN:VTIMEZONE",
-    `TZID:${timezone}`,
-    `X-LIC-LOCATION:${timezone}`,
+    `TZID:${tz}`,
+    `X-LIC-LOCATION:${tz}`,
     "BEGIN:DAYLIGHT",
     "DTSTART:19700301T020000",
     `TZOFFSETFROM:${formatOffset(standard)}`,
     `TZOFFSETTO:${formatOffset(daylight)}`,
-    `TZNAME:${timezone}`,
+    `TZNAME:${tz}`,
     "END:DAYLIGHT",
     "BEGIN:STANDARD",
     "DTSTART:19701001T020000",
     `TZOFFSETFROM:${formatOffset(daylight)}`,
     `TZOFFSETTO:${formatOffset(standard)}`,
-    `TZNAME:${timezone}`,
+    `TZNAME:${tz}`,
     "END:STANDARD",
     "END:VTIMEZONE",
   ];
@@ -210,11 +235,19 @@ function sanitizeUri(value: string): string {
   return value.replace(/[\r\n]/gu, "");
 }
 
+// Strip CR/LF from non-TEXT property values (TZID, RRULE, etc.) to prevent
+// CRLF injection where a user-supplied value could introduce spurious iCal
+// property lines when placed directly in a header line without escapeText.
+function sanitizeIcsParam(value: string): string {
+  return value.replace(/[\r\n]/gu, "");
+}
+
 function pushEventDateLine(lines: string[], key: string, event: EventForIcs, ms: number): void {
   if (event.allDay) {
     lines.push(`${key};VALUE=DATE:${formatDate(ms)}`);
   } else {
-    lines.push(`${key};TZID=${event.timezone}:${formatZoned(ms, event.timezone)}`);
+    const tz = sanitizeIcsParam(event.timezone);
+    lines.push(`${key};TZID=${tz}:${formatZoned(ms, tz)}`);
   }
 }
 
@@ -234,7 +267,10 @@ function eventLines(event: EventForIcs): string[] {
     lines.push(`URL:${sanitizeUri(event.meetingUrl)}`);
   }
   if (event.rrule !== undefined && event.rrule.length > 0) {
-    lines.push(`RRULE:${event.rrule.replace(/^RRULE:/iu, "")}`);
+    const rruleValue = sanitizeIcsParam(event.rrule.replace(/^RRULE:/iu, ""));
+    if (rruleValue.length > 0) {
+      lines.push(`RRULE:${rruleValue}`);
+    }
   }
   for (const exdate of event.exdates) {
     pushEventDateLine(lines, "EXDATE", event, exdate);
@@ -257,7 +293,7 @@ export function serializeCalendar(calendar: CalendarForIcs, events: EventForIcs[
     "PRODID:-//Calink//Calendar Feed//EN",
     "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:${escapeText(calendar.name)}`,
-    `X-WR-TIMEZONE:${calendar.timezone}`,
+    `X-WR-TIMEZONE:${sanitizeIcsParam(calendar.timezone)}`,
   ];
   pushTextLine(lines, "X-WR-CALDESC", calendar.description);
   for (const timezone of timezones) {
