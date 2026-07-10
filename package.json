@@ -33,7 +33,7 @@
     "ical.js": "^2.2.1",
     "node-ical": "latest",
     "typescript": "latest",
-    "typescript-eslint": "latest",
+    "typescript-eslint": "^8.63.0",
     "vitest": "latest"
   }
 }

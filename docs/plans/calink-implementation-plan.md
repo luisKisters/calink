@@ -66,12 +66,12 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 **Files:**
 - Create/verify: `package.json`, `tsconfig.json`, `vitest.config.ts`, `.env.example`, `convex/` (with generated `convex/_generated`)
 
-- [ ] Ensure `package.json` has runtime deps `next`, `react`, `convex`, `@convex-dev/auth`, `@auth/core`, `@anthropic-ai/sdk` and dev deps `typescript`, `vitest`, `convex-test`, `@edge-runtime/vm`, `rrule`, `node-ical` or `ical.js` (test-only ICS validator), `zod`.
-- [ ] Ensure `convex/` is initialized and `convex/_generated` exists (`npx convex codegen`).
-- [ ] Ensure `vitest.config.ts` is configured for `convex-test`: environment `edge-runtime`, `server.deps.inline: ["convex-test"]`.
-- [ ] Ensure npm scripts exist: `dev`, `lint`, `typecheck` (`tsc --noEmit`), `test` (`vitest run`), `test:watch`.
-- [ ] Document Convex env (do not commit secrets) in `.env.example`: `ANTHROPIC_API_KEY` (set via `npx convex env set ANTHROPIC_API_KEY ...`), `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`.
-- [ ] **Gate:** `npm run typecheck` passes; `npm test` runs (0 tests ok); `convex/_generated` present. Run `npm run lint && npm run typecheck && npm test`.
+- [x] Ensure `package.json` has runtime deps `next`, `react`, `convex`, `@convex-dev/auth`, `@auth/core`, `@anthropic-ai/sdk` and dev deps `typescript`, `vitest`, `convex-test`, `@edge-runtime/vm`, `rrule`, `node-ical` or `ical.js` (test-only ICS validator), `zod`.
+- [x] Ensure `convex/` is initialized and `convex/_generated` exists (`npx convex codegen`).
+- [x] Ensure `vitest.config.ts` is configured for `convex-test`: environment `edge-runtime`, `server.deps.inline: ["convex-test"]`.
+- [x] Ensure npm scripts exist: `dev`, `lint`, `typecheck` (`tsc --noEmit`), `test` (`vitest run`), `test:watch`.
+- [x] Document Convex env (do not commit secrets) in `.env.example`: `ANTHROPIC_API_KEY` (set via `npx convex env set ANTHROPIC_API_KEY ...`), `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`.
+- [x] **Gate:** `npm run typecheck` passes; `npm test` runs (0 tests ok); `convex/_generated` present. Run `npm run lint && npm run typecheck && npm test`.
 
 ### Task 2: Schema, auth, ownership-scoped CRUD + Undo
 
