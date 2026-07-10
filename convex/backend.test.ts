@@ -332,6 +332,139 @@ describe("Convex backend", () => {
     }
   });
 
+  test("AI chat create_event appends to changeLog and undo reverts it", async () => {
+    const t = createHarness();
+    const userId = await createUser(t, "alice");
+    const calendarId = await createCalendar(t, userId);
+    let turns = 0;
+    const fakeClient: ModelClient = {
+      extractEvents() {
+        return Promise.resolve([]);
+      },
+      createChatTurn(): Promise<ChatTurn> {
+        turns += 1;
+        if (turns === 1) {
+          return Promise.resolve({
+            text: "",
+            stopReason: "tool_use",
+            toolCalls: [
+              {
+                id: "tool-1",
+                name: "create_event",
+                input: {
+                  title: "Undoable event",
+                  startISO: "2026-07-01T09:00:00.000Z",
+                  allDay: false,
+                  timezone: "UTC",
+                },
+              },
+            ],
+          });
+        }
+        return Promise.resolve({ text: "Created.", stopReason: "end_turn", toolCalls: [] });
+      },
+    };
+    setModelClientForTesting(fakeClient);
+    try {
+      const chatResult = await asUser(t, userId).action(api.ai.chat, {
+        calendarId,
+        messages: [{ role: "user", content: "Add a meeting" }],
+      });
+      expect(chatResult.applied).toHaveLength(1);
+      expect(chatResult.applied[0]).toMatch(/^create:/);
+
+      const changeLogEntry = await t.run(async (ctx) => {
+        return await ctx.db
+          .query("changeLog")
+          .withIndex("by_calendar", (q) => q.eq("calendarId", calendarId))
+          .order("desc")
+          .first();
+      });
+      expect(changeLogEntry).not.toBeNull();
+      expect(changeLogEntry?.actorType).toBe("agent");
+      expect(changeLogEntry?.op).toBe("create");
+
+      await asUser(t, userId).mutation(api.events.undo, { calendarId });
+      const events = await asUser(t, userId).query(api.events.listByCalendar, { calendarId });
+      expect(events).toHaveLength(0);
+    } finally {
+      setModelClientForTesting(null);
+    }
+  });
+
+  test("AI chat update_event scope:this produces override row and exdate on original", async () => {
+    const t = createHarness();
+    const userId = await createUser(t, "alice");
+    const calendarId = await createCalendar(t, userId);
+
+    const recurringEventId = await asUser(t, userId).mutation(api.events.create, {
+      calendarId,
+      event: {
+        title: "Weekly standup",
+        start: Date.UTC(2026, 5, 1, 9, 0, 0),
+        end: Date.UTC(2026, 5, 1, 9, 30, 0),
+        allDay: false,
+        timezone: "UTC",
+        rrule: "FREQ=WEEKLY;COUNT=4",
+        exdates: [],
+      },
+    });
+
+    const instanceStartISO = "2026-06-08T09:00:00.000Z";
+    let turns = 0;
+    const fakeClient: ModelClient = {
+      extractEvents() {
+        return Promise.resolve([]);
+      },
+      createChatTurn(): Promise<ChatTurn> {
+        turns += 1;
+        if (turns === 1) {
+          return Promise.resolve({
+            text: "",
+            stopReason: "tool_use",
+            toolCalls: [
+              {
+                id: "tool-2",
+                name: "update_event",
+                input: {
+                  eventId: recurringEventId,
+                  scope: "this",
+                  instanceStartISO,
+                  patch: { title: "Standup (retitled)" },
+                },
+              },
+            ],
+          });
+        }
+        return Promise.resolve({ text: "Updated.", stopReason: "end_turn", toolCalls: [] });
+      },
+    };
+    setModelClientForTesting(fakeClient);
+    try {
+      const chatResult = await asUser(t, userId).action(api.ai.chat, {
+        calendarId,
+        messages: [{ role: "user", content: "Rename second standup" }],
+      });
+      expect(chatResult.applied).toHaveLength(2);
+
+      const allEvents = await asUser(t, userId).query(api.events.listByCalendar, {
+        calendarId,
+        includeCancelled: true,
+      });
+      const original = allEvents.find((e) => e._id === recurringEventId);
+      expect(original?.exdates).toContain(Date.parse(instanceStartISO));
+
+      const override = allEvents.find(
+        (e) => e._id !== recurringEventId && e.recurrenceId !== undefined,
+      );
+      expect(override).toBeDefined();
+      expect(override?.title).toBe("Standup (retitled)");
+      expect(override?.recurrenceId).toBe(Date.parse(instanceStartISO));
+    } finally {
+      setModelClientForTesting(null);
+    }
+  });
+
   test("rate limiter trips within a window", async () => {
     const t = createHarness();
     const userId = await createUser(t, "alice");

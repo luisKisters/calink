@@ -277,6 +277,12 @@ export function expandOccurrences(
   return result;
 }
 
+function stripUndefined<T extends object>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined),
+  ) as Partial<T>;
+}
+
 export function applyEditScope(
   series: RecurrenceEvent,
   instanceStart: number,
@@ -286,20 +292,21 @@ export function applyEditScope(
   if (scope === "all") {
     return [{ kind: "updateSeries", patch }];
   }
+  const cleanPatch = stripUndefined(patch);
   const duration = series.end === undefined ? undefined : series.end - series.start;
   if (scope === "this") {
     const nextExdates = Array.from(new Set([...series.exdates, instanceStart])).sort(
       (left, right) => left - right,
     );
-    const overrideStart = patch.start ?? instanceStart;
-    const overrideEnd = patch.end ?? (duration === undefined ? undefined : overrideStart + duration);
+    const overrideStart = cleanPatch.start ?? instanceStart;
+    const overrideEnd = cleanPatch.end ?? (duration === undefined ? undefined : overrideStart + duration);
     return [
       { kind: "updateSeries", patch: { exdates: nextExdates } },
       {
         kind: "insertOverride",
         event: {
           ...series,
-          ...patch,
+          ...cleanPatch,
           start: overrideStart,
           end: overrideEnd,
           rrule: undefined,
@@ -330,15 +337,15 @@ export function applyEditScope(
       until: parseRRuleUntil(formatUntil(until, series.timezone, series.allDay)),
     }),
   };
-  const newStart = patch.start ?? instanceStart;
-  const newEnd = patch.end ?? (duration === undefined ? undefined : newStart + duration);
+  const newStart = cleanPatch.start ?? instanceStart;
+  const newEnd = cleanPatch.end ?? (duration === undefined ? undefined : newStart + duration);
   return [
     { kind: "updateSeries", patch: originalPatch },
     {
       kind: "insertSeries",
       event: {
         ...series,
-        ...patch,
+        ...cleanPatch,
         start: newStart,
         end: newEnd,
         rrule: buildRRuleString({

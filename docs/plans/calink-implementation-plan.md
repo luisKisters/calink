@@ -127,10 +127,10 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 **Files:**
 - Create/verify: `convex/ai.ts` (`chat` action, `"use node"`), shared tool definitions, tests alongside
 
-- [ ] `chat({ calendarId, messages })`: manual agentic loop — `client.messages.create({ model: "claude-opus-4-8", thinking: { type: "adaptive" }, tools, messages })`; while `stop_reason === "tool_use"`, execute each tool, append `tool_result` blocks, re-call; stop on `end_turn`.
-- [ ] **Tools** (defined once, shared with MCP — Task 7): `list_events`, `create_event`, `update_event`, `delete_event`. Each handler calls the same internal `applyCreate/applyUpdate/applyDelete` mutations so every change lands in `changeLog` and is undoable. **Auto-apply**: tools mutate immediately; the action returns assistant text + applied `changeLog` entries. Recurrence edits go through `applyEditScope` (Task 3); `update_event`/`delete_event` take `scope: "this" | "following" | "all"`. Use SDK-parsed `block.input` — never raw-string-match.
-- [ ] Tests (mocked model): scripted turn calling `create_event` then `end_turn` → one new event + one `changeLog` entry; `update_event` with `scope:"this"` → override + EXDATE (assert via recurrence helpers); Undo reverts a chat-applied change; chat on a non-owned calendar throws before any model call.
-- [ ] **Gate:** `npm run lint && npm run typecheck && npm test`.
+- [x] `chat({ calendarId, messages })`: manual agentic loop — `client.messages.create({ model: "claude-opus-4-8", thinking: { type: "adaptive" }, tools, messages })`; while `stop_reason === "tool_use"`, execute each tool, append `tool_result` blocks, re-call; stop on `end_turn`.
+- [x] **Tools** (defined once, shared with MCP — Task 7): `list_events`, `create_event`, `update_event`, `delete_event`. Each handler calls the same internal `applyCreate/applyUpdate/applyDelete` mutations so every change lands in `changeLog` and is undoable. **Auto-apply**: tools mutate immediately; the action returns assistant text + applied `changeLog` entries. Recurrence edits go through `applyEditScope` (Task 3); `update_event`/`delete_event` take `scope: "this" | "following" | "all"`. Use SDK-parsed `block.input` — never raw-string-match.
+- [x] Tests (mocked model): scripted turn calling `create_event` then `end_turn` → one new event + one `changeLog` entry; `update_event` with `scope:"this"` → override + EXDATE (assert via recurrence helpers); Undo reverts a chat-applied change; chat on a non-owned calendar throws before any model call.
+- [x] **Gate:** `npm run lint && npm run typecheck && npm test`.
 
 ### Task 7: MCP server (Streamable HTTP, Bearer, full CRUD)
 
