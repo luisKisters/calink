@@ -79,14 +79,14 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 - Create/verify: `convex/schema.ts`, `convex/auth.ts`, `convex/calendars.ts`, `convex/events.ts`, `convex/mcpKeys.ts`
 - Create/verify: `convex/backend.test.ts` (or split per-module test files)
 
-- [ ] `convex/schema.ts` defines tables per spec: `...authTables`, `calendars` (ownerId, name, color, timezone IANA, description?, feedToken secret, sequence, createdAt; indexes `by_owner`, `by_feedToken`), `events` (calendarId, uid, title, description?, location?, meetingUrl?, start epoch-ms, end?, allDay, timezone TZID, rrule? (no `RRULE:` prefix), exdates[], status confirmed|cancelled, sequence, lastModified, recurrenceId?; indexes `by_calendar`, `by_calendar_status`), `mcpKeys` (ownerId, token secret, label, createdAt, lastUsedAt?; indexes `by_owner`, `by_token`), `changeLog` (calendarId, actorType user|agent|mcp, op, inverse, description, createdAt, undone; index `by_calendar`).
-- [ ] `convex/auth.ts`: Convex Auth with Google provider (`import Google from "@auth/core/providers/google"`). Export `auth, signIn, signOut, store, isAuthenticated`. Document redirect URI `https://<deployment>.convex.site/api/auth/callback/google`.
-- [ ] Helpers: `getAuthedUserId(ctx)` throws if unauthenticated; `requireOwnedCalendar(ctx, calendarId)` loads calendar, asserts `ownerId === userId` else throws. **Every event mutation funnels through it.**
-- [ ] `calendars`: `list`, `create` (generates `feedToken` via Web Crypto `crypto.getRandomValues`, 20 bytes → base64url), `rename/recolor/setTimezone`, `regenerateFeedToken`, `remove`.
-- [ ] `events`: `listByCalendar`, `create`, `update`, `remove` (soft: `status:"cancelled"` + bump `sequence`; prune later via cron).
-- [ ] Internal mutations `applyCreate/applyUpdate/applyDelete` that ALSO append to `changeLog` with an inverse — reused by chat + MCP so undo works uniformly. `undo(calendarId)` pops last non-undone `changeLog` row, applies inverse, marks undone.
-- [ ] Tests (`convex-test`): create-calendar sets a unique feedToken; CRUD round-trips; **cross-tenant test** — user B cannot read/update/delete user A's calendar or events (each throws); `undo` reverts the last create/update/delete; auth-required functions throw when unauthenticated.
-- [ ] **Gate:** `npm run lint && npm run typecheck && npm test`.
+- [x] `convex/schema.ts` defines tables per spec: `...authTables`, `calendars` (ownerId, name, color, timezone IANA, description?, feedToken secret, sequence, createdAt; indexes `by_owner`, `by_feedToken`), `events` (calendarId, uid, title, description?, location?, meetingUrl?, start epoch-ms, end?, allDay, timezone TZID, rrule? (no `RRULE:` prefix), exdates[], status confirmed|cancelled, sequence, lastModified, recurrenceId?; indexes `by_calendar`, `by_calendar_status`), `mcpKeys` (ownerId, token secret, label, createdAt, lastUsedAt?; indexes `by_owner`, `by_token`), `changeLog` (calendarId, actorType user|agent|mcp, op, inverse, description, createdAt, undone; index `by_calendar`).
+- [x] `convex/auth.ts`: Convex Auth with Google provider (`import Google from "@auth/core/providers/google"`). Export `auth, signIn, signOut, store, isAuthenticated`. Document redirect URI `https://<deployment>.convex.site/api/auth/callback/google`.
+- [x] Helpers: `getAuthedUserId(ctx)` throws if unauthenticated; `requireOwnedCalendar(ctx, calendarId)` loads calendar, asserts `ownerId === userId` else throws. **Every event mutation funnels through it.**
+- [x] `calendars`: `list`, `create` (generates `feedToken` via Web Crypto `crypto.getRandomValues`, 20 bytes → base64url), `rename/recolor/setTimezone`, `regenerateFeedToken`, `remove`.
+- [x] `events`: `listByCalendar`, `create`, `update`, `remove` (soft: `status:"cancelled"` + bump `sequence`; prune later via cron).
+- [x] Internal mutations `applyCreate/applyUpdate/applyDelete` that ALSO append to `changeLog` with an inverse — reused by chat + MCP so undo works uniformly. `undo(calendarId)` pops last non-undone `changeLog` row, applies inverse, marks undone.
+- [x] Tests (`convex-test`): create-calendar sets a unique feedToken; CRUD round-trips; **cross-tenant test** — user B cannot read/update/delete user A's calendar or events (each throws); `undo` reverts the last create/update/delete; auth-required functions throw when unauthenticated.
+- [x] **Gate:** `npm run lint && npm run typecheck && npm test`.
 
 ### Task 3: Recurrence engine (pure, heavily tested)
 
