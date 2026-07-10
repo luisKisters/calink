@@ -180,7 +180,8 @@ export function parseRRuleString(rule: string): RRuleModel {
       model.interval = Number(value);
     } else if (key === "BYDAY") {
       model.byday = value.split(",").map((day) => {
-        const normalized = day.toUpperCase();
+        // RFC 5545 allows ordinal-prefix forms like "2TU" or "-1FR"; strip the prefix.
+        const normalized = day.toUpperCase().replace(/^-?\d+/, "");
         if (!weekdays.includes(normalized as Weekday)) {
           throw new Error(`Unsupported RRULE weekday: ${day}`);
         }
@@ -228,7 +229,8 @@ export function buildRRuleString(model: RRuleModel): string {
   if (model.bysetpos !== undefined && model.bysetpos.length > 0) {
     parts.push(`BYSETPOS=${model.bysetpos.join(",")}`);
   }
-  if (model.count !== undefined) parts.push(`COUNT=${model.count}`);
+  // RFC 5545 §3.3.10: COUNT and UNTIL MUST NOT both appear in the same RRULE.
+  if (model.count !== undefined && model.until === undefined) parts.push(`COUNT=${model.count}`);
   if (model.until !== undefined) {
     const date = new Date(model.until);
     const year = String(date.getUTCFullYear()).padStart(4, "0");
@@ -342,9 +344,11 @@ export function applyEditScope(
   };
   const newStart = cleanPatch.start ?? instanceStart;
   const newEnd = cleanPatch.end ?? (duration === undefined ? undefined : newStart + duration);
-  return [
-    { kind: "updateSeries", patch: originalPatch },
-    {
+  const writes: RecurrenceWrite[] = [{ kind: "updateSeries", patch: originalPatch }];
+  // Skip insertSeries when remainingCount is 0 — COUNT=0 produces no occurrences
+  // and would create a ghost series document.
+  if (remainingCount === undefined || remainingCount > 0) {
+    writes.push({
       kind: "insertSeries",
       event: {
         ...series,
@@ -360,8 +364,9 @@ export function applyEditScope(
         exdates: [],
         recurrenceId: undefined,
       },
-    },
-  ];
+    });
+  }
+  return writes;
 }
 
 export function getLocalWallClock(date: Date, timezone: string): DateParts {

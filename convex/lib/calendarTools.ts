@@ -331,9 +331,7 @@ export async function executeCalendarTool(
       ownerId: args.ownerId,
       eventId,
     });
-    const writes = applyEditScope(recurrenceEventFromDoc(event), instanceStart, "following", {
-      status: "cancelled",
-    });
+    const writes = applyEditScope(recurrenceEventFromDoc(event), instanceStart, "following", {});
     const applied: string[] = [];
     for (const write of writes) {
       if (write.kind === "updateSeries") {
@@ -344,15 +342,9 @@ export async function executeCalendarTool(
           actorType: args.actorType,
         });
         applied.push(`update:${eventId}`);
-      } else {
-        const newEventId = await ctx.runMutation(internal.events.applyCreate, {
-          ownerId: args.ownerId,
-          calendarId: args.calendarId,
-          event: eventInputFromRecurrence(write.event),
-          actorType: args.actorType,
-        });
-        applied.push(`create:${newEventId}`);
       }
+      // insertSeries is skipped: trimming UNTIL on the original series is sufficient
+      // to remove following occurrences without creating a spurious split series.
     }
     return { content: JSON.stringify({ eventId, splitAt: instanceStart }), applied };
   }
