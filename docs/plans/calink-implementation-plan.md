@@ -137,11 +137,11 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 **Files:**
 - Create/verify: `convex/http.ts` (`POST /mcp`), `convex/mcpKeys.ts` (management), tests alongside
 
-- [ ] `POST /mcp` (`httpAction`): **Auth** — read `Authorization: Bearer <token>`, look up `mcpKeys.by_token`, 401 if missing/invalid, stamp `lastUsedAt`; the key's `ownerId` scopes every op. **Transport** — Streamable HTTP; accept a single JSON-RPC request (+ batches) per POST; respond `application/json`. Methods: `initialize` (protocol version + `tools: {}` capabilities), `tools/list` (catalog), `tools/call` (dispatch by name); unknown methods → JSON-RPC error `-32601`.
-- [ ] **Tools (full CRUD + create calendars):** `list_calendars`, `create_calendar`, `get_feed_url`, `list_events`, `create_event`, `update_event` (with `scope`), `delete_event` — each scoped to the key's `ownerId`, reusing the same internal mutations (writes hit `changeLog`).
-- [ ] `mcpKeys` management: `createMcpKey(label)` (full token shown once), `listMcpKeys` (masked token + label + lastUsedAt), `revokeMcpKey(id)`. Document the `mcp.json` snippet (URL `https://<deployment>.convex.site/mcp`, `Authorization` bearer header).
-- [ ] Tests: `initialize` returns capabilities; `tools/list` lists all 8 tools with valid JSON Schemas; `tools/call create_event` creates an event + returns id; missing/invalid Bearer → 401; a key for user A cannot touch user B's calendar (404/forbidden); malformed JSON-RPC → proper error object. Optional: MCP Inspector smoke against a local deployment (document result).
-- [ ] **Gate:** `npm run lint && npm run typecheck && npm test`.
+- [x] `POST /mcp` (`httpAction`): **Auth** — read `Authorization: Bearer <token>`, look up `mcpKeys.by_token`, 401 if missing/invalid, stamp `lastUsedAt`; the key's `ownerId` scopes every op. **Transport** — Streamable HTTP; accept a single JSON-RPC request (+ batches) per POST; respond `application/json`. Methods: `initialize` (protocol version + `tools: {}` capabilities), `tools/list` (catalog), `tools/call` (dispatch by name); unknown methods → JSON-RPC error `-32601`.
+- [x] **Tools (full CRUD + create calendars):** `list_calendars`, `create_calendar`, `get_feed_url`, `list_events`, `create_event`, `update_event` (with `scope`), `delete_event` — each scoped to the key's `ownerId`, reusing the same internal mutations (writes hit `changeLog`).
+- [x] `mcpKeys` management: `createMcpKey(label)` (full token shown once), `listMcpKeys` (masked token + label + lastUsedAt), `revokeMcpKey(id)`. Document the `mcp.json` snippet (URL `https://<deployment>.convex.site/mcp`, `Authorization` bearer header).
+- [x] Tests: `initialize` returns capabilities; `tools/list` lists all 8 tools with valid JSON Schemas; `tools/call create_event` creates an event + returns id; missing/invalid Bearer → 401; a key for user A cannot touch user B's calendar (404/forbidden); malformed JSON-RPC → proper error object. Optional: MCP Inspector smoke against a local deployment (document result).
+- [x] **Gate:** `npm run lint && npm run typecheck && npm test`.
 
 ### Task 8: Hardening, scheduled cleanup, security review
 

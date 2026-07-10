@@ -1,3 +1,13 @@
+// mcp.json snippet for AI clients:
+// {
+//   "mcpServers": {
+//     "calink": {
+//       "url": "https://<deployment>.convex.site/mcp",
+//       "headers": { "Authorization": "Bearer <token>" }
+//     }
+//   }
+// }
+
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";

@@ -193,8 +193,14 @@ describe("Convex backend", () => {
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }),
     });
-    const listedBody = (await listed.json()) as { result: { tools: Array<{ name: string }> } };
+    const listedBody = (await listed.json()) as {
+      result: { tools: Array<{ name: string; inputSchema: { type: string; properties: unknown } }> };
+    };
     expect(listedBody.result.tools).toHaveLength(8);
+    for (const toolDef of listedBody.result.tools) {
+      expect(toolDef.inputSchema).toBeDefined();
+      expect(toolDef.inputSchema.type).toBe("object");
+    }
 
     const created = await t.fetch("/mcp", {
       method: "POST",
@@ -228,6 +234,56 @@ describe("Convex backend", () => {
       }),
     });
     expect(await crossTenant.json()).toMatchObject({ result: { isError: true } });
+  });
+
+  test("MCP returns JSON-RPC errors for malformed requests and unknown methods", async () => {
+    const t = createHarness();
+    const alice = await createUser(t, "alice");
+    const { token } = await asUser(t, alice).mutation(api.mcpKeys.createMcpKey, {
+      label: "test",
+    });
+
+    const malformedBody = await t.fetch("/mcp", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: "not json {{{",
+    });
+    const malformedResult = (await malformedBody.json()) as { error: { code: number } };
+    expect(malformedResult.error.code).toBe(-32700);
+
+    const unknownMethod = await t.fetch("/mcp", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "unknown/method" }),
+    });
+    const unknownResult = (await unknownMethod.json()) as { error: { code: number } };
+    expect(unknownResult.error.code).toBe(-32601);
+
+    const invalidRpc = await t.fetch("/mcp", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ notJsonRpc: true }),
+    });
+    const invalidResult = (await invalidRpc.json()) as { error: { code: number } };
+    expect(invalidResult.error.code).toBe(-32600);
+  });
+
+  test("mcpKeys management: list returns masked tokens, revoke deletes the key", async () => {
+    const t = createHarness();
+    const alice = await createUser(t, "alice");
+    const { id: keyId, token } = await asUser(t, alice).mutation(api.mcpKeys.createMcpKey, {
+      label: "mykey",
+    });
+
+    const listed = await asUser(t, alice).query(api.mcpKeys.listMcpKeys);
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?.label).toBe("mykey");
+    expect(listed[0]?.maskedToken).not.toBe(token);
+    expect(listed[0]?.maskedToken).toContain("...");
+
+    await asUser(t, alice).mutation(api.mcpKeys.revokeMcpKey, { keyId });
+    const afterRevoke = await asUser(t, alice).query(api.mcpKeys.listMcpKeys);
+    expect(afterRevoke).toHaveLength(0);
   });
 
   test("AI extraction uses a mocked model, writes events, and undo works", async () => {
