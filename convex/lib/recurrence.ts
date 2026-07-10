@@ -289,10 +289,10 @@ export function applyEditScope(
   scope: EditScope,
   patch: RecurrencePatch,
 ): RecurrenceWrite[] {
-  if (scope === "all") {
-    return [{ kind: "updateSeries", patch }];
-  }
   const cleanPatch = stripUndefined(patch);
+  if (scope === "all") {
+    return [{ kind: "updateSeries", patch: cleanPatch }];
+  }
   const duration = series.end === undefined ? undefined : series.end - series.start;
   if (scope === "this") {
     const nextExdates = Array.from(new Set([...series.exdates, instanceStart])).sort(
@@ -316,7 +316,10 @@ export function applyEditScope(
       },
     ];
   }
-  const model = parseRRuleString(series.rrule ?? "FREQ=DAILY");
+  if (series.rrule === undefined) {
+    throw new Error("Cannot apply 'following' scope to a non-recurring event");
+  }
+  const model = parseRRuleString(series.rrule);
   const beforeSplitCount =
     model.count === undefined
       ? undefined

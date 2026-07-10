@@ -334,6 +334,7 @@ export async function executeCalendarTool(
     const writes = applyEditScope(recurrenceEventFromDoc(event), instanceStart, "following", {
       status: "cancelled",
     });
+    const applied: string[] = [];
     for (const write of writes) {
       if (write.kind === "updateSeries") {
         await ctx.runMutation(internal.events.applyUpdate, {
@@ -342,9 +343,18 @@ export async function executeCalendarTool(
           patch: write.patch,
           actorType: args.actorType,
         });
+        applied.push(`update:${eventId}`);
+      } else {
+        const newEventId = await ctx.runMutation(internal.events.applyCreate, {
+          ownerId: args.ownerId,
+          calendarId: args.calendarId,
+          event: eventInputFromRecurrence(write.event),
+          actorType: args.actorType,
+        });
+        applied.push(`create:${newEventId}`);
       }
     }
-    return { content: JSON.stringify({ eventId, splitAt: instanceStart }), applied: [`update:${eventId}`] };
+    return { content: JSON.stringify({ eventId, splitAt: instanceStart }), applied };
   }
   throw new Error(`Unknown tool: ${args.name}`);
 }

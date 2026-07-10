@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
 
 export const prune = internalMutation({
   args: {
@@ -21,14 +20,12 @@ export const prune = internalMutation({
       await ctx.db.delete(event._id);
     }
 
-    const changes = await ctx.db.query("changeLog").collect();
-    const byCalendar = new Map<string, Doc<"changeLog">[]>();
-    for (const change of changes) {
-      const bucket = byCalendar.get(change.calendarId) ?? [];
-      bucket.push(change);
-      byCalendar.set(change.calendarId, bucket);
-    }
-    for (const bucket of byCalendar.values()) {
+    const calendars = await ctx.db.query("calendars").collect();
+    for (const calendar of calendars) {
+      const bucket = await ctx.db
+        .query("changeLog")
+        .withIndex("by_calendar", (q) => q.eq("calendarId", calendar._id))
+        .collect();
       const stale = bucket
         .sort((left, right) => right.createdAt - left.createdAt)
         .slice(maxChangeLogPerCalendar);
