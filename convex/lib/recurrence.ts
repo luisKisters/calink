@@ -344,7 +344,8 @@ export function applyEditScope(
         rrule: buildRRuleString({
           ...model,
           count: remainingCount,
-          until: undefined,
+          // If original had UNTIL (not COUNT), preserve it on the new series
+          until: model.count !== undefined ? undefined : model.until,
         }),
         exdates: [],
         recurrenceId: undefined,

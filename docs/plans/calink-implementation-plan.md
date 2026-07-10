@@ -93,11 +93,11 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 **Files:**
 - Create/verify: `convex/lib/recurrence.ts`, `convex/lib/recurrence.test.ts`
 
-- [ ] `expandOccurrences(event, {from, to, limit})` → `Date[]` of instance starts honoring `rrule`, `exdates`, optional `until`. Implement on top of `rrule` (RRule.between / .all with count) but wrap it so the rest of the code is library-agnostic.
-- [ ] `applyEditScope(series, instanceStart, scope, patch)` → returns the set of DB writes for: **"this event only"** (add `instanceStart` to `series.exdates` + insert override row with `recurrenceId = instanceStart` + patch); **"this and following"** (set `UNTIL` on original RRULE to just before `instanceStart`; create new series starting at `instanceStart` with patch); **"all events"** (patch the series row directly).
-- [ ] Helpers to build/parse RRULE strings (freq, interval, byday, bymonthday, bysetpos, until, count) with a typed model shared by the AI/MCP layers and the future UI builder.
-- [ ] Deep test matrix (verifier owns this): weekly-on-Mon, every-2-weeks, weekdays, Mon/Wed/Fri, monthly day-N, monthly Nth-weekday ("2nd Tuesday"), yearly; `UNTIL`/`COUNT` terminate correctly; `EXDATE` removes the right instances; **DST**: a recurring 09:00 Europe/Berlin event stays at 09:00 local across March/October transitions (assert local wall-clock); all-day vs timed; edit-scope splits verified (union of old ∪ new reproduces original future set minus the change; "this only" = exactly one override + one EXDATE). Optional property test: random rule → expand → count matches `rrule` reference.
-- [ ] **Gate:** `npm run lint && npm run typecheck && npm test`.
+- [x] `expandOccurrences(event, {from, to, limit})` → `Date[]` of instance starts honoring `rrule`, `exdates`, optional `until`. Implement on top of `rrule` (RRule.between / .all with count) but wrap it so the rest of the code is library-agnostic.
+- [x] `applyEditScope(series, instanceStart, scope, patch)` → returns the set of DB writes for: **"this event only"** (add `instanceStart` to `series.exdates` + insert override row with `recurrenceId = instanceStart` + patch); **"this and following"** (set `UNTIL` on original RRULE to just before `instanceStart`; create new series starting at `instanceStart` with patch); **"all events"** (patch the series row directly).
+- [x] Helpers to build/parse RRULE strings (freq, interval, byday, bymonthday, bysetpos, until, count) with a typed model shared by the AI/MCP layers and the future UI builder.
+- [x] Deep test matrix (verifier owns this): weekly-on-Mon, every-2-weeks, weekdays, Mon/Wed/Fri, monthly day-N, monthly Nth-weekday ("2nd Tuesday"), yearly; `UNTIL`/`COUNT` terminate correctly; `EXDATE` removes the right instances; **DST**: a recurring 09:00 Europe/Berlin event stays at 09:00 local across March/October transitions (assert local wall-clock); all-day vs timed; edit-scope splits verified (union of old ∪ new reproduces original future set minus the change; "this only" = exactly one override + one EXDATE). Optional property test: random rule → expand → count matches `rrule` reference.
+- [x] **Gate:** `npm run lint && npm run typecheck && npm test`.
 
 ### Task 4: iCal feed serializer + HTTP endpoint (highest-risk)
 
