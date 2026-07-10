@@ -116,11 +116,11 @@ Next.js (App Router)  ──Convex React client──▶  Convex
 **Files:**
 - Create/verify: `convex/ai.ts` (action, `"use node"`), `convex/rateLimits.ts`, tests alongside
 
-- [ ] `extractEvents({ calendarId, text, now, timezone })`: build an Anthropic request using **structured outputs** to force a typed `{ events: Array<{title, description?, location?, meetingUrl?, startISO, endISO?, allDay, rrule?}> }`. Model constant `claude-opus-4-8` (allow `claude-haiku-4-5` for the cheap path). Thinking off. System prompt: "Extract calendar events from the user's pasted text. Resolve relative dates against `now` in `timezone`. Output RRULE strings for anything repeating. Do not invent events." Write immediately + surface Undo (writes go through `applyCreate`, so they append to `changeLog`).
-- [ ] Anthropic client behind a small `getModelClient()` indirection so tests inject a fake.
-- [ ] Per-user rate-limit guard (max N extract calls / minute; token-bucket mutation or table in `rateLimits.ts`).
-- [ ] Tests (mocked model client): canned structured response maps to event rows with correct fields; writes append to `changeLog` (Undo works); prompt includes `now`/`timezone`; no real network call; rate-limit trips.
-- [ ] **Gate:** `npm run lint && npm run typecheck && npm test`.
+- [x] `extractEvents({ calendarId, text, now, timezone })`: build an Anthropic request using **structured outputs** to force a typed `{ events: Array<{title, description?, location?, meetingUrl?, startISO, endISO?, allDay, rrule?}> }`. Model constant `claude-opus-4-8` (allow `claude-haiku-4-5` for the cheap path). Thinking off. System prompt: "Extract calendar events from the user's pasted text. Resolve relative dates against `now` in `timezone`. Output RRULE strings for anything repeating. Do not invent events." Write immediately + surface Undo (writes go through `applyCreate`, so they append to `changeLog`).
+- [x] Anthropic client behind a small `getModelClient()` indirection so tests inject a fake.
+- [x] Per-user rate-limit guard (max N extract calls / minute; token-bucket mutation or table in `rateLimits.ts`).
+- [x] Tests (mocked model client): canned structured response maps to event rows with correct fields; writes append to `changeLog` (Undo works); prompt includes `now`/`timezone`; no real network call; rate-limit trips.
+- [x] **Gate:** `npm run lint && npm run typecheck && npm test`.
 
 ### Task 6: AI — conversational editing (tool-using, auto-apply + Undo)
 

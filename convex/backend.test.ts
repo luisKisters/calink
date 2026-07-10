@@ -349,6 +349,40 @@ describe("Convex backend", () => {
     expect(second.allowed).toBe(false);
   });
 
+  test("extractEvents rate limit trips after limit is exhausted", async () => {
+    const t = createHarness();
+    const userId = await createUser(t, "alice");
+    const calendarId = await createCalendar(t, userId);
+    const fakeClient: ModelClient = {
+      extractEvents() {
+        return Promise.resolve([]);
+      },
+      createChatTurn(): Promise<ChatTurn> {
+        return Promise.resolve({ text: "", stopReason: "end_turn", toolCalls: [] });
+      },
+    };
+    setModelClientForTesting(fakeClient);
+    try {
+      for (let i = 0; i < 10; i += 1) {
+        await t.mutation(internal.rateLimits.consume, {
+          ownerId: userId,
+          key: "ai_extract",
+          limit: 10,
+        });
+      }
+      await expect(
+        asUser(t, userId).action(api.ai.extractEvents, {
+          calendarId,
+          text: "Meeting at 3pm",
+          now: "2026-06-01T00:00:00.000Z",
+          timezone: "UTC",
+        }),
+      ).rejects.toThrow("Rate limit exceeded");
+    } finally {
+      setModelClientForTesting(null);
+    }
+  });
+
   test("rate limiter resets an expired window without leaving duplicate rows", async () => {
     const t = createHarness();
     const userId = await createUser(t, "alice");
